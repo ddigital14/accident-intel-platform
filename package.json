@@ -1,0 +1,48 @@
+{
+  "name": "accident-intel-platform",
+  "version": "1.0.0",
+  "description": "Real-time accident and personal injury intelligence platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "knex migrate:latest --knexfile src/config/knexfile.js",
+    "seed": "knex seed:run --knexfile src/config/knexfile.js",
+    "ingest": "node src/ingestion/runner.js",
+    "worker": "node src/ingestion/worker.js",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "bullmq": "^4.14.0",
+    "cheerio": "^1.0.0-rc.12",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.4",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "morgan": "^1.10.0",
+    "natural": "^6.10.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.7",
+    "openai": "^4.20.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "socket.io": "^4.7.2",
+    "twilio": "^4.19.0",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^7.2.2"
+  }
+}
