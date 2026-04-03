@@ -32,8 +32,6 @@ async function api(path, opts = {}) {
     return { error: err.message, data: [] };
   }
 }
-  return res.json();
-}
 
 // ============================================================================
 // MAIN APP
