@@ -23,7 +23,8 @@ async function enrichWithPDL(person, apiKey) {
     params.append('min_likelihood', '3');
 
     const resp = await fetch(`https://api.peopledatalabs.com/v5/person/enrich?${params.toString()}`, {
-      headers: { 'X-API-Key': apiKey, 'Accept': 'application/json' }
+      headers: { 'X-API-Key': apiKey, 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(8000)
     });
     if (resp.status === 200) {
       const data = await resp.json();
@@ -68,7 +69,9 @@ async function enrichWithHunter(person, apiKey) {
     }
 
     if (domain) {
-      const resp = await fetch(`https://api.hunter.io/v2/email-finder?domain=${domain}&first_name=${encodeURIComponent(person.first_name)}&last_name=${encodeURIComponent(person.last_name)}&api_key=${apiKey}`);
+      const resp = await fetch(`https://api.hunter.io/v2/email-finder?domain=${domain}&first_name=${encodeURIComponent(person.first_name)}&last_name=${encodeURIComponent(person.last_name)}&api_key=${apiKey}`, {
+        signal: AbortSignal.timeout(8000)
+      });
       if (resp.status === 200) {
         const data = await resp.json();
         if (data.data && data.data.email) {
@@ -86,7 +89,9 @@ async function enrichWithHunter(person, apiKey) {
 
     // If we already have an email, verify it
     if (person.email) {
-      const resp = await fetch(`https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(person.email)}&api_key=${apiKey}`);
+      const resp = await fetch(`https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(person.email)}&api_key=${apiKey}`, {
+        signal: AbortSignal.timeout(8000)
+      });
       if (resp.status === 200) {
         const data = await resp.json();
         if (data.data) {
@@ -112,7 +117,9 @@ async function enrichWithHunter(person, apiKey) {
 async function getWeatherAtIncident(incident, apiKey) {
   if (!apiKey || !incident || !incident.latitude || !incident.longitude) return null;
   try {
-    const resp = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${incident.latitude}&lon=${incident.longitude}&appid=${apiKey}&units=imperial`);
+    const resp = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${incident.latitude}&lon=${incident.longitude}&appid=${apiKey}&units=imperial`, {
+      signal: AbortSignal.timeout(8000)
+    });
     if (resp.status === 200) {
       const data = await resp.json();
       return {
@@ -133,7 +140,9 @@ async function validatePhoneNumVerify(phone, apiKey) {
   if (!apiKey || !phone) return null;
   try {
     const cleanPhone = phone.replace(/\D/g, '');
-    const resp = await fetch(`http://apilayer.net/api/validate?access_key=${apiKey}&number=1${cleanPhone}&country_code=US&format=1`);
+    const resp = await fetch(`https://apilayer.net/api/validate?access_key=${apiKey}&number=1${cleanPhone}&country_code=US&format=1`, {
+      signal: AbortSignal.timeout(8000)
+    });
     if (resp.status === 200) {
       const data = await resp.json();
       if (data.valid !== undefined) {
@@ -187,7 +196,8 @@ async function enrichWithTracerfy(person, apiKey) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000)
     });
 
     if (resp.status === 200) {
@@ -311,7 +321,8 @@ module.exports = async function handler(req, res) {
   const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0, tracerfy: 0 }, errors: [] };
 
   try {
-    const { person_id, incident_id, batch_size = 20, mode } = { ...req.query, ...req.body };
+    const { person_id, incident_id, batch_size: rawBatch = 20, mode } = { ...req.query, ...req.body };
+    const batch_size = Math.max(1, Math.min(parseInt(rawBatch) || 20, 50));
     const isReEnrich = mode === 're-enrich' || mode === 'deep';
 
     // Get API keys from env or integrations table
@@ -358,7 +369,7 @@ module.exports = async function handler(req, res) {
             .orWhereNull('mailing_address');
         })
         .orderByRaw('last_enriched_at ASC NULLS FIRST')
-        .limit(Math.min(parseInt(batch_size), 50));
+        .limit(batch_size);
     } else {
       persons = await db('persons')
         .where(function() {
@@ -369,7 +380,7 @@ module.exports = async function handler(req, res) {
           this.where('do_not_contact', false).orWhereNull('do_not_contact');
         })
         .orderByRaw('enrichment_score ASC NULLS FIRST')
-        .limit(Math.min(parseInt(batch_size), 50));
+        .limit(batch_size);
     }
 
     for (const person of persons) {

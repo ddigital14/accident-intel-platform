@@ -120,7 +120,7 @@ async function fetchNewsAPI(apiKey) {
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${apiKey}`;
 
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!resp.ok) return [];
     const data = await resp.json();
 
@@ -165,7 +165,7 @@ async function fetchNHTSA() {
     const currentYear = new Date().getFullYear();
     const url = `https://api.nhtsa.gov/complaints/complaintsByVehicle?make=&model=&modelYear=${currentYear}&type=VEHICLE`;
 
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
     if (!resp.ok) return [];
     const data = await resp.json();
 
@@ -237,7 +237,8 @@ async function fetchTomTomIncidents(apiKey) {
       const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${apiKey}&bbox=${metro.bbox}&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to,length,delay,roadNumbers,timeValidity,probabilityOfOccurrence,numberOfReports,lastReportTime,tmc{countryCode,tableNumber,tableVersion,direction,points{location,offset}}}}}&language=en-US&categoryFilter=1,2,3,4,5,6,7,8,9,10,11,14&timeValidityFilter=present`;
 
       const resp = await fetch(url, {
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(10000)
       });
 
       if (!resp.ok) {

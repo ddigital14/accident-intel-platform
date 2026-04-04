@@ -7,11 +7,42 @@
  */
 const { getDb } = require('../../_db');
 
+// Simple in-memory rate limiter (per IP, 30 requests per minute)
+const rateLimitMap = new Map();
+const RATE_LIMIT = 30;
+const RATE_WINDOW = 60000; // 1 minute
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.windowStart > RATE_WINDOW) {
+    rateLimitMap.set(ip, { windowStart: now, count: 1 });
+    return true;
+  }
+  entry.count++;
+  if (entry.count > RATE_LIMIT) return false;
+  return true;
+}
+
+// Clean up stale entries every 5 minutes
+setInterval(() => {
+  const cutoff = Date.now() - RATE_WINDOW;
+  for (const [ip, entry] of rateLimitMap) {
+    if (entry.windowStart < cutoff) rateLimitMap.delete(ip);
+  }
+}, 300000);
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Rate limit check
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a moment.' });
+  }
 
   try {
     const db = getDb();
