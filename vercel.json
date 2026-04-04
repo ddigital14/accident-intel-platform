@@ -12,5 +12,11 @@
       "memory": 512,
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/ingest/run?secret=ingest-now",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }
