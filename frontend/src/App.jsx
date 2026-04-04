@@ -168,7 +168,66 @@ export default function App() {
     if (user) api("/dashboard/metro-areas").then((d) => setMetros(d.data || []));
   }, [user]);
 
-  // Load data
+  // Load public dashboard stats (no auth required)
+  const loadPublicStats = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch(`${API}/dashboard/counts`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.success) {
+          // Map counts endpoint data to the stats format the DashboardView expects
+          const enrichment = data.enrichment || {};
+          const fc = data.field_completeness || {};
+          setStats({
+            totals: {
+              total_incidents: data.counts?.incidents || 0,
+              new_incidents: data.counts?.persons ? Math.round((data.counts.persons - parseInt(enrichment.enriched || 0))) : 0,
+              total_injuries: 0,
+              total_fatalities: 0,
+              high_severity_count: 0,
+              active_reps: 0,
+              total_persons: data.counts?.persons || 0,
+              total_vehicles: data.counts?.vehicles || 0,
+              avg_enrichment: parseFloat(enrichment.avg_score) || 0,
+              enriched_count: parseInt(enrichment.enriched) || 0,
+              cross_references: data.counts?.cross_references || 0,
+            },
+            byType: (data.source_breakdown || []).map(s => ({ incident_type: s.source, count: parseInt(s.count) })),
+            byMetro: [],
+            bySeverity: data.by_severity || [],
+            recentHighPriority: (data.recent_incidents || []).slice(0, 5).map(inc => ({
+              id: inc.id,
+              incident_type: inc.incident_type || inc.source || 'unknown',
+              severity: inc.severity || 'unknown',
+              city: inc.city || '',
+              state: inc.state || '',
+              description: `Confidence: ${inc.confidence_score || 'N/A'}`,
+              discovered_at: inc.timestamp,
+            })),
+            fieldCompleteness: fc,
+            enrichmentHealth: data.pipeline_health || [],
+            crossRefStats: data.cross_references || {},
+          });
+          setIncidents((data.recent_incidents || []).map(inc => ({
+            id: inc.id,
+            incident_type: inc.incident_type || inc.source || 'unknown',
+            severity: inc.severity || 'unknown',
+            city: inc.city || '',
+            state: inc.state || '',
+            description: `Source: ${inc.source || 'unknown'} | Confidence: ${inc.confidence_score || 'N/A'}`,
+            discovered_at: inc.timestamp,
+            confidence_score: inc.confidence_score,
+          })));
+        }
+      }
+    } catch (err) {
+      console.error('Public stats error:', err);
+    }
+    setLoading(false);
+  }, []);
+
+  // Load data (authenticated mode)
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -186,14 +245,20 @@ export default function App() {
     setLoading(false);
   }, [user, filters]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // Load on auth or fallback to public
+  useEffect(() => {
+    if (user) {
+      loadData();
+    } else {
+      loadPublicStats();
+    }
+  }, [user, loadData, loadPublicStats]);
 
   // Auto-refresh every 30s
   useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(loadData, 30000);
+    const interval = setInterval(user ? loadData : loadPublicStats, 30000);
     return () => clearInterval(interval);
-  }, [user, loadData]);
+  }, [user, loadData, loadPublicStats]);
 
   // Load contacts
   const loadContacts = useCallback(async () => {
@@ -501,11 +566,11 @@ function DashboardView({ stats, incidents, onSelect, loading }) {
   const hueShift = (time / 50) % 360;
   const kpiConfigs = [
     { label: "Total Incidents", value: t.total_incidents || 0, gradient: "linear-gradient(135deg, #4f6bff, #a855f7, #e040fb)", icon: "\u25A3" },
-    { label: "New (Unassigned)", value: t.new_incidents || 0, gradient: "linear-gradient(135deg, #22d3ee, #4f6bff, #a855f7)", icon: "\u2605" },
-    { label: "Total Injuries", value: t.total_injuries || 0, gradient: "linear-gradient(135deg, #ff4757, #ff7b3a, #fbbf24)", icon: "\u2764" },
-    { label: "Fatalities", value: t.total_fatalities || 0, gradient: "linear-gradient(135deg, #34d399, #22d3ee)", icon: "\u26A0" },
-    { label: "High Severity", value: t.high_severity_count || 0, gradient: "linear-gradient(135deg, #ff7b3a, #ff4da6, #a855f7)", icon: "\u26A1" },
-    { label: "Active Reps", value: t.active_reps || 0, gradient: "linear-gradient(135deg, #14b8a6, #22d3ee, #4f6bff)", icon: "\u263A" },
+    { label: t.total_persons ? "Persons Tracked" : "New (Unassigned)", value: t.total_persons || t.new_incidents || 0, gradient: "linear-gradient(135deg, #22d3ee, #4f6bff, #a855f7)", icon: "\u2605" },
+    { label: t.total_vehicles ? "Vehicles" : "Total Injuries", value: t.total_vehicles || t.total_injuries || 0, gradient: "linear-gradient(135deg, #ff4757, #ff7b3a, #fbbf24)", icon: "\u2764" },
+    { label: t.avg_enrichment ? "Avg Enrichment" : "Fatalities", value: t.avg_enrichment ? `${t.avg_enrichment}%` : (t.total_fatalities || 0), gradient: "linear-gradient(135deg, #34d399, #22d3ee)", icon: "\u26A0" },
+    { label: t.enriched_count ? "Enriched" : "High Severity", value: t.enriched_count || t.high_severity_count || 0, gradient: "linear-gradient(135deg, #ff7b3a, #ff4da6, #a855f7)", icon: "\u26A1" },
+    { label: t.cross_references !== undefined ? "Cross-Refs" : "Active Reps", value: t.cross_references !== undefined ? t.cross_references : (t.active_reps || 0), gradient: "linear-gradient(135deg, #14b8a6, #22d3ee, #4f6bff)", icon: "\u263A" },
   ];
 
   return (
@@ -600,6 +665,41 @@ function DashboardView({ stats, incidents, onSelect, loading }) {
           {(!stats.byType || stats.byType.length === 0) && <EmptyState text="No type data" />}
         </div>
       </div>
+
+      {/* Enrichment & Data Quality Panel */}
+      {stats.fieldCompleteness && (
+        <div style={{ ...enhancedCardStyle, marginBottom: 16, borderColor: "rgba(52,211,153,0.15)" }}>
+          <h3 style={enhancedCardTitle}>
+            <span style={{ marginRight: 8 }}>&#x1F9EA;</span>Data Quality & Enrichment
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+            {[
+              { label: "Has Phone", val: stats.fieldCompleteness.has_phone, total: stats.fieldCompleteness.total, color: "#4f6bff" },
+              { label: "Has Email", val: stats.fieldCompleteness.has_email, total: stats.fieldCompleteness.total, color: "#a855f7" },
+              { label: "Has Address", val: stats.fieldCompleteness.has_address, total: stats.fieldCompleteness.total, color: "#22d3ee" },
+              { label: "Has Employer", val: stats.fieldCompleteness.has_employer, total: stats.fieldCompleteness.total, color: "#ff7b3a" },
+              { label: "Has Insurance", val: stats.fieldCompleteness.has_insurance, total: stats.fieldCompleteness.total, color: "#34d399" },
+              { label: "Has Attorney", val: stats.fieldCompleteness.has_attorney, total: stats.fieldCompleteness.total, color: "#ff4da6" },
+              { label: "Litigator", val: stats.fieldCompleteness.is_litigator, total: stats.fieldCompleteness.total, color: "#fbbf24" },
+              { label: "Property Owner", val: stats.fieldCompleteness.is_property_owner, total: stats.fieldCompleteness.total, color: "#14b8a6" },
+            ].map(item => {
+              const pct = item.total > 0 ? Math.round((parseInt(item.val || 0) / parseInt(item.total)) * 100) : 0;
+              return (
+                <div key={item.label} style={{ background: "#0d1424", borderRadius: 10, padding: "12px 14px" }}>
+                  <div style={{ color: "#a0b0d0", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>{item.label}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ flex: 1, height: 4, background: "#1c2b4d", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: item.color, borderRadius: 2, transition: "width 0.6s ease" }} />
+                    </div>
+                    <span style={{ color: item.color, fontWeight: 700, fontSize: 12, minWidth: 32, textAlign: "right" }}>{pct}%</span>
+                  </div>
+                  <div style={{ color: "#a0b0d0", fontSize: 10, marginTop: 4 }}>{parseInt(item.val || 0)} / {parseInt(item.total || 0)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* High Priority Feed */}
       <div style={{ ...enhancedCardStyle, borderColor: "rgba(255,71,87,0.15)" }}>

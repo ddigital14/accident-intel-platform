@@ -311,7 +311,8 @@ module.exports = async function handler(req, res) {
   const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0, tracerfy: 0 }, errors: [] };
 
   try {
-    const { person_id, incident_id, batch_size = 20 } = { ...req.query, ...req.body };
+    const { person_id, incident_id, batch_size = 20, mode } = { ...req.query, ...req.body };
+    const isReEnrich = mode === 're-enrich' || mode === 'deep';
 
     // Get API keys from env or integrations table
     const PDL_KEY = process.env.PDL_API_KEY || null;
@@ -338,6 +339,26 @@ module.exports = async function handler(req, res) {
       persons = await db('persons').where('id', person_id);
     } else if (incident_id) {
       persons = await db('persons').where('incident_id', incident_id);
+    } else if (isReEnrich) {
+      // Re-enrich mode: pick persons that have data but may benefit from deeper APIs
+      // Targets persons with fallback-only data or missing Tracerfy/NumVerify data
+      persons = await db('persons')
+        .where(function() {
+          this.where('enrichment_score', '>=', 50)
+            .andWhere('enrichment_score', '<', 95);
+        })
+        .where(function() {
+          this.where('do_not_contact', false).orWhereNull('do_not_contact');
+        })
+        .where(function() {
+          // Has phone but not validated, or has name+address but no deep trace
+          this.whereNull('phone_carrier')
+            .orWhereNull('phone_line_type')
+            .orWhereNull('litigator')
+            .orWhereNull('mailing_address');
+        })
+        .orderByRaw('last_enriched_at ASC NULLS FIRST')
+        .limit(Math.min(parseInt(batch_size), 50));
     } else {
       persons = await db('persons')
         .where(function() {
@@ -393,12 +414,13 @@ module.exports = async function handler(req, res) {
         // STEP 2.5: Validate phone with NumVerify
         // ══════════════════════════════════════════════
         const phoneToValidate = updates.phone || person.phone;
-        if (phoneToValidate && numverifyKey) {
+        const needsPhoneValidation = isReEnrich ? !person.phone_carrier : (!person.phone_verified && !updates.phone_verified);
+        if (phoneToValidate && numverifyKey && needsPhoneValidation) {
           const nvResult = await validatePhoneNumVerify(phoneToValidate, numverifyKey);
           if (nvResult) {
             results.api_calls.numverify = (results.api_calls.numverify || 0) + 1;
             for (const [field, value] of Object.entries(nvResult.fields)) {
-              if (value && !person[field] && !updates[field]) {
+              if (value !== null && value !== undefined && (isReEnrich || (!person[field] && !updates[field]))) {
                 updates[field] = value;
                 enrichLogs.push({ field, value: String(value), source: 'numverify', confidence: nvResult.confidence });
               }
@@ -410,12 +432,15 @@ module.exports = async function handler(req, res) {
         // STEP 2.7: Tracerfy Skip Trace - phones, emails, demographics
         // ══════════════════════════════════════════════
         const tracerfyPerson = { ...person, ...updates };
-        if (tracerfyKey && (tracerfyPerson.address || (tracerfyPerson.first_name && tracerfyPerson.last_name))) {
+        const needsTracerfy = isReEnrich
+          ? (!person.litigator && person.litigator !== false) || !person.mailing_address
+          : true;
+        if (tracerfyKey && needsTracerfy && (tracerfyPerson.address || (tracerfyPerson.first_name && tracerfyPerson.last_name))) {
           const tfResult = await enrichWithTracerfy(tracerfyPerson, tracerfyKey);
           if (tfResult) {
             results.api_calls.tracerfy++;
             for (const [field, value] of Object.entries(tfResult.fields)) {
-              if (value !== null && value !== undefined && !person[field] && !updates[field]) {
+              if (value !== null && value !== undefined && (isReEnrich || (!person[field] && !updates[field]))) {
                 updates[field] = value;
                 enrichLogs.push({ field, value: String(value), source: 'tracerfy', confidence: tfResult.confidence });
               }
@@ -557,8 +582,9 @@ module.exports = async function handler(req, res) {
         }
 
         // ══════════════════════════════════════════════
-        // STEP 8: Cross-reference when multiple sources
+        // STEP 8: Cross-reference — find this person in OTHER incidents
         // ══════════════════════════════════════════════
+        // 8a: Within-person source cross-refs (same field from multiple APIs)
         const realLogs = enrichLogs.filter(l => l.source !== 'generated_fallback');
         if (realLogs.length >= 2) {
           for (let a = 0; a < realLogs.length; a++) {
@@ -584,6 +610,81 @@ module.exports = async function handler(req, res) {
           }
         }
 
+        // 8b: Cross-incident person matching — find same person in different incidents
+        // Match on: exact phone, exact email, or (first_name + last_name + city)
+        const merged = { ...person, ...updates };
+        try {
+          let matchQuery = db('persons')
+            .where('id', '!=', person.id)
+            .whereNotNull('incident_id');
+
+          const conditions = [];
+          if (merged.phone) {
+            conditions.push(db.raw('phone = ?', [merged.phone]));
+          }
+          if (merged.email && !merged.email.includes('generated_fallback')) {
+            conditions.push(db.raw('email = ?', [merged.email]));
+          }
+          if (merged.first_name && merged.last_name && merged.city) {
+            conditions.push(db.raw(
+              'LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) AND LOWER(city) = LOWER(?)',
+              [merged.first_name, merged.last_name, merged.city]
+            ));
+          }
+
+          if (conditions.length > 0) {
+            const matches = await matchQuery
+              .where(function() {
+                for (const cond of conditions) {
+                  this.orWhereRaw(cond.sql, cond.bindings);
+                }
+              })
+              .limit(10);
+
+            for (const match of matches) {
+              // Check if we already have this cross-ref
+              const existing = await db('cross_references')
+                .where(function() {
+                  this.where({ person_id: person.id, source_b: match.id })
+                    .orWhere({ person_id: match.id, source_b: person.id });
+                })
+                .where('field_name', 'person_match')
+                .first();
+
+              if (!existing) {
+                // Determine match quality
+                let matchScore = 0;
+                const matchFields = [];
+                if (merged.phone && match.phone && merged.phone === match.phone) { matchScore += 40; matchFields.push('phone'); }
+                if (merged.email && match.email && merged.email === match.email) { matchScore += 30; matchFields.push('email'); }
+                if (merged.first_name && match.first_name && merged.first_name.toLowerCase() === match.first_name.toLowerCase()
+                    && merged.last_name && match.last_name && merged.last_name.toLowerCase() === match.last_name.toLowerCase()) {
+                  matchScore += 25; matchFields.push('name');
+                }
+                if (merged.city && match.city && merged.city.toLowerCase() === match.city.toLowerCase()) { matchScore += 5; matchFields.push('city'); }
+
+                await db('cross_references').insert({
+                  id: uuidv4(),
+                  person_id: person.id,
+                  incident_id: person.incident_id,
+                  source_a: `person:${person.id}`,
+                  source_b: `person:${match.id}`,
+                  field_name: 'person_match',
+                  value_a: `${merged.first_name || ''} ${merged.last_name || ''} (incident ${person.incident_id})`.trim(),
+                  value_b: `${match.first_name || ''} ${match.last_name || ''} (incident ${match.incident_id})`.trim(),
+                  match_score: Math.min(matchScore, 100),
+                  resolution: matchScore >= 70 ? 'auto_resolved' : 'pending',
+                  resolved_value: matchFields.join('+'),
+                  created_at: new Date()
+                });
+                results.cross_refs++;
+              }
+            }
+          }
+        } catch (xrefErr) {
+          console.error('Cross-ref matching error:', xrefErr.message);
+        }
+
         results.enriched++;
       } catch (personErr) {
         results.errors.push(`Person ${person.id}: ${personErr.message}`);
@@ -602,7 +703,8 @@ module.exports = async function handler(req, res) {
 
     res.json({
       success: true,
-      message: `Enriched ${results.enriched} persons, updated ${results.fields_updated} fields, ${results.cross_refs} cross-references`,
+      mode: isReEnrich ? 're-enrich' : 'standard',
+      message: `${isReEnrich ? '[RE-ENRICH] ' : ''}Enriched ${results.enriched} persons, updated ${results.fields_updated} fields, ${results.cross_refs} cross-references`,
       api_keys_active: {
         pdl: !!pdlKey,
         hunter: !!hunterKey,
