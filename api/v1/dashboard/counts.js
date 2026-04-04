@@ -72,27 +72,24 @@ module.exports = async function handler(req, res) {
       enrichmentStats = r.rows[0];
     } catch (e) { /* ignore */ }
 
-    // Data source breakdown — try 'source' column, fallback to 'incident_type'
+    // Data source breakdown — check which column exists, prefer 'source', fallback 'incident_type'
     let sourceBreakdown = [];
     try {
-      const r = await db.raw(`
-        SELECT COALESCE(source, 'unknown') as source, COUNT(*) as count,
-          ROUND(AVG(confidence_score)::numeric, 1) as avg_confidence
-        FROM incidents
-        GROUP BY COALESCE(source, 'unknown')
-        ORDER BY count DESC
+      const srcCol = await db.raw(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'incidents' AND column_name IN ('source', 'incident_type')
+        ORDER BY CASE column_name WHEN 'source' THEN 1 ELSE 2 END
       `);
-      sourceBreakdown = r.rows.filter(row => row.count > 0);
-      // If all are 'unknown', try incident_type instead
-      if (sourceBreakdown.length <= 1 && sourceBreakdown[0]?.source === 'unknown') {
-        const r2 = await db.raw(`
-          SELECT COALESCE(incident_type, 'unknown') as source, COUNT(*) as count,
+      const groupCol = srcCol.rows[0]?.column_name || null;
+      if (groupCol) {
+        const r = await db.raw(`
+          SELECT COALESCE(${groupCol}, 'unknown') as source, COUNT(*) as count,
             ROUND(AVG(confidence_score)::numeric, 1) as avg_confidence
           FROM incidents
-          GROUP BY COALESCE(incident_type, 'unknown')
+          GROUP BY COALESCE(${groupCol}, 'unknown')
           ORDER BY count DESC
         `);
-        sourceBreakdown = r2.rows;
+        sourceBreakdown = r.rows;
       }
     } catch (e) { sourceBreakdown = [{ error: e.message }]; }
 
