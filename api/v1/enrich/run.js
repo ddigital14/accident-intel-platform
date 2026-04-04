@@ -649,13 +649,13 @@ module.exports = async function handler(req, res) {
                 // Determine match quality
                 let matchScore = 0;
                 const matchFields = [];
-                if (merged.phone && match.phone && merged.phone === match.phone) { matchScore += 40; matchFields.push('phone'); }
-                if (merged.email && match.email && merged.email === match.email) { matchScore += 30; matchFields.push('email'); }
-                if (merged.first_name && match.first_name && merged.first_name.toLowerCase() === match.first_name.toLowerCase()
-                    && merged.last_name && match.last_name && merged.last_name.toLowerCase() === match.last_name.toLowerCase()) {
+                if (merged8b.phone && match.phone && merged8b.phone === match.phone) { matchScore += 40; matchFields.push('phone'); }
+                if (merged8b.email && match.email && merged8b.email === match.email) { matchScore += 30; matchFields.push('email'); }
+                if (merged8b.first_name && match.first_name && merged8b.first_name.toLowerCase() === match.first_name.toLowerCase()
+                    && merged8b.last_name && match.last_name && merged8b.last_name.toLowerCase() === match.last_name.toLowerCase()) {
                   matchScore += 25; matchFields.push('name');
                 }
-                if (merged.city && match.city && merged.city.toLowerCase() === match.city.toLowerCase()) { matchScore += 5; matchFields.push('city'); }
+                if (merged8b.city && match.city && merged8b.city.toLowerCase() === match.city.toLowerCase()) { matchScore += 5; matchFields.push('city'); }
 
                 await db('cross_references').insert({
                   id: uuidv4(),
@@ -664,7 +664,7 @@ module.exports = async function handler(req, res) {
                   source_a: `person:${person.id}`,
                   source_b: `person:${match.id}`,
                   field_name: 'person_match',
-                  value_a: `${merged.first_name || ''} ${merged.last_name || ''} (incident ${person.incident_id})`.trim(),
+                  value_a: `${merged8b.first_name || ''} ${merged8b.last_name || ''} (incident ${person.incident_id})`.trim(),
                   value_b: `${match.first_name || ''} ${match.last_name || ''} (incident ${match.incident_id})`.trim(),
                   match_score: Math.min(matchScore, 100),
                   resolution: matchScore >= 70 ? 'auto_resolved' : 'pending',
