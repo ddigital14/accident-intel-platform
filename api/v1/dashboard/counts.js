@@ -27,19 +27,21 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Recent incidents — use discovered_at (the main timestamp), fall back to created_at
+    // Recent incidents — try multiple timestamp strategies
     let recentIncidents = [];
     try {
       const r = await db.raw(`
         SELECT id, source, confidence_score, severity, city, state, incident_type,
-          COALESCE(discovered_at, created_at) as timestamp
+          discovered_at, created_at
         FROM incidents
-        ORDER BY COALESCE(discovered_at, created_at) DESC NULLS LAST
+        ORDER BY id DESC
         LIMIT 10
       `);
-      recentIncidents = r.rows;
+      recentIncidents = r.rows.map(row => ({
+        ...row,
+        timestamp: row.discovered_at || row.created_at || null
+      }));
     } catch (e) {
-      // Try simpler query if columns don't exist
       try {
         const r = await db.raw(`SELECT id, source, confidence_score FROM incidents ORDER BY id DESC LIMIT 10`);
         recentIncidents = r.rows;
@@ -63,17 +65,28 @@ module.exports = async function handler(req, res) {
       enrichmentStats = r.rows[0];
     } catch (e) { /* ignore */ }
 
-    // Data source breakdown
+    // Data source breakdown — try 'source' column, fallback to 'incident_type'
     let sourceBreakdown = [];
     try {
       const r = await db.raw(`
-        SELECT source, COUNT(*) as count,
+        SELECT COALESCE(source, 'unknown') as source, COUNT(*) as count,
           ROUND(AVG(confidence_score)::numeric, 1) as avg_confidence
         FROM incidents
-        GROUP BY source
+        GROUP BY COALESCE(source, 'unknown')
         ORDER BY count DESC
       `);
-      sourceBreakdown = r.rows;
+      sourceBreakdown = r.rows.filter(row => row.count > 0);
+      // If all are 'unknown', try incident_type instead
+      if (sourceBreakdown.length <= 1 && sourceBreakdown[0]?.source === 'unknown') {
+        const r2 = await db.raw(`
+          SELECT COALESCE(incident_type, 'unknown') as source, COUNT(*) as count,
+            ROUND(AVG(confidence_score)::numeric, 1) as avg_confidence
+          FROM incidents
+          GROUP BY COALESCE(incident_type, 'unknown')
+          ORDER BY count DESC
+        `);
+        sourceBreakdown = r2.rows;
+      }
     } catch (e) { /* ignore */ }
 
     // Enrichment pipeline health — which APIs have contributed
