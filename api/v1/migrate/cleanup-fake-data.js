@@ -22,27 +22,34 @@ module.exports = async function handler(req, res) {
       .del();
     log.push(`Deleted ${delLogs} fake enrichment logs`);
 
-    // 2. Get IDs of generated (GDOT) incidents to cascade-delete their persons/vehicles
-    const gdotReports = await db('source_reports')
+    // 2. Delete generated (GDOT) incidents and their related records using subqueries
+    // (avoids massive WHERE IN lists that exceed query limits)
+    const gdotSubquery = db('source_reports')
       .where('source_reference', 'like', 'GDOT-%')
+      .whereNotNull('incident_id')
       .select('incident_id');
-    const gdotIncidentIds = gdotReports.map(r => r.incident_id).filter(Boolean);
 
-    if (gdotIncidentIds.length > 0) {
+    const gdotCount = await db('source_reports').where('source_reference', 'like', 'GDOT-%').count('* as c').first();
+
+    if (parseInt(gdotCount.c) > 0) {
       // Delete persons tied to generated incidents
-      const delPersons = await db('persons').whereIn('incident_id', gdotIncidentIds).del();
+      const delPersons = await db('persons').whereIn('incident_id', gdotSubquery).del();
       log.push(`Deleted ${delPersons} persons from generated incidents`);
 
       // Delete vehicles tied to generated incidents
-      const delVehicles = await db('vehicles').whereIn('incident_id', gdotIncidentIds).del();
+      const delVehicles = await db('vehicles').whereIn('incident_id', gdotSubquery).del();
       log.push(`Deleted ${delVehicles} vehicles from generated incidents`);
 
+      // Delete enrichment logs tied to generated incident persons
+      const delELogs = await db('enrichment_logs').whereIn('incident_id', gdotSubquery).del();
+      log.push(`Deleted ${delELogs} enrichment logs from generated incidents`);
+
       // Delete cross-references tied to generated incidents
-      const delXrefs = await db('cross_references').whereIn('incident_id', gdotIncidentIds).del();
+      const delXrefs = await db('cross_references').whereIn('incident_id', gdotSubquery).del();
       log.push(`Deleted ${delXrefs} cross-references from generated incidents`);
 
       // Delete the generated incidents themselves
-      const delIncidents = await db('incidents').whereIn('id', gdotIncidentIds).del();
+      const delIncidents = await db('incidents').whereIn('id', gdotSubquery).del();
       log.push(`Deleted ${delIncidents} generated incidents`);
 
       // Delete the source reports
