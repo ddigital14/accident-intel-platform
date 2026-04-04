@@ -46,6 +46,18 @@ module.exports = async function handler(req, res) {
       const r4 = await db.raw(`DELETE FROM vehicles WHERE incident_id IN ${gdotSub}`);
       log.push(`Deleted vehicles from generated incidents`);
 
+      // Delete from all tables that may have FK references to incidents
+      const fkTables = ['activity_log', 'incident_assignments', 'incident_notes', 'contact_attempts'];
+      for (const tbl of fkTables) {
+        try {
+          await db.raw(`DELETE FROM ${tbl} WHERE incident_id IN ${gdotSub}`);
+          log.push(`Cleaned ${tbl}`);
+        } catch (e) {
+          // Table may not exist — that's fine
+          if (!e.message.includes('does not exist')) log.push(`${tbl}: ${e.message}`);
+        }
+      }
+
       const r5 = await db.raw(`DELETE FROM incidents WHERE id IN ${gdotSub}`);
       log.push(`Deleted generated incidents`);
 
