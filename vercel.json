@@ -17,6 +17,10 @@
     {
       "path": "/api/v1/ingest/run?secret=ingest-now",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/v1/enrich/run?secret=enrich-now",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

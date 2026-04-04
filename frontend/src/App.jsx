@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 const API = "/api/v1";
 
@@ -140,6 +140,12 @@ export default function App() {
   const [metros, setMetros] = useState([]);
   const [notifications, setNotifs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [contactSummary, setContactSummary] = useState({});
+  const [contactFilters, setContactFilters] = useState({});
+  const [integrations, setIntegrations] = useState([]);
+  const [integrationStats, setIntegrationStats] = useState({});
+  const [enriching, setEnriching] = useState(false);
 
   // Inject global CSS
   useEffect(() => {
@@ -189,6 +195,45 @@ export default function App() {
     return () => clearInterval(interval);
   }, [user, loadData]);
 
+  // Load contacts
+  const loadContacts = useCallback(async () => {
+    if (!user) return;
+    const params = new URLSearchParams(Object.entries(contactFilters).filter(([, v]) => v));
+    const data = await api(`/contacts?${params}&limit=200`);
+    setContacts(data.data || []);
+    setContactSummary(data.summary || {});
+  }, [user, contactFilters]);
+
+  useEffect(() => { if (user && page === "contacts") loadContacts(); }, [page, user, loadContacts]);
+
+  // Load integrations
+  const loadIntegrations = useCallback(async () => {
+    if (!user) return;
+    const data = await api("/integrations");
+    setIntegrations(data.integrations || []);
+    setIntegrationStats(data.stats || {});
+  }, [user]);
+
+  useEffect(() => { if (user && page === "integrations") loadIntegrations(); }, [page, user, loadIntegrations]);
+
+  // Enrich person
+  const enrichPerson = useCallback(async (personId) => {
+    setEnriching(true);
+    const data = await api("/enrich/run", { method: "POST", body: personId ? { person_id: personId } : { batch_size: 20 } });
+    setEnriching(false);
+    if (data.success) { loadContacts(); loadData(); }
+    return data;
+  }, [loadContacts, loadData]);
+
+  // Integration actions
+  const integrationAction = useCallback(async (id, action, apiKey) => {
+    const body = { id, action };
+    if (apiKey) body.api_key = apiKey;
+    const data = await api("/integrations", { method: "POST", body });
+    if (data.success) loadIntegrations();
+    return data;
+  }, [loadIntegrations]);
+
   if (!user) return <LoginScreen onLogin={setUser} />;
 
   return (
@@ -201,6 +246,8 @@ export default function App() {
           {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} />}
           {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} />}
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
+          {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
+          {page === "integrations" && <IntegrationsView integrations={integrations} stats={integrationStats} onAction={integrationAction} onRefresh={loadIntegrations} />}
         </main>
       </div>
 
@@ -300,7 +347,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
-          {["dashboard", "incidents", "my-leads"].map((p) => (
+          {["dashboard", "incidents", "my-leads", "contacts", "integrations"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
@@ -311,6 +358,8 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
               {p === "dashboard" && "\u25A3 "}
               {p === "incidents" && "\u26A0 "}
               {p === "my-leads" && "\u2605 "}
+              {p === "contacts" && "\uD83D\uDCCB "}
+              {p === "integrations" && "\u2699 "}
               {p.replace("-", " ").toUpperCase()}
             </button>
           ))}
@@ -937,3 +986,435 @@ const enhancedCardStyle = { background: "rgba(21,29,50,0.8)", borderRadius: 14, 
 const enhancedCardTitle = { color: "#f4f7ff", fontSize: 16, fontWeight: 700, margin: "0 0 18px", display: "flex", alignItems: "center" };
 const tdStyle = { padding: "12px 8px", fontSize: 13 };
 const badgeBase = { fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, display: "inline-block", textTransform: "capitalize" };
+
+// ============================================================================
+// CONTACTS VIEW — Full contact management with filters & enrichment
+// ============================================================================
+function ContactsView({ contacts, summary, filters, setFilters, onEnrich, enriching, onRefresh, onSelect }) {
+  const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+
+  const filteredContacts = contacts.filter(c => {
+    if (search) {
+      const s = search.toLowerCase();
+      const name = (c.display_name || c.first_name + " " + c.last_name || "").toLowerCase();
+      if (!name.includes(s) && !(c.phone || "").includes(s) && !(c.email || "").toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
+
+  const enrichScoreColor = (s) => {
+    const score = parseFloat(s) || 0;
+    if (score >= 60) return "#34d399";
+    if (score >= 30) return "#fbbf24";
+    return "#ff4757";
+  };
+
+  const contactQualityBar = (score) => {
+    const pct = Math.min(parseFloat(score) || 0, 100);
+    const color = enrichScoreColor(score);
+    return (
+      <div style={{ width: 80, height: 6, background: "rgba(28,43,77,0.6)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.5s" }} />
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 24 }}>📋</span> Contact Intelligence
+          </h2>
+          <p style={{ margin: "4px 0 0", color: "#a0b0d0", fontSize: 13 }}>Cross-referenced contact data from all integrated sources</p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => onEnrich(null)} disabled={enriching}
+            style={{ ...btnSmall, background: enriching ? "rgba(79,107,255,0.3)" : "linear-gradient(135deg, #4f6bff, #a855f7)", color: "#fff", padding: "8px 16px", borderRadius: 8, border: "none" }}
+            className="btn-action">
+            {enriching ? "⏳ Enriching..." : "🔄 Enrich All"}
+          </button>
+          <button onClick={onRefresh} style={{ ...btnSmall, background: "rgba(79,107,255,0.15)", color: "#4f6bff", border: "1px solid rgba(79,107,255,0.3)", borderRadius: 8 }} className="btn-action">↻ Refresh</button>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 12, marginBottom: 20 }}>
+        {[
+          { label: "Total", value: summary.total || contacts.length, icon: "👥", color: "#4f6bff" },
+          { label: "With Phone", value: summary.with_phone || 0, icon: "📱", color: "#34d399" },
+          { label: "With Email", value: summary.with_email || 0, icon: "📧", color: "#22d3ee" },
+          { label: "With Address", value: summary.with_address || 0, icon: "🏠", color: "#a855f7" },
+          { label: "No Attorney", value: summary.no_attorney || 0, icon: "⚡", color: "#fbbf24" },
+          { label: "Injured", value: summary.injured || 0, icon: "🩹", color: "#ff7b3a" },
+          { label: "Not Contacted", value: summary.not_contacted || 0, icon: "📞", color: "#ff4757" },
+          { label: "Avg Enrichment", value: (summary.avg_enrichment || 0) + "%", icon: "📊", color: "#e040fb" },
+        ].map((s, i) => (
+          <div key={i} style={{ background: "rgba(21,29,50,0.8)", borderRadius: 10, padding: "12px 14px", border: "1px solid rgba(28,43,77,0.5)", textAlign: "center" }}>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: "#5e739e", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter Bar */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Search name, phone, email..."
+          style={{ ...inputStyle, width: 280, marginBottom: 0, borderRadius: 8, padding: "8px 14px", fontSize: 13 }} />
+        {[
+          { key: "has_phone", label: "Has Phone", val: "true" },
+          { key: "has_email", label: "Has Email", val: "true" },
+          { key: "has_address", label: "Has Address", val: "true" },
+          { key: "has_attorney", label: "No Attorney", val: "false" },
+          { key: "is_injured", label: "Injured", val: "true" },
+          { key: "contact_status", label: "Not Contacted", val: "not_contacted" },
+        ].map(f => {
+          const active = filters[f.key] === f.val;
+          return (
+            <button key={f.key} onClick={() => setFilters(prev => ({ ...prev, [f.key]: active ? undefined : f.val }))}
+              style={{ ...btnSmall, background: active ? "rgba(79,107,255,0.25)" : "rgba(21,29,50,0.8)", color: active ? "#4f6bff" : "#a0b0d0", border: `1px solid ${active ? "rgba(79,107,255,0.4)" : "rgba(28,43,77,0.5)"}`, borderRadius: 20, fontSize: 11, padding: "5px 12px" }}>
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contact Table */}
+      <div style={{ background: "rgba(21,29,50,0.5)", borderRadius: 12, border: "1px solid rgba(28,43,77,0.5)", overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid rgba(28,43,77,0.5)" }}>
+              {["Name", "Phone", "Email", "Location", "Incident", "Injury", "Attorney", "Enrichment", "Status", "Actions"].map(h => (
+                <th key={h} style={{ padding: "10px 8px", fontSize: 10, fontWeight: 700, color: "#5e739e", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "left" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredContacts.map(c => (
+              <React.Fragment key={c.id}>
+                <tr onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                  style={{ borderBottom: "1px solid rgba(28,43,77,0.3)", cursor: "pointer", transition: "background 0.15s" }}
+                  className="table-row">
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 600, color: "#f4f7ff" }}>{c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim() || "Unknown"}</div>
+                    <div style={{ fontSize: 11, color: "#5e739e" }}>{c.role || ""} {c.age ? `• Age ${c.age}` : ""}</div>
+                  </td>
+                  <td style={tdStyle}>
+                    {c.phone ? <span style={{ color: "#34d399" }}>{c.phone}</span> : <span style={{ color: "#5e739e" }}>—</span>}
+                    {c.phone_verified && <span title="Verified" style={{ marginLeft: 4 }}>✓</span>}
+                  </td>
+                  <td style={tdStyle}>
+                    {c.email ? <span style={{ color: "#22d3ee", fontSize: 12 }}>{c.email}</span> : <span style={{ color: "#5e739e" }}>—</span>}
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={{ color: "#a0b0d0", fontSize: 12 }}>{c.incident_city || c.city || ""}{c.incident_state || c.state ? `, ${c.incident_state || c.state}` : ""}</span>
+                  </td>
+                  <td style={tdStyle}>
+                    <span style={{ fontSize: 11, color: "#a0b0d0" }}>{c.incident_number || ""}</span>
+                    {c.incident_type && <div><span style={{ ...badgeBase, fontSize: 9, padding: "2px 6px", background: "rgba(168,85,247,0.15)", color: "#c4b5fd" }}>{formatType(c.incident_type)}</span></div>}
+                  </td>
+                  <td style={tdStyle}>
+                    {c.is_injured ? <span style={{ color: "#ff7b3a" }}>{c.injury_description || "Injured"}</span> : <span style={{ color: "#5e739e" }}>None</span>}
+                  </td>
+                  <td style={tdStyle}>
+                    {c.has_attorney ? <span style={{ ...badgeBase, fontSize: 9, background: "rgba(255,71,87,0.2)", color: "#ff7b9c", border: "1px solid rgba(255,71,87,0.3)" }}>Has Atty</span> :
+                      <span style={{ ...badgeBase, fontSize: 9, background: "rgba(52,211,153,0.2)", color: "#6ee7b7", border: "1px solid rgba(52,211,153,0.3)" }}>No Atty ⚡</span>}
+                  </td>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {contactQualityBar(c.enrichment_score || c.contact_quality || 0)}
+                      <span style={{ fontSize: 11, color: enrichScoreColor(c.enrichment_score), fontWeight: 700 }}>{Math.round(c.enrichment_score || c.contact_quality || 0)}</span>
+                    </div>
+                  </td>
+                  <td style={tdStyle}>
+                    {(() => { const cs = contactStatusColor(c.contact_status); return <span style={{ ...badgeBase, fontSize: 9, background: cs.bg, color: cs.fg }}>{(c.contact_status || "not_contacted").replace(/_/g, " ")}</span>; })()}
+                  </td>
+                  <td style={tdStyle}>
+                    <button onClick={(e) => { e.stopPropagation(); onEnrich(c.id); }}
+                      style={{ ...btnSmall, background: "rgba(79,107,255,0.15)", color: "#4f6bff", border: "1px solid rgba(79,107,255,0.3)", fontSize: 10, padding: "4px 10px", borderRadius: 6 }}
+                      disabled={enriching}>🔍 Enrich</button>
+                  </td>
+                </tr>
+                {expandedId === c.id && (
+                  <tr><td colSpan={10} style={{ padding: 0 }}>
+                    <div style={{ background: "rgba(13,18,37,0.6)", padding: "16px 24px", borderBottom: "2px solid rgba(79,107,255,0.2)", animation: "slideUp 0.2s ease" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 10, color: "#5e739e", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Full Address</div>
+                          <div style={{ color: "#f4f7ff", fontSize: 13 }}>{c.address || "—"}</div>
+                          <div style={{ color: "#a0b0d0", fontSize: 12 }}>{c.city || ""} {c.state || ""} {c.zip || ""}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, color: "#5e739e", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Employment</div>
+                          <div style={{ color: "#f4f7ff", fontSize: 13 }}>{c.employer || "—"}</div>
+                          <div style={{ color: "#a0b0d0", fontSize: 12 }}>{c.occupation || ""}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, color: "#5e739e", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Insurance</div>
+                          <div style={{ color: "#f4f7ff", fontSize: 13 }}>{c.insurance_company || "—"}</div>
+                          <div style={{ color: "#a0b0d0", fontSize: 12 }}>Limits: {c.policy_limits || "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, color: "#5e739e", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Medical</div>
+                          <div style={{ color: "#f4f7ff", fontSize: 13 }}>{c.transported_to || "—"}</div>
+                          <div style={{ color: "#a0b0d0", fontSize: 12 }}>{c.injury_description || ""}</div>
+                        </div>
+                      </div>
+                      {c.enrichment_sources && c.enrichment_sources.length > 0 && (
+                        <div style={{ marginTop: 12, display: "flex", gap: 6, alignItems: "center" }}>
+                          <span style={{ fontSize: 10, color: "#5e739e", fontWeight: 600 }}>SOURCES:</span>
+                          {(Array.isArray(c.enrichment_sources) ? c.enrichment_sources : []).map((s, i) => (
+                            <span key={i} style={{ ...badgeBase, fontSize: 9, padding: "2px 6px", background: "rgba(79,107,255,0.15)", color: "#93c5fd", border: "1px solid rgba(79,107,255,0.2)" }}>{s}</span>
+                          ))}
+                        </div>
+                      )}
+                      {c.attorney_name && (
+                        <div style={{ marginTop: 8, color: "#ff7b9c", fontSize: 12 }}>Attorney: {c.attorney_name}</div>
+                      )}
+                    </div>
+                  </td></tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+        {filteredContacts.length === 0 && (
+          <div style={{ textAlign: "center", padding: 40, color: "#5e739e" }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>No contacts found</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>Try adjusting filters or run enrichment to populate contact data</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// INTEGRATIONS VIEW — Full integration management dashboard
+// ============================================================================
+function IntegrationsView({ integrations, stats, onAction, onRefresh }) {
+  const [expandedSlug, setExpandedSlug] = useState(null);
+  const [apiKeyInputs, setApiKeyInputs] = useState({});
+  const [showKeys, setShowKeys] = useState({});
+  const [testResults, setTestResults] = useState({});
+
+  const categoryLabels = {
+    crash_data: { label: "🚗 Crash & Accident Data", desc: "Official crash databases — same sources LexisNexis and insurance companies pull from" },
+    real_time: { label: "🚨 Real-Time Feeds", desc: "Live 911 dispatch, traffic incidents, and emergency response data" },
+    news: { label: "📰 News Sources", desc: "Accident news aggregation from thousands of sources" },
+    contact_enrichment: { label: "👤 Contact Enrichment", desc: "Find phones, emails, addresses, employers — same data as skip-tracing services" },
+    public_records: { label: "🏛️ Public Records", desc: "Court records, property ownership, business registrations — same sources as LexisNexis" },
+    vehicle: { label: "🔎 Vehicle & VIN Data", desc: "VIN decoding, theft/salvage history, safety recalls" },
+    conditions: { label: "🌧️ Weather & Conditions", desc: "Weather conditions at time of accident for case building" },
+    geocoding: { label: "🗺️ Mapping & Geocoding", desc: "Address resolution and location intelligence" },
+    skip_trace: { label: "🕵️ Skip Tracing", desc: "Professional people search — phones, addresses, assets, associates" },
+  };
+
+  const grouped = {};
+  integrations.forEach(i => {
+    if (!grouped[i.category]) grouped[i.category] = [];
+    grouped[i.category].push(i);
+  });
+
+  const statusColors = {
+    active: { bg: "rgba(52,211,153,0.2)", fg: "#6ee7b7", border: "rgba(52,211,153,0.3)" },
+    ready: { bg: "rgba(251,191,36,0.2)", fg: "#ffd966", border: "rgba(251,191,36,0.3)" },
+    error: { bg: "rgba(255,71,87,0.2)", fg: "#ff7b9c", border: "rgba(255,71,87,0.3)" },
+    disconnected: { bg: "rgba(28,43,77,0.5)", fg: "#5e739e", border: "rgba(28,43,77,0.5)" },
+    paused: { bg: "rgba(28,43,77,0.5)", fg: "#a0b0d0", border: "rgba(28,43,77,0.5)" },
+  };
+
+  const handleTest = async (id) => {
+    setTestResults(prev => ({ ...prev, [id]: { testing: true } }));
+    const result = await onAction(id, "test", apiKeyInputs[id]);
+    setTestResults(prev => ({ ...prev, [id]: result }));
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 24 }}>⚙</span> Integrations Hub
+          </h2>
+          <p style={{ margin: "4px 0 0", color: "#a0b0d0", fontSize: 13 }}>Connect data sources, enrich contacts, cross-reference everything</p>
+        </div>
+        <button onClick={onRefresh} style={{ ...btnSmall, background: "rgba(79,107,255,0.15)", color: "#4f6bff", border: "1px solid rgba(79,107,255,0.3)", borderRadius: 8 }} className="btn-action">↻ Refresh</button>
+      </div>
+
+      {/* Stats Banner */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 24 }}>
+        {[
+          { label: "Total Sources", value: stats.total || integrations.length, icon: "🔌", color: "#4f6bff" },
+          { label: "Connected", value: stats.connected || 0, icon: "✅", color: "#34d399" },
+          { label: "Active", value: stats.active || 0, icon: "⚡", color: "#fbbf24" },
+          { label: "Free Sources", value: stats.free || 0, icon: "🆓", color: "#22d3ee" },
+          { label: "Monthly Cost", value: "$" + (stats.total_monthly_cost || 0).toFixed(0), icon: "💰", color: "#e040fb" },
+        ].map((s, i) => (
+          <div key={i} style={{ background: "rgba(21,29,50,0.8)", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(28,43,77,0.5)", textAlign: "center" }}>
+            <div style={{ fontSize: 20 }}>{s.icon}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: "#5e739e", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Connect Free Sources */}
+      <div style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.1), rgba(34,211,238,0.1))", borderRadius: 12, padding: "16px 20px", marginBottom: 24, border: "1px solid rgba(52,211,153,0.2)" }}>
+        <h3 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 700, color: "#34d399" }}>🆓 Quick-Connect Free Sources (No API Key Required)</h3>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {integrations.filter(i => i.is_free && i.auth_type === "none" && i.status !== "active").map(i => (
+            <button key={i.id} onClick={() => onAction(i.id, "connect")}
+              style={{ ...btnSmall, background: "rgba(52,211,153,0.15)", color: "#6ee7b7", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 20, fontSize: 11, padding: "5px 14px" }}
+              className="btn-action">
+              {i.icon} {i.name} →
+            </button>
+          ))}
+          {integrations.filter(i => i.is_free && i.auth_type === "none" && i.status !== "active").length === 0 && (
+            <span style={{ color: "#6ee7b7", fontSize: 12 }}>✓ All free no-key sources are connected!</span>
+          )}
+        </div>
+      </div>
+
+      {/* Integration Categories */}
+      {Object.entries(categoryLabels).map(([cat, { label, desc }]) => {
+        const items = grouped[cat] || [];
+        if (items.length === 0) return null;
+        return (
+          <div key={cat} style={{ marginBottom: 24 }}>
+            <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#f4f7ff" }}>{label}</h3>
+            <p style={{ margin: "0 0 12px", fontSize: 12, color: "#5e739e" }}>{desc}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {items.map(intg => {
+                const sc = statusColors[intg.status] || statusColors.disconnected;
+                const expanded = expandedSlug === intg.slug;
+                const testRes = testResults[intg.id];
+                return (
+                  <div key={intg.id} style={{
+                    background: "rgba(21,29,50,0.8)", borderRadius: 12, border: `1px solid ${intg.status === "active" ? "rgba(52,211,153,0.3)" : "rgba(28,43,77,0.5)"}`,
+                    overflow: "hidden", transition: "border-color 0.3s"
+                  }}>
+                    <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer" }}
+                      onClick={() => setExpandedSlug(expanded ? null : intg.slug)}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1 }}>
+                        <div style={{ fontSize: 24, minWidth: 32, textAlign: "center" }}>{intg.icon}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: "#f4f7ff", marginBottom: 2 }}>{intg.name}</div>
+                          <div style={{ fontSize: 11, color: "#a0b0d0", lineHeight: 1.4 }}>{intg.description && intg.description.substring(0, 80)}...</div>
+                          <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                            <span style={{ ...badgeBase, fontSize: 9, padding: "2px 8px", background: sc.bg, color: sc.fg, border: `1px solid ${sc.border}` }}>{intg.status}</span>
+                            {intg.is_free ? <span style={{ ...badgeBase, fontSize: 9, padding: "2px 8px", background: "rgba(52,211,153,0.15)", color: "#6ee7b7" }}>FREE</span> :
+                              <span style={{ ...badgeBase, fontSize: 9, padding: "2px 8px", background: "rgba(251,191,36,0.15)", color: "#ffd966" }}>${parseFloat(intg.monthly_cost || 0)}/mo</span>}
+                            {intg.auth_type === "none" && <span style={{ ...badgeBase, fontSize: 9, padding: "2px 8px", background: "rgba(34,211,238,0.15)", color: "#67e8f9" }}>No Key</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ color: "#5e739e", fontSize: 18, transform: expanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▾</span>
+                    </div>
+
+                    {expanded && (
+                      <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(28,43,77,0.5)", paddingTop: 12, animation: "slideUp 0.2s ease" }}>
+                        <div style={{ fontSize: 12, color: "#a0b0d0", marginBottom: 10, lineHeight: 1.5 }}>{intg.description}</div>
+
+                        {intg.api_base_url && (
+                          <div style={{ fontSize: 11, color: "#5e739e", marginBottom: 8 }}>
+                            <strong>API:</strong> <span style={{ fontFamily: "monospace", color: "#22d3ee" }}>{intg.api_base_url}</span>
+                          </div>
+                        )}
+
+                        {intg.auth_type !== "none" && (
+                          <div style={{ marginBottom: 10 }}>
+                            <label style={{ fontSize: 10, color: "#5e739e", fontWeight: 600, textTransform: "uppercase", display: "block", marginBottom: 4 }}>API Key</label>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <input type={showKeys[intg.id] ? "text" : "password"} placeholder="Paste your API key here..."
+                                value={apiKeyInputs[intg.id] || ""}
+                                onChange={(e) => setApiKeyInputs(prev => ({ ...prev, [intg.id]: e.target.value }))}
+                                style={{ ...inputStyle, marginBottom: 0, borderRadius: 8, fontSize: 12, flex: 1 }} />
+                              <button onClick={() => setShowKeys(prev => ({ ...prev, [intg.id]: !prev[intg.id] }))}
+                                style={{ ...btnSmall, background: "rgba(28,43,77,0.5)", color: "#a0b0d0", border: "1px solid rgba(28,43,77,0.5)", borderRadius: 8, fontSize: 10, padding: "6px 10px" }}>
+                                {showKeys[intg.id] ? "🙈" : "👁"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Stats if active */}
+                        {intg.status === "active" && (
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 10 }}>
+                            <div style={{ background: "rgba(13,18,37,0.6)", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: "#4f6bff" }}>{intg.requests_today || 0}</div>
+                              <div style={{ fontSize: 9, color: "#5e739e" }}>REQ TODAY</div>
+                            </div>
+                            <div style={{ background: "rgba(13,18,37,0.6)", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399" }}>{intg.total_records_fetched || 0}</div>
+                              <div style={{ fontSize: 9, color: "#5e739e" }}>RECORDS</div>
+                            </div>
+                            <div style={{ background: "rgba(13,18,37,0.6)", borderRadius: 6, padding: "8px 10px", textAlign: "center" }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24" }}>{intg.last_success_at ? formatTime(intg.last_success_at) : "Never"}</div>
+                              <div style={{ fontSize: 9, color: "#5e739e" }}>LAST SUCCESS</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {intg.last_error && (
+                          <div style={{ background: "rgba(255,71,87,0.1)", borderRadius: 6, padding: "8px 12px", marginBottom: 10, fontSize: 11, color: "#ff7b9c" }}>
+                            ⚠ Error: {intg.last_error}
+                          </div>
+                        )}
+
+                        {testRes && !testRes.testing && (
+                          <div style={{ background: testRes.success ? "rgba(52,211,153,0.1)" : "rgba(255,71,87,0.1)", borderRadius: 6, padding: "8px 12px", marginBottom: 10, fontSize: 11, color: testRes.success ? "#6ee7b7" : "#ff7b9c" }}>
+                            {testRes.success ? "✓ Connection test passed!" : `✗ Test failed: ${testRes.error || testRes.message}`}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {intg.status !== "active" ? (
+                            <button onClick={() => onAction(intg.id, "connect", apiKeyInputs[intg.id])}
+                              style={{ ...btnSmall, background: "linear-gradient(135deg, #34d399, #22d3ee)", color: "#0b0f1a", border: "none", fontWeight: 700, borderRadius: 8, padding: "8px 16px" }}
+                              className="btn-action">⚡ Connect</button>
+                          ) : (
+                            <button onClick={() => onAction(intg.id, "disconnect")}
+                              style={{ ...btnSmall, background: "rgba(255,71,87,0.15)", color: "#ff7b9c", border: "1px solid rgba(255,71,87,0.3)", borderRadius: 8, padding: "8px 16px" }}
+                              className="btn-action">Disconnect</button>
+                          )}
+                          <button onClick={() => handleTest(intg.id)}
+                            disabled={testRes?.testing}
+                            style={{ ...btnSmall, background: "rgba(79,107,255,0.15)", color: "#4f6bff", border: "1px solid rgba(79,107,255,0.3)", borderRadius: 8, padding: "8px 16px" }}
+                            className="btn-action">{testRes?.testing ? "⏳ Testing..." : "🧪 Test"}</button>
+                          {intg.auth_type !== "none" && apiKeyInputs[intg.id] && (
+                            <button onClick={() => onAction(intg.id, "update_config", apiKeyInputs[intg.id])}
+                              style={{ ...btnSmall, background: "rgba(168,85,247,0.15)", color: "#c4b5fd", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "8px 16px" }}
+                              className="btn-action">💾 Save Key</button>
+                          )}
+                        </div>
+
+                        {/* Config JSON */}
+                        {intg.config_json && intg.config_json !== "{}" && (() => {
+                          try {
+                            const cfg = JSON.parse(intg.config_json);
+                            return Object.keys(cfg).length > 0 ? (
+                              <div style={{ marginTop: 10, fontSize: 11, color: "#5e739e" }}>
+                                {Object.entries(cfg).map(([k, v]) => (
+                                  <div key={k}><strong>{k}:</strong> {String(v)}</div>
+                                ))}
+                              </div>
+                            ) : null;
+                          } catch { return null; }
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
