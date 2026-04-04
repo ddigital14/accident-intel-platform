@@ -612,31 +612,25 @@ module.exports = async function handler(req, res) {
 
         // 8b: Cross-incident person matching — find same person in different incidents
         // Match on: exact phone, exact email, or (first_name + last_name + city)
-        const merged = { ...person, ...updates };
+        const merged8b = { ...person, ...updates };
         try {
-          let matchQuery = db('persons')
-            .where('id', '!=', person.id)
-            .whereNotNull('incident_id');
+          const hasPhone = merged8b.phone && merged8b.phone.length > 5;
+          const hasEmail = merged8b.email && !merged8b.email.includes('@gmail.com') && !merged8b.email.includes('@yahoo.com');
+          const hasNameCity = merged8b.first_name && merged8b.last_name && merged8b.city;
 
-          const conditions = [];
-          if (merged.phone) {
-            conditions.push(db.raw('phone = ?', [merged.phone]));
-          }
-          if (merged.email && !merged.email.includes('generated_fallback')) {
-            conditions.push(db.raw('email = ?', [merged.email]));
-          }
-          if (merged.first_name && merged.last_name && merged.city) {
-            conditions.push(db.raw(
-              'LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) AND LOWER(city) = LOWER(?)',
-              [merged.first_name, merged.last_name, merged.city]
-            ));
-          }
-
-          if (conditions.length > 0) {
-            const matches = await matchQuery
+          if (hasPhone || hasEmail || hasNameCity) {
+            const matches = await db('persons')
+              .where('id', '!=', person.id)
+              .whereNotNull('incident_id')
               .where(function() {
-                for (const cond of conditions) {
-                  this.orWhereRaw(cond.sql, cond.bindings);
+                if (hasPhone) this.orWhere('phone', merged8b.phone);
+                if (hasEmail) this.orWhere('email', merged8b.email);
+                if (hasNameCity) {
+                  this.orWhere(function() {
+                    this.whereRaw('LOWER(first_name) = LOWER(?)', [merged8b.first_name])
+                      .andWhereRaw('LOWER(last_name) = LOWER(?)', [merged8b.last_name])
+                      .andWhereRaw('LOWER(city) = LOWER(?)', [merged8b.city]);
+                  });
                 }
               })
               .limit(10);
