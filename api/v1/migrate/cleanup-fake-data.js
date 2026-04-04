@@ -22,39 +22,30 @@ module.exports = async function handler(req, res) {
       .del();
     log.push(`Deleted ${delLogs} fake enrichment logs`);
 
-    // 2. Delete generated (GDOT) incidents and their related records using subqueries
-    // (avoids massive WHERE IN lists that exceed query limits)
-    const gdotSubquery = db('source_reports')
-      .where('source_reference', 'like', 'GDOT-%')
-      .whereNotNull('incident_id')
-      .select('incident_id');
+    // 2. Delete generated (GDOT) incidents using pure SQL subqueries
+    // Knex whereIn expands subqueries into parameter lists — raw SQL keeps it server-side
+    const gdotSub = `(SELECT incident_id FROM source_reports WHERE source_reference LIKE 'GDOT-%' AND incident_id IS NOT NULL)`;
 
-    const gdotCount = await db('source_reports').where('source_reference', 'like', 'GDOT-%').count('* as c').first();
+    const gdotCount = await db.raw(`SELECT COUNT(*) as c FROM source_reports WHERE source_reference LIKE 'GDOT-%'`);
 
-    if (parseInt(gdotCount.c) > 0) {
-      // Delete persons tied to generated incidents
-      const delPersons = await db('persons').whereIn('incident_id', gdotSubquery).del();
-      log.push(`Deleted ${delPersons} persons from generated incidents`);
+    if (parseInt(gdotCount.rows[0].c) > 0) {
+      const r1 = await db.raw(`DELETE FROM enrichment_logs WHERE incident_id IN ${gdotSub}`);
+      log.push(`Deleted enrichment logs from generated incidents`);
 
-      // Delete vehicles tied to generated incidents
-      const delVehicles = await db('vehicles').whereIn('incident_id', gdotSubquery).del();
-      log.push(`Deleted ${delVehicles} vehicles from generated incidents`);
+      const r2 = await db.raw(`DELETE FROM cross_references WHERE incident_id IN ${gdotSub}`);
+      log.push(`Deleted cross-references from generated incidents`);
 
-      // Delete enrichment logs tied to generated incident persons
-      const delELogs = await db('enrichment_logs').whereIn('incident_id', gdotSubquery).del();
-      log.push(`Deleted ${delELogs} enrichment logs from generated incidents`);
+      const r3 = await db.raw(`DELETE FROM persons WHERE incident_id IN ${gdotSub}`);
+      log.push(`Deleted persons from generated incidents`);
 
-      // Delete cross-references tied to generated incidents
-      const delXrefs = await db('cross_references').whereIn('incident_id', gdotSubquery).del();
-      log.push(`Deleted ${delXrefs} cross-references from generated incidents`);
+      const r4 = await db.raw(`DELETE FROM vehicles WHERE incident_id IN ${gdotSub}`);
+      log.push(`Deleted vehicles from generated incidents`);
 
-      // Delete the generated incidents themselves
-      const delIncidents = await db('incidents').whereIn('id', gdotSubquery).del();
-      log.push(`Deleted ${delIncidents} generated incidents`);
+      const r5 = await db.raw(`DELETE FROM incidents WHERE id IN ${gdotSub}`);
+      log.push(`Deleted generated incidents`);
 
-      // Delete the source reports
-      const delReports = await db('source_reports').where('source_reference', 'like', 'GDOT-%').del();
-      log.push(`Deleted ${delReports} GDOT source reports`);
+      const r6 = await db.raw(`DELETE FROM source_reports WHERE source_reference LIKE 'GDOT-%'`);
+      log.push(`Deleted GDOT source reports`);
     } else {
       log.push('No GDOT generated incidents found');
     }
