@@ -1,6 +1,6 @@
 /**
  * Enrichment Engine v2 - REAL API integrations + fallback generation
- * Uses: People Data Labs, Hunter.io, OpenWeather, NewsAPI, NumVerify
+ * Uses: People Data Labs, Hunter.io, OpenWeather, NewsAPI, NumVerify, Tracerfy
  * POST /api/v1/enrich/run  - Enrich a specific person or batch
  * GET  /api/v1/enrich/run?person_id=xxx - Enrich single person
  */
@@ -156,6 +156,110 @@ async function validatePhoneNumVerify(phone, apiKey) {
   }
 }
 
+async function enrichWithTracerfy(person, apiKey) {
+  if (!apiKey) return null;
+  // Need at least an address OR (first_name + last_name + some location)
+  const addr = person.address;
+  const city = person.city;
+  const state = person.state;
+  const zip = person.zip;
+  if (!addr && (!person.first_name || !person.last_name)) return null;
+
+  try {
+    const body = {};
+    if (addr) body.address = addr;
+    if (city) body.city = city;
+    if (state) body.state = state;
+    if (zip) body.zip = zip;
+
+    // Use find_owner mode when we only have address (no name)
+    if (person.first_name && person.last_name) {
+      body.find_owner = false;
+      body.first_name = person.first_name;
+      body.last_name = person.last_name;
+    } else {
+      body.find_owner = true;
+    }
+
+    const resp = await fetch('https://tracerfy.com/v1/api/trace/lookup/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (resp.status === 200) {
+      const data = await resp.json();
+      // Tracerfy returns { results: [ { persons: [...] } ] } for hits
+      const results = data.results || data.data?.results || [];
+      if (!results.length) return null;
+
+      // Find best matching person from results
+      const match = results[0]?.persons?.[0] || results[0] || null;
+      if (!match) return null;
+
+      const fields = {};
+
+      // Extract phones - take the highest-ranked phone
+      const phones = match.phones || [];
+      if (phones.length > 0) {
+        const bestPhone = phones.sort((a, b) => (a.rank || 99) - (b.rank || 99))[0];
+        fields.phone = bestPhone.phone_number || bestPhone.number || null;
+        fields.phone_carrier = bestPhone.carrier || null;
+        fields.phone_line_type = bestPhone.phone_type || bestPhone.type || null;
+        if (bestPhone.dnc !== undefined) fields.phone_dnc = bestPhone.dnc;
+      }
+
+      // Extract emails - take the first
+      const emails = match.emails || [];
+      if (emails.length > 0) {
+        fields.email = emails[0].email || emails[0].address || null;
+      }
+
+      // Extract mailing address if different from input
+      if (match.mailing_address) {
+        const ma = match.mailing_address;
+        if (ma.street && ma.street !== addr) {
+          fields.mailing_address = ma.street;
+          fields.mailing_city = ma.city || null;
+          fields.mailing_state = ma.state || null;
+          fields.mailing_zip = ma.zip || null;
+        }
+      }
+
+      // Demographics
+      if (match.dob) fields.date_of_birth = match.dob;
+      if (match.age) fields.age = parseInt(match.age, 10) || null;
+      if (match.deceased !== undefined) fields.deceased = match.deceased;
+      if (match.litigator !== undefined) fields.litigator = match.litigator;
+      if (match.property_owner !== undefined) fields.property_owner = match.property_owner;
+
+      // Only return if we got something useful
+      if (Object.keys(fields).length === 0) return null;
+
+      return {
+        source: 'tracerfy',
+        confidence: 85,
+        fields
+      };
+    }
+
+    if (resp.status === 404) {
+      // No results / miss - 0 credits consumed
+      console.log(`Tracerfy: no results for ${person.first_name || 'unknown'} ${person.last_name || ''}`);
+      return null;
+    }
+
+    console.log(`Tracerfy returned status ${resp.status} for ${person.first_name || 'unknown'} ${person.last_name || ''}`);
+    return null;
+  } catch (err) {
+    console.error('Tracerfy error:', err.message);
+    return null;
+  }
+}
+
 // ── Fallback generators (when API unavailable/rate-limited) ──
 
 function generateFallbackPhone() {
@@ -204,7 +308,7 @@ module.exports = async function handler(req, res) {
   }
 
   const db = getDb();
-  const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0 }, errors: [] };
+  const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0, tracerfy: 0 }, errors: [] };
 
   try {
     const { person_id, incident_id, batch_size = 20 } = { ...req.query, ...req.body };
@@ -215,6 +319,7 @@ module.exports = async function handler(req, res) {
     const WEATHER_KEY = process.env.OPENWEATHER_API_KEY || null;
     const NEWS_KEY = process.env.NEWSAPI_KEY || null;
     const NUMVERIFY_KEY = process.env.NUMVERIFY_API_KEY || null;
+    const TRACERFY_KEY = process.env.TRACERFY_API_KEY || null;
 
     // Also check integrations table for keys
     const integrations = await db('integrations').where('is_enabled', true);
@@ -225,6 +330,7 @@ module.exports = async function handler(req, res) {
     const hunterKey = HUNTER_KEY || intMap['hunter_io']?.api_key || null;
     const weatherKey = WEATHER_KEY || intMap['openweather']?.api_key || null;
     const numverifyKey = NUMVERIFY_KEY || intMap['numverify']?.api_key || null;
+    const tracerfyKey = TRACERFY_KEY || intMap['tracerfy']?.api_key || null;
 
     // Get persons to enrich
     let persons;
@@ -295,6 +401,23 @@ module.exports = async function handler(req, res) {
               if (value && !person[field] && !updates[field]) {
                 updates[field] = value;
                 enrichLogs.push({ field, value: String(value), source: 'numverify', confidence: nvResult.confidence });
+              }
+            }
+          }
+        }
+
+        // ══════════════════════════════════════════════
+        // STEP 2.7: Tracerfy Skip Trace - phones, emails, demographics
+        // ══════════════════════════════════════════════
+        const tracerfyPerson = { ...person, ...updates };
+        if (tracerfyKey && (tracerfyPerson.address || (tracerfyPerson.first_name && tracerfyPerson.last_name))) {
+          const tfResult = await enrichWithTracerfy(tracerfyPerson, tracerfyKey);
+          if (tfResult) {
+            results.api_calls.tracerfy++;
+            for (const [field, value] of Object.entries(tfResult.fields)) {
+              if (value !== null && value !== undefined && !person[field] && !updates[field]) {
+                updates[field] = value;
+                enrichLogs.push({ field, value: String(value), source: 'tracerfy', confidence: tfResult.confidence });
               }
             }
           }
@@ -390,6 +513,9 @@ module.exports = async function handler(req, res) {
         if (merged.has_attorney !== null) score += 5;
         if (merged.occupation) score += 5;
         if (merged.linkedin_url) score += 3;
+        if (merged.litigator !== undefined && merged.litigator !== null) score += 4;
+        if (merged.deceased !== undefined && merged.deceased !== null) score += 2;
+        if (merged.property_owner !== undefined && merged.property_owner !== null) score += 2;
         // Bonus for real API data
         score += Math.min(realSourceFields * 2, 10);
 
@@ -482,7 +608,8 @@ module.exports = async function handler(req, res) {
         hunter: !!hunterKey,
         openweather: !!weatherKey,
         newsapi: !!NEWS_KEY,
-        numverify: !!numverifyKey
+        numverify: !!numverifyKey,
+        tracerfy: !!tracerfyKey
       },
       ...results,
       timestamp: new Date().toISOString()
