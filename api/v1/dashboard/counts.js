@@ -52,11 +52,7 @@ module.exports = async function handler(req, res) {
         timestamp: row.discovered_at || row.created_at || null
       }));
     } catch (e) {
-      // Ultra-fallback
-      try {
-        const r = await db.raw(`SELECT id FROM incidents LIMIT 10`);
-        recentIncidents = r.rows;
-      } catch (e2) { /* ignore */ }
+      recentIncidents = [{ error: e.message }];
     }
 
     // Enrichment stats
@@ -98,7 +94,7 @@ module.exports = async function handler(req, res) {
         `);
         sourceBreakdown = r2.rows;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { sourceBreakdown = [{ error: e.message }]; }
 
     // Enrichment pipeline health — which APIs have contributed
     let pipelineHealth = [];
