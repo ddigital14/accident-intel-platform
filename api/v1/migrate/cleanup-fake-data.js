@@ -29,10 +29,15 @@ module.exports = async function handler(req, res) {
     const gdotCount = await db.raw(`SELECT COUNT(*) as c FROM source_reports WHERE source_reference LIKE 'GDOT-%'`);
 
     if (parseInt(gdotCount.rows[0].c) > 0) {
-      const r1 = await db.raw(`DELETE FROM enrichment_logs WHERE incident_id IN ${gdotSub}`);
-      log.push(`Deleted enrichment logs from generated incidents`);
+      // Must delete enrichment_logs by BOTH incident_id AND person_id (FK constraint)
+      const personSub = `(SELECT id FROM persons WHERE incident_id IN ${gdotSub})`;
 
-      const r2 = await db.raw(`DELETE FROM cross_references WHERE incident_id IN ${gdotSub}`);
+      const r1a = await db.raw(`DELETE FROM enrichment_logs WHERE incident_id IN ${gdotSub}`);
+      const r1b = await db.raw(`DELETE FROM enrichment_logs WHERE person_id IN ${personSub}`);
+      log.push(`Deleted enrichment logs from generated incidents (by incident + person FK)`);
+
+      const r2a = await db.raw(`DELETE FROM cross_references WHERE incident_id IN ${gdotSub}`);
+      const r2b = await db.raw(`DELETE FROM cross_references WHERE person_id IN ${personSub}`);
       log.push(`Deleted cross-references from generated incidents`);
 
       const r3 = await db.raw(`DELETE FROM persons WHERE incident_id IN ${gdotSub}`);
