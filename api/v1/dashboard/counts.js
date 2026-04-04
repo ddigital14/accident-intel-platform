@@ -27,23 +27,34 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Recent incidents — try multiple timestamp strategies
+    // Recent incidents — discover columns dynamically
     let recentIncidents = [];
     try {
-      const r = await db.raw(`
-        SELECT id, source, confidence_score, severity, city, state, incident_type,
-          discovered_at, created_at
-        FROM incidents
-        ORDER BY id DESC
-        LIMIT 10
+      // First get available columns
+      const colCheck = await db.raw(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'incidents'
+        AND column_name IN ('discovered_at','created_at','source','confidence_score','severity','city','state','incident_type')
       `);
+      const cols = colCheck.rows.map(r => r.column_name);
+      const hasDisco = cols.includes('discovered_at');
+      const hasCreated = cols.includes('created_at');
+      const orderCol = hasDisco ? 'discovered_at' : hasCreated ? 'created_at' : null;
+
+      const selectCols = ['id', ...cols.filter(c => c !== 'discovered_at' && c !== 'created_at')];
+      if (hasDisco) selectCols.push('discovered_at');
+      if (hasCreated) selectCols.push('created_at');
+
+      const orderClause = orderCol ? `ORDER BY ${orderCol} DESC NULLS LAST` : 'ORDER BY id DESC';
+      const r = await db.raw(`SELECT ${selectCols.join(', ')} FROM incidents ${orderClause} LIMIT 10`);
       recentIncidents = r.rows.map(row => ({
         ...row,
         timestamp: row.discovered_at || row.created_at || null
       }));
     } catch (e) {
+      // Ultra-fallback
       try {
-        const r = await db.raw(`SELECT id, source, confidence_score FROM incidents ORDER BY id DESC LIMIT 10`);
+        const r = await db.raw(`SELECT id FROM incidents LIMIT 10`);
         recentIncidents = r.rows;
       } catch (e2) { /* ignore */ }
     }
