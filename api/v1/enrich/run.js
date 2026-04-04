@@ -270,37 +270,7 @@ async function enrichWithTracerfy(person, apiKey) {
   }
 }
 
-// ── Fallback generators (when API unavailable/rate-limited) ──
-
-function generateFallbackPhone() {
-  const areaCode = ['404', '678', '470', '770', '762'][Math.floor(Math.random() * 5)];
-  return `(${areaCode}) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-}
-
-function generateFallbackEmail(first, last) {
-  const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'aol.com', 'hotmail.com', 'icloud.com'];
-  return `${first.toLowerCase()}.${last.toLowerCase()}${Math.floor(Math.random() * 99)}@${domains[Math.floor(Math.random() * domains.length)]}`;
-}
-
-function generateFallbackAddress(incident) {
-  const streets = ['Peachtree St NE', 'Ponce de Leon Ave', 'Northside Dr NW', 'Piedmont Ave', 'Spring St NW', 'Marietta St', 'Decatur St SE', 'Memorial Dr SE', 'Boulevard SE', 'North Ave NE'];
-  return {
-    address: `${Math.floor(Math.random() * 9000) + 100} ${streets[Math.floor(Math.random() * streets.length)]}`,
-    city: incident?.city || 'Atlanta',
-    state: incident?.state || 'GA',
-    zip: ['30301', '30303', '30305', '30308', '30309', '30312', '30315', '30318', '30324', '30326'][Math.floor(Math.random() * 10)]
-  };
-}
-
-function generateFallbackEmployer() {
-  const employers = ['Delta Air Lines', 'Coca-Cola Company', 'Home Depot', 'UPS', 'Georgia-Pacific', 'Cox Enterprises', 'SunTrust Bank', 'AT&T Southeast', 'Grady Health System', 'Emory Healthcare', 'Self-Employed', 'Publix Super Markets', 'Waffle House Inc', 'Georgia Power', 'NCR Corporation'];
-  return employers[Math.floor(Math.random() * employers.length)];
-}
-
-function generateFallbackOccupation() {
-  const occupations = ['Warehouse Associate', 'Delivery Driver', 'Sales Associate', 'Office Administrator', 'Construction Worker', 'Registered Nurse', 'Teacher', 'Software Developer', 'Mechanic', 'Restaurant Server', 'Account Manager', 'Truck Driver', 'Retail Manager', 'Security Guard', 'Medical Assistant'];
-  return occupations[Math.floor(Math.random() * occupations.length)];
-}
+// ── Fallback generators REMOVED — production mode: real data only ──
 
 // ── Main handler ──
 
@@ -477,58 +447,10 @@ module.exports = async function handler(req, res) {
         }
 
         // ══════════════════════════════════════════════
-        // STEP 4: Fallback generation for missing fields
+        // STEP 4: No fallback generation — only real API-sourced data
+        // Fields left empty will be populated by future API calls
+        // (Spokeo, Argus AI) or re-enrich runs
         // ══════════════════════════════════════════════
-        if (!person.phone && !updates.phone) {
-          const phone = generateFallbackPhone();
-          updates.phone = phone;
-          enrichLogs.push({ field: 'phone', value: phone, source: 'generated_fallback', confidence: 30 });
-        }
-
-        if (!person.email && !updates.email && person.first_name && person.last_name) {
-          const email = generateFallbackEmail(person.first_name, person.last_name);
-          updates.email = email;
-          enrichLogs.push({ field: 'email', value: email, source: 'generated_fallback', confidence: 25 });
-        }
-
-        if (!person.address && !updates.address) {
-          const addr = generateFallbackAddress(incident);
-          Object.assign(updates, addr);
-          enrichLogs.push({ field: 'address', value: addr.address, source: 'generated_fallback', confidence: 20 });
-        }
-
-        if (!person.employer && !updates.employer) {
-          updates.employer = generateFallbackEmployer();
-          enrichLogs.push({ field: 'employer', value: updates.employer, source: 'generated_fallback', confidence: 20 });
-        }
-
-        if (!person.occupation && !updates.occupation) {
-          updates.occupation = generateFallbackOccupation();
-          enrichLogs.push({ field: 'occupation', value: updates.occupation, source: 'generated_fallback', confidence: 20 });
-        }
-
-        if (!person.household_income_range && !updates.household_income_range) {
-          const ranges = ['$25K-$50K', '$50K-$75K', '$75K-$100K', '$100K-$150K', '$150K-$200K', '$200K+'];
-          updates.household_income_range = ranges[Math.floor(Math.random() * ranges.length)];
-        }
-
-        // Insurance enrichment
-        if (!person.insurance_company && !updates.insurance_company && Math.random() > 0.3) {
-          const insurers = ['State Farm', 'Geico', 'Progressive', 'Allstate', 'USAA', 'Liberty Mutual', 'Farmers Insurance', 'Nationwide', 'Travelers', 'American Family'];
-          updates.insurance_company = insurers[Math.floor(Math.random() * insurers.length)];
-          const limits = ['25/50/25', '50/100/50', '100/300/100', '250/500/250'];
-          updates.policy_limits = limits[Math.floor(Math.random() * limits.length)];
-          enrichLogs.push({ field: 'insurance', value: updates.insurance_company, source: 'generated_fallback', confidence: 30 });
-        }
-
-        // Attorney check
-        if (person.has_attorney === null || person.has_attorney === undefined) {
-          updates.has_attorney = Math.random() > 0.7;
-          if (updates.has_attorney) {
-            const firms = ['Morgan & Morgan', 'Bader Scott Injury Lawyers', 'The Millar Law Firm', 'Scholle Law', 'Kaine Law', 'Fried Rogers Goldberg LLC', 'Butler Prather LLP', 'Kenneth S. Nugent P.C.'];
-            updates.attorney_name = firms[Math.floor(Math.random() * firms.length)];
-          }
-        }
 
         // ══════════════════════════════════════════════
         // STEP 5: Calculate enrichment score

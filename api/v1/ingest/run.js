@@ -336,97 +336,7 @@ async function fetchTomTomIncidents(apiKey) {
   return incidents;
 }
 
-// ── Source 4: Generate realistic real-time incidents ───────────────────
-// Uses GDOT-style data patterns for Atlanta metro (primary market)
-function generateRealtimeIncidents() {
-  const now = new Date();
-  const incidents = [];
-
-  const templates = [
-    {
-      desc: 'Multi-vehicle collision reported on I-85 near Exit {exit}. {count} vehicles involved. Emergency crews on scene.',
-      type: 'car_accident', exits: [86, 88, 91, 95, 100, 105, 110], city: 'Atlanta', state: 'GA'
-    },
-    {
-      desc: 'Accident on I-285 at {road}. {injuries} injuries reported. Traffic backed up for {miles} miles.',
-      type: 'car_accident', roads: ['Peachtree Rd', 'Roswell Rd', 'Ashford Dunwoody', 'LaVista Rd', 'Memorial Dr'], city: 'Atlanta', state: 'GA'
-    },
-    {
-      desc: 'Motorcycle crash on GA-400 southbound near {area}. Rider transported to Grady Memorial Hospital.',
-      type: 'motorcycle_accident', areas: ['Buckhead', 'Sandy Springs', 'Dunwoody', 'Roswell', 'Alpharetta'], city: 'Atlanta', state: 'GA'
-    },
-    {
-      desc: 'Pedestrian struck by vehicle at {intersection} in {area}. Victim airlifted to trauma center.',
-      type: 'pedestrian', intersections: ['Peachtree St & 10th St', 'Ponce De Leon & Monroe', 'Spring St & 14th St'], areas: ['Midtown', 'Downtown', 'Buckhead'], city: 'Atlanta', state: 'GA'
-    },
-    {
-      desc: 'Tractor-trailer jackknifed on I-20 {dir}bound near {exit}. Hazmat team responding. Multiple lanes closed.',
-      type: 'truck_accident', dirs: ['east', 'west'], exits: ['Exit 51 (Lee St)', 'Exit 55 (Capitol Ave)', 'Exit 60 (Moreland Ave)', 'Exit 65 (Wesley Chapel)'], city: 'Atlanta', state: 'GA'
-    },
-    {
-      desc: 'Two-car collision at {road} intersection in {city}. {injuries} people injured. No fatalities reported.',
-      type: 'car_accident', roads: ['Buford Hwy', 'Jimmy Carter Blvd', 'Lawrenceville Hwy', 'Stone Mountain Hwy'], cities: ['Doraville', 'Norcross', 'Tucker', 'Lilburn'], state: 'GA'
-    },
-    {
-      desc: 'Head-on collision reported on US-78 near {city}. Multiple injuries. LifeFlight helicopter dispatched.',
-      type: 'car_accident', cities: ['Snellville', 'Loganville', 'Monroe', 'Covington'], state: 'GA'
-    },
-    {
-      desc: 'Work zone accident on {road} in {area}. Construction worker struck by vehicle. OSHA notified.',
-      type: 'work_accident', roads: ['I-285', 'I-75', 'I-85', 'SR-400'], areas: ['Perimeter area', 'Midtown', 'Downtown Connector'], city: 'Atlanta', state: 'GA'
-    }
-  ];
-
-  // Generate 3-6 incidents per run
-  const count = 3 + Math.floor(Math.random() * 4);
-
-  for (let i = 0; i < count; i++) {
-    const tpl = templates[Math.floor(Math.random() * templates.length)];
-    let desc = tpl.desc;
-
-    // Fill template placeholders
-    desc = desc.replace('{exit}', tpl.exits ? tpl.exits[Math.floor(Math.random() * tpl.exits.length)] : '');
-    desc = desc.replace('{road}', tpl.roads ? tpl.roads[Math.floor(Math.random() * tpl.roads.length)] : '');
-    desc = desc.replace('{area}', tpl.areas ? tpl.areas[Math.floor(Math.random() * tpl.areas.length)] : '');
-    desc = desc.replace('{intersection}', tpl.intersections ? tpl.intersections[Math.floor(Math.random() * tpl.intersections.length)] : '');
-    desc = desc.replace('{dir}', tpl.dirs ? tpl.dirs[Math.floor(Math.random() * tpl.dirs.length)] : '');
-    desc = desc.replace('{city}', tpl.cities ? tpl.cities[Math.floor(Math.random() * tpl.cities.length)] : tpl.city || 'Atlanta');
-    const injCount = Math.floor(Math.random() * 5) + 1;
-    desc = desc.replace('{injuries}', injCount);
-    desc = desc.replace('{count}', Math.floor(Math.random() * 4) + 2);
-    desc = desc.replace('{miles}', (Math.random() * 3 + 0.5).toFixed(1));
-
-    const city = tpl.cities ? tpl.cities[Math.floor(Math.random() * tpl.cities.length)] : tpl.city || 'Atlanta';
-    const severity = classifySeverity(desc);
-    const coords = METRO_COORDS[city] || METRO_COORDS['Atlanta'];
-
-    // Random time in the past 1-6 hours
-    const hoursAgo = Math.random() * 6;
-    const occurredAt = new Date(now - hoursAgo * 3600000);
-
-    incidents.push({
-      source: 'gdot_feed',
-      source_reference: `GDOT-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      title: desc.split('.')[0],
-      description: desc,
-      incident_type: tpl.type,
-      severity: severity,
-      priority: calculatePriority(severity, tpl.type, desc),
-      city: city,
-      state: tpl.state || 'GA',
-      lat: coords.lat + (Math.random() - 0.5) * 0.08,
-      lng: coords.lng + (Math.random() - 0.5) * 0.08,
-      injuries_count: injCount,
-      fatalities_count: severity === 'fatal' ? 1 : 0,
-      vehicles_involved: tpl.type === 'pedestrian' ? 1 : Math.floor(Math.random() * 3) + 1,
-      occurred_at: occurredAt.toISOString(),
-      confidence: 70 + Math.floor(Math.random() * 25),
-      raw: { template: tpl.desc, generated_at: now.toISOString() }
-    });
-  }
-
-  return incidents;
-}
+// ── Source 4: Generated incidents REMOVED — production mode: real data only ──
 
 // ── Main Ingestion Handler ────────────────────────────────────────────
 module.exports = async function handler(req, res) {
@@ -461,21 +371,16 @@ module.exports = async function handler(req, res) {
       fetchTomTomIncidents(process.env.TOMTOM_API_KEY)
     ]);
 
-    // Also generate real-time style incidents
-    const realtimeIncidents = generateRealtimeIncidents();
-
     const allRecords = [
       ...tomtomIncidents.map(r => ({ ...r, source_name: 'tomtom' })),
       ...newsArticles.map(r => ({ ...r, source_name: 'newsapi' })),
-      ...nhtsaComplaints.map(r => ({ ...r, source_name: 'nhtsa' })),
-      ...realtimeIncidents.map(r => ({ ...r, source_name: 'gdot_feed' }))
+      ...nhtsaComplaints.map(r => ({ ...r, source_name: 'nhtsa' }))
     ];
 
     results.sources = {
       tomtom: tomtomIncidents.length,
       newsapi: newsArticles.length,
-      nhtsa: nhtsaComplaints.length,
-      gdot_feed: realtimeIncidents.length
+      nhtsa: nhtsaComplaints.length
     };
 
     // Get Atlanta metro area ID
