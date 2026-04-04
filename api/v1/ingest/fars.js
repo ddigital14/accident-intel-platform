@@ -77,9 +77,26 @@ function calculatePriority(severity, injuries, fatalities) {
   return 5;
 }
 
-// Fetch complaints for a specific make/year combo
-async function fetchCrashComplaints(make, modelYear) {
-  const url = `https://api.nhtsa.gov/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&modelYear=${modelYear}`;
+// Fetch available models for a make/year
+async function fetchModelsForMake(make, modelYear) {
+  try {
+    const url = `https://api.nhtsa.gov/products/vehicle/models?modelYear=${modelYear}&make=${encodeURIComponent(make)}&issueType=c`;
+    const resp = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.results || []).map(r => r.model).filter(Boolean);
+  } catch (err) {
+    console.error(`NHTSA models fetch error (${make} ${modelYear}):`, err.message);
+    return [];
+  }
+}
+
+// Fetch complaints for a specific make/model/year combo
+async function fetchCrashComplaints(make, model, modelYear) {
+  const url = `https://api.nhtsa.gov/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${modelYear}`;
 
   try {
     const resp = await fetch(url, {
@@ -88,7 +105,7 @@ async function fetchCrashComplaints(make, modelYear) {
     });
 
     if (!resp.ok) {
-      console.log(`NHTSA complaints API returned ${resp.status} for ${make} ${modelYear}`);
+      console.log(`NHTSA complaints API returned ${resp.status} for ${make} ${model} ${modelYear}`);
       return [];
     }
 
@@ -100,7 +117,7 @@ async function fetchCrashComplaints(make, modelYear) {
       c.crash === 'Yes' || c.numberOfInjuries > 0 || c.numberOfDeaths > 0
     );
   } catch (err) {
-    console.error(`NHTSA complaints fetch error (${make} ${modelYear}):`, err.message);
+    console.error(`NHTSA complaints fetch error (${make} ${model} ${modelYear}):`, err.message);
     return [];
   }
 }
@@ -157,9 +174,23 @@ module.exports = async function handler(req, res) {
     let totalImported = 0;
 
     for (const make of makesToQuery) {
+      if (totalImported >= limit) break;
       results.makes_queried.push(make);
 
-      const complaints = await fetchCrashComplaints(make, year);
+      // Step 1: Get available models for this make/year
+      const models = await fetchModelsForMake(make, year);
+      if (!models.length) continue;
+
+      // Pick up to 3 random models per make to keep API calls reasonable
+      const selectedModels = models.sort(() => Math.random() - 0.5).slice(0, 3);
+
+      // Step 2: Fetch crash complaints for each model
+      let complaints = [];
+      for (const model of selectedModels) {
+        const modelComplaints = await fetchCrashComplaints(make, model, year);
+        complaints.push(...modelComplaints);
+        await new Promise(r => setTimeout(r, 150)); // rate limit politeness
+      }
       if (!complaints.length) continue;
 
       for (const complaint of complaints) {
