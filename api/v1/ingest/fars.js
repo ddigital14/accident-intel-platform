@@ -310,38 +310,8 @@ module.exports = async function handler(req, res) {
           });
           results.vehicles_added++;
 
-          // Add person records for injuries/fatalities
-          if (injuries > 0 || fatalities > 0) {
-            const personCount = Math.min(injuries + fatalities, 4);
-            const firstNames = ['James', 'Robert', 'Michael', 'Maria', 'Jennifer', 'David', 'Linda', 'William', 'Carlos', 'Patricia'];
-            const lastNames = ['Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Davis', 'Rodriguez', 'Wilson', 'Anderson', 'Thomas'];
-
-            for (let p = 0; p < personCount; p++) {
-              const isFatal = p < fatalities;
-              await db('persons').insert({
-                id: uuidv4(),
-                incident_id: incidentId,
-                role: p === 0 ? 'driver' : 'passenger',
-                is_injured: !isFatal,
-                first_name: firstNames[Math.floor(Math.random() * firstNames.length)],
-                last_name: lastNames[Math.floor(Math.random() * lastNames.length)],
-                age: 18 + Math.floor(Math.random() * 55),
-                gender: Math.random() > 0.5 ? 'male' : 'female',
-                injury_description: isFatal ? 'Fatal injuries' :
-                  ['Whiplash', 'Broken bones', 'Head laceration', 'Back injury', 'Concussion', 'Chest contusion'][Math.floor(Math.random() * 6)],
-                state: stateAbbr || 'GA',
-                has_attorney: Math.random() > 0.7,
-                contact_status: isFatal ? 'do_not_contact' : 'not_contacted',
-                contact_attempts: 0,
-                confidence_score: 85,
-                do_not_contact: isFatal,
-                deceased: isFatal,
-                created_at: now,
-                updated_at: now
-              });
-              results.persons_added++;
-            }
-          }
+          // Person records are NOT generated during NHTSA import.
+          // Real person data comes from enrichment APIs and police report integrations.
 
           totalImported++;
           results.imported++;

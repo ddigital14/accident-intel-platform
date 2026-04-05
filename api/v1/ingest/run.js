@@ -320,9 +320,9 @@ async function fetchTomTomIncidents(apiKey) {
           state: metro.state,
           lat: lat,
           lng: lng,
-          injuries_count: isAccident ? Math.floor(Math.random() * 3) + 1 : 0,
-          fatalities_count: severity === 'fatal' ? 1 : 0,
-          vehicles_involved: isAccident ? Math.floor(Math.random() * 3) + 1 : 1,
+          injuries_count: null,
+          fatalities_count: severity === 'fatal' ? 1 : null,
+          vehicles_involved: null,
           occurred_at: props.startTime || new Date().toISOString(),
           confidence: isAccident ? 85 : 65,
           raw: inc
@@ -463,58 +463,9 @@ module.exports = async function handler(req, res) {
           created_at: now
         });
 
-        // Generate some persons for higher-severity incidents
-        if (record.injuries_count > 0 && Math.random() > 0.3) {
-          const firstNames = ['James', 'Robert', 'Michael', 'William', 'David', 'Maria', 'Jennifer', 'Linda', 'Patricia', 'Elizabeth', 'Carlos', 'Juan', 'Ahmad', 'Wei', 'Keisha'];
-          const lastNames = ['Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Martinez', 'Davis', 'Rodriguez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Lee'];
-
-          const personCount = Math.min(record.injuries_count, 3);
-          for (let p = 0; p < personCount; p++) {
-            await db('persons').insert({
-              id: uuidv4(),
-              incident_id: incidentId,
-              role: p === 0 ? 'driver' : (Math.random() > 0.5 ? 'passenger' : 'driver'),
-              is_injured: true,
-              first_name: firstNames[Math.floor(Math.random() * firstNames.length)],
-              last_name: lastNames[Math.floor(Math.random() * lastNames.length)],
-              age: 18 + Math.floor(Math.random() * 55),
-              gender: Math.random() > 0.5 ? 'male' : 'female',
-              injury_description: ['Whiplash and neck pain', 'Broken arm', 'Head laceration', 'Back injury', 'Concussion', 'Multiple fractures', 'Chest contusion', 'Knee injury'][Math.floor(Math.random() * 8)],
-              transported_to: ['Grady Memorial Hospital', 'Emory University Hospital', 'Piedmont Atlanta Hospital', 'Northside Hospital', 'WellStar Kennestone'][Math.floor(Math.random() * 5)],
-              has_attorney: Math.random() > 0.75,
-              contact_status: 'not_contacted',
-              contact_attempts: 0,
-              confidence_score: 50 + Math.floor(Math.random() * 40),
-              created_at: now,
-              updated_at: now
-            });
-          }
-        }
-
-        // Generate vehicle records
-        if (record.vehicles_involved > 0 && record.incident_type !== 'pedestrian') {
-          const makes = ['Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan', 'BMW', 'Mercedes', 'Hyundai', 'Kia', 'Tesla'];
-          const models = { 'Toyota': ['Camry', 'Corolla', 'RAV4'], 'Honda': ['Civic', 'Accord', 'CR-V'], 'Ford': ['F-150', 'Explorer', 'Mustang'], 'Chevrolet': ['Silverado', 'Malibu', 'Equinox'], 'Nissan': ['Altima', 'Rogue', 'Sentra'], 'BMW': ['3 Series', '5 Series', 'X5'], 'Mercedes': ['C-Class', 'E-Class', 'GLE'], 'Hyundai': ['Elantra', 'Tucson', 'Sonata'], 'Kia': ['Optima', 'Sportage', 'Sorento'], 'Tesla': ['Model 3', 'Model Y', 'Model S'] };
-          const colors = ['White', 'Black', 'Silver', 'Red', 'Blue', 'Gray'];
-
-          const vehCount = Math.min(record.vehicles_involved, 3);
-          for (let v = 0; v < vehCount; v++) {
-            const make = makes[Math.floor(Math.random() * makes.length)];
-            const model = models[make][Math.floor(Math.random() * models[make].length)];
-            await db('vehicles').insert({
-              id: uuidv4(),
-              incident_id: incidentId,
-              year: 2018 + Math.floor(Math.random() * 8),
-              make: make,
-              model: model,
-              color: colors[Math.floor(Math.random() * colors.length)],
-              damage_severity: ['minor', 'moderate', 'severe', 'totaled'][Math.floor(Math.random() * 4)],
-              towed: Math.random() > 0.5,
-              created_at: now,
-              updated_at: now
-            });
-          }
-        }
+        // Person and vehicle records are NOT generated during ingestion.
+        // Real person/vehicle data comes from enrichment APIs (PDL, SearchBug, Tracerfy, etc.)
+        // and from police report integrations (Argus AI, Spokeo) when available.
 
         results.inserted++;
       } catch (e) {

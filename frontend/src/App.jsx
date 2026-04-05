@@ -523,6 +523,10 @@ function Sidebar({ filters, setFilters, metros, onRefresh }) {
 
       <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#a0b0d0", fontSize: 13, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!filters.hasContactInfo} onChange={(e) => update("hasContactInfo", e.target.checked ? "true" : "")} style={{ accentColor: "#34d399" }} />
+          Has Contact Info
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#a0b0d0", fontSize: 13, cursor: "pointer" }}>
           <input type="checkbox" checked={!!filters.hasAttorney} onChange={(e) => update("hasAttorney", e.target.checked ? "false" : "")} style={{ accentColor: "#4f6bff" }} />
           No Attorney
         </label>

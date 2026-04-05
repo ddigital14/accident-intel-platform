@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const {
       page = 1, limit = 50, type, severity, status, metro, city, state,
-      dateFrom, dateTo, minConfidence, assigned, hasAttorney, search,
+      dateFrom, dateTo, minConfidence, assigned, hasAttorney, hasContactInfo, search,
       sortBy = 'discovered_at', sortDir = 'desc', priority
     } = req.query;
 
@@ -50,6 +50,21 @@ router.get('/', async (req, res) => {
       query = query.whereNotExists(function () {
         this.select(db.raw(1)).from('persons as p')
           .whereRaw('p.incident_id = i.id').where('p.has_attorney', true);
+      });
+    }
+
+    // Filter to only incidents that have persons with contact info (phone or email)
+    if (hasContactInfo === 'true') {
+      query = query.whereExists(function () {
+        this.select(db.raw(1)).from('persons as p')
+          .whereRaw('p.incident_id = i.id')
+          .where(function () {
+            this.where(function () {
+              this.whereNotNull('p.phone').andWhere('p.phone', '!=', '');
+            }).orWhere(function () {
+              this.whereNotNull('p.email').andWhere('p.email', '!=', '');
+            });
+          });
       });
     }
 
