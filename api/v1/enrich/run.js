@@ -272,7 +272,7 @@ async function enrichWithTracerfy(person, apiKey) {
 
 // ── SearchBug People Search API ──
 
-async function enrichWithSearchBug(person, apiKey) {
+async function enrichWithSearchBug(person, apiKey, coCode) {
   if (!apiKey) return null;
   // Need at least first_name + last_name
   if (!person.first_name || !person.last_name) return null;
@@ -289,12 +289,15 @@ async function enrichWithSearchBug(person, apiKey) {
     params.append('TYPE', 'people_trace');
     params.append('FORMAT', 'JSON');
 
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Bearer ${apiKey}`
+    };
+    if (coCode) headers['CO_CODE'] = coCode;
+
     const resp = await fetch('https://data.searchbug.com/api/search.aspx', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: params.toString(),
       signal: AbortSignal.timeout(10000)
     });
@@ -414,6 +417,7 @@ module.exports = async function handler(req, res) {
     const NUMVERIFY_KEY = process.env.NUMVERIFY_API_KEY || null;
     const TRACERFY_KEY = process.env.TRACERFY_API_KEY || null;
     const SEARCHBUG_KEY = process.env.SEARCHBUG_API_KEY || null;
+    const SEARCHBUG_CO = process.env.SEARCHBUG_CO_CODE || null;
 
     // Also check integrations table for keys
     const integrations = await db('integrations').where('is_enabled', true);
@@ -550,7 +554,7 @@ module.exports = async function handler(req, res) {
           ? (!person.date_of_birth && !updates.date_of_birth) || (!person.address && !updates.address)
           : true;
         if (searchbugKey && needsSearchBug && searchbugPerson.first_name && searchbugPerson.last_name) {
-          const sbResult = await enrichWithSearchBug(searchbugPerson, searchbugKey);
+          const sbResult = await enrichWithSearchBug(searchbugPerson, searchbugKey, SEARCHBUG_CO);
           if (sbResult) {
             results.api_calls.searchbug = (results.api_calls.searchbug || 0) + 1;
             for (const [field, value] of Object.entries(sbResult.fields)) {
