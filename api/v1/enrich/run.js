@@ -1,6 +1,6 @@
 /**
- * Enrichment Engine v2 - REAL API integrations + fallback generation
- * Uses: People Data Labs, Hunter.io, OpenWeather, NewsAPI, NumVerify, Tracerfy
+ * Enrichment Engine v3 - REAL API integrations only (no fallbacks)
+ * Uses: People Data Labs, Hunter.io, OpenWeather, NumVerify, Tracerfy, SearchBug
  * POST /api/v1/enrich/run  - Enrich a specific person or batch
  * GET  /api/v1/enrich/run?person_id=xxx - Enrich single person
  */
@@ -270,6 +270,117 @@ async function enrichWithTracerfy(person, apiKey) {
   }
 }
 
+// ── SearchBug People Search API ──
+
+async function enrichWithSearchBug(person, apiKey) {
+  if (!apiKey) return null;
+  // Need at least first_name + last_name
+  if (!person.first_name || !person.last_name) return null;
+
+  try {
+    // Build search parameters
+    const params = new URLSearchParams();
+    params.append('FNAME', person.first_name);
+    params.append('LNAME', person.last_name);
+    if (person.middle_name) params.append('MNAME', person.middle_name);
+    if (person.state) params.append('STATE', person.state);
+    if (person.city) params.append('CITY', person.city);
+    if (person.address) params.append('ADDRESS', person.address);
+    params.append('TYPE', 'people_trace');
+    params.append('FORMAT', 'JSON');
+
+    const resp = await fetch('https://data.searchbug.com/api/search.aspx', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: params.toString(),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (resp.status === 200) {
+      const data = await resp.json();
+
+      // Handle error responses
+      if (data.Error || data.error) {
+        console.log(`SearchBug error: ${data.Error || data.error}`);
+        return null;
+      }
+
+      // Parse results — SearchBug returns results in various structures
+      const results = data.Data || data.data || data.Results || data.results || data;
+      const records = Array.isArray(results) ? results : (results?.records || results?.people || [results]);
+
+      if (!records || records.length === 0) return null;
+
+      // Take best match (first result)
+      const match = records[0];
+      if (!match) return null;
+
+      const fields = {};
+
+      // Extract phone
+      const phone = match.phone_phone10 || match.phone || match.Phone || match.phone10 || null;
+      if (phone && !person.phone) {
+        fields.phone = phone.length === 10 ? `(${phone.slice(0,3)}) ${phone.slice(3,6)}-${phone.slice(6)}` : phone;
+      }
+
+      // Extract address
+      const streetNum = match['street-number'] || match.streetNumber || '';
+      const streetName = match['street-name'] || match.streetName || '';
+      const streetSuffix = match['street-suffix'] || match.streetSuffix || '';
+      const fullAddress = [streetNum, streetName, streetSuffix].filter(Boolean).join(' ').trim();
+      if (fullAddress && !person.address) fields.address = fullAddress;
+
+      const city = match.City || match.city || null;
+      if (city && !person.city) fields.city = city;
+
+      const state = match.state || match.State || null;
+      if (state && !person.state) fields.state = state;
+
+      const zip = match.zip || match.Zip || match.zip5 || null;
+      if (zip && !person.zip) fields.zip = zip;
+
+      // Extract email if available
+      const email = match.email || match.Email || match.email_address || null;
+      if (email && !person.email) fields.email = email;
+
+      // Extract DOB
+      const dob = match.dob || match.DOB || match['date-of-birth'] || match.dateOfBirth || null;
+      if (dob && !person.date_of_birth) fields.date_of_birth = dob;
+
+      // Extract age
+      const age = match.age || match.Age || null;
+      if (age && !person.age) fields.age = parseInt(age, 10) || null;
+
+      // Extract employer/occupation if available (Restricted Access Add-On)
+      const employer = match.employer || match.Employer ||
+        (match.employers && match.employers[0]?.name) || null;
+      if (employer && !person.employer) fields.employer = employer;
+
+      const occupation = match.occupation || match.Occupation ||
+        (match.employers && match.employers[0]?.title) || null;
+      if (occupation && !person.occupation) fields.occupation = occupation;
+
+      // Only return if we got something useful
+      if (Object.keys(fields).length === 0) return null;
+
+      return {
+        source: 'searchbug',
+        confidence: 80,
+        fields
+      };
+    }
+
+    console.log(`SearchBug returned status ${resp.status} for ${person.first_name} ${person.last_name}`);
+    return null;
+  } catch (err) {
+    console.error('SearchBug error:', err.message);
+    return null;
+  }
+}
+
 // ── Fallback generators REMOVED — production mode: real data only ──
 
 // ── Main handler ──
@@ -288,7 +399,7 @@ module.exports = async function handler(req, res) {
   }
 
   const db = getDb();
-  const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0, tracerfy: 0 }, errors: [] };
+  const results = { enriched: 0, fields_updated: 0, cross_refs: 0, api_calls: { pdl: 0, hunter: 0, weather: 0, numverify: 0, tracerfy: 0, searchbug: 0 }, errors: [] };
 
   try {
     const { person_id, incident_id, batch_size: rawBatch = 20, mode } = { ...req.query, ...req.body };
@@ -302,6 +413,7 @@ module.exports = async function handler(req, res) {
     const NEWS_KEY = process.env.NEWSAPI_KEY || null;
     const NUMVERIFY_KEY = process.env.NUMVERIFY_API_KEY || null;
     const TRACERFY_KEY = process.env.TRACERFY_API_KEY || null;
+    const SEARCHBUG_KEY = process.env.SEARCHBUG_API_KEY || null;
 
     // Also check integrations table for keys
     const integrations = await db('integrations').where('is_enabled', true);
@@ -313,6 +425,7 @@ module.exports = async function handler(req, res) {
     const weatherKey = WEATHER_KEY || intMap['openweather']?.api_key || null;
     const numverifyKey = NUMVERIFY_KEY || intMap['numverify']?.api_key || null;
     const tracerfyKey = TRACERFY_KEY || intMap['tracerfy']?.api_key || null;
+    const searchbugKey = SEARCHBUG_KEY || intMap['searchbug']?.api_key || null;
 
     // Get persons to enrich
     let persons;
@@ -424,6 +537,26 @@ module.exports = async function handler(req, res) {
               if (value !== null && value !== undefined && (isReEnrich || (!person[field] && !updates[field]))) {
                 updates[field] = value;
                 enrichLogs.push({ field, value: String(value), source: 'tracerfy', confidence: tfResult.confidence });
+              }
+            }
+          }
+        }
+
+        // ══════════════════════════════════════════════
+        // STEP 2.9: SearchBug People Search - phones, addresses, DOB, employer
+        // ══════════════════════════════════════════════
+        const searchbugPerson = { ...person, ...updates };
+        const needsSearchBug = isReEnrich
+          ? (!person.date_of_birth && !updates.date_of_birth) || (!person.address && !updates.address)
+          : true;
+        if (searchbugKey && needsSearchBug && searchbugPerson.first_name && searchbugPerson.last_name) {
+          const sbResult = await enrichWithSearchBug(searchbugPerson, searchbugKey);
+          if (sbResult) {
+            results.api_calls.searchbug = (results.api_calls.searchbug || 0) + 1;
+            for (const [field, value] of Object.entries(sbResult.fields)) {
+              if (value !== null && value !== undefined && (isReEnrich || (!person[field] && !updates[field]))) {
+                updates[field] = value;
+                enrichLogs.push({ field, value: String(value), source: 'searchbug', confidence: sbResult.confidence });
               }
             }
           }
@@ -638,7 +771,8 @@ module.exports = async function handler(req, res) {
         openweather: !!weatherKey,
         newsapi: !!NEWS_KEY,
         numverify: !!numverifyKey,
-        tracerfy: !!tracerfyKey
+        tracerfy: !!tracerfyKey,
+        searchbug: !!searchbugKey
       },
       ...results,
       timestamp: new Date().toISOString()
