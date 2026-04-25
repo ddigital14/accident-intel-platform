@@ -25,7 +25,7 @@ async function fetchArticles() {
   const articles = [];
   for (const q of SEARCH_QUERIES) {
     try {
-      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=20&apiKey=${NEWSAPI_KEY}`;
+      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${NEWSAPI_KEY}`;
       const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
       if (!resp.ok) continue;
       const data = await resp.json();
@@ -156,14 +156,20 @@ module.exports = async function handler(req, res) {
       newsDs = { id: dsId };
     }
 
-    const articles = await fetchArticles();
+    const articles = (await fetchArticles()).slice(0, 12);
     results.articles_fetched = articles.length;
+    const startTime = Date.now();
+    const TIME_BUDGET_MS = 22000;
 
     const newPersons = [];
     const newIncidents = [];
     const newReports = [];
 
     for (const article of articles) {
+      if (Date.now() - startTime > TIME_BUDGET_MS) {
+        results.errors.push('time budget exhausted, deferring remaining articles');
+        break;
+      }
       try {
         const articleKey = `news:${article.url}`;
         if (dedupCache.has(articleKey)) { results.skipped++; continue; }
