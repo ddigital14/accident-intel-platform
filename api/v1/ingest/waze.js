@@ -5,7 +5,7 @@
  * Waze exposes GeoRSS/JSON data via their map tile endpoints that contain
  * user-reported incidents including accidents, hazards, and road closures.
  *
- * No API key required — uses the same public data Waze shows on their web map.
+ * No API key required â uses the same public data Waze shows on their web map.
  *
  * GET /api/v1/ingest/waze?secret=ingest-now
  */
@@ -136,169 +136,48 @@ module.exports = async function handler(req, res) {
   const results = { inserted: 0, skipped: 0, errors: [], sources: {} };
 
   try {
-    // Pick 4 random metros per run to spread coverage
-    const selectedMetros = WAZE_METROS
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 4);
-
+    const selectedMetros = WAZE_METROS.sort(() => Math.random() - 0.5).slice(0, 4);
     let allAlerts = [];
     for (const metro of selectedMetros) {
       const alerts = await fetchWazeAlerts(metro);
       results.sources[metro.name] = alerts.length;
       allAlerts = allAlerts.concat(alerts);
-      // Small delay between requests to be respectful
       await new Promise(r => setTimeout(r, 500));
     }
-
-    // Get metro area IDs and data source IDs
     const metroAreas = await db('metro_areas').select('id', 'name');
     const metroMap = {};
     for (const ma of metroAreas) {
       for (const key of Object.keys(WAZE_METROS.reduce((acc, m) => ({ ...acc, [m.name]: true }), {}))) {
-        if (ma.name.toLowerCase().includes(key.toLowerCase())) {
-          metroMap[key] = ma.id;
-        }
+        if (ma.name.toLowerCase().includes(key.toLowerCase())) metroMap[key] = ma.id;
       }
     }
-
-    // Find or create waze data source
     let wazeDs = await db('data_sources').where('name', 'like', '%Waze%').first();
     if (!wazeDs) {
       const dsId = uuidv4();
-      await db('data_sources').insert({
-        id: dsId,
-        name: 'Waze Live Map',
-        source_type: 'api',
-        api_endpoint: 'https://www.waze.com/live-map/api/georss',
-        is_active: true,
-        poll_interval_minutes: 10,
-        last_polled_at: new Date(),
-        created_at: new Date(),
-        updated_at: new Date()
-      });
+      await db('data_sources').insert({ id: dsId, name: 'Waze Live Map', source_type: 'api', api_endpoint: 'https://www.waze.com/live-map/api/georss', is_active: true, poll_interval_minutes: 10, last_polled_at: new Date(), created_at: new Date(), updated_at: new Date() });
       wazeDs = { id: dsId };
     }
-
     for (const record of allAlerts) {
       try {
-        // Dedup by source reference
-        const existing = await db('source_reports')
-          .where('source_reference', record.source_reference)
-          .first();
-
-        // Also dedup by proximity + time (within 500m and 30 min)
+        const existing = await db('source_reports').where('source_reference', record.source_reference).first();
         if (!existing && record.lat && record.lng) {
-          const nearby = await db('incidents')
-            .where('source_count', '>=', 0)
-            .where('occurred_at', '>', new Date(Date.now() - 30 * 60 * 1000))
-            .whereNotNull('latitude')
-            .whereNotNull('longitude')
-            .whereRaw(`
-              (6371000 * acos(
-                cos(radians(?)) * cos(radians(latitude)) *
-                cos(radians(longitude) - radians(?)) +
-                sin(radians(?)) * sin(radians(latitude))
-              )) < 500
-            `, [record.lat, record.lng, record.lat])
-            .first();
-
+          const nearby = await db('incidents').where('source_count', '>=', 0).where('occurred_at', '>', new Date(Date.now() - 30 * 60 * 1000)).whereNotNull('latitude').whereNotNull('longitude').whereRaw(`(6371000 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) < 500`, [record.lat, record.lng, record.lat]).first();
           if (nearby) {
-            // Corroborate existing incident — increase confidence and source count
-            await db('incidents').where('id', nearby.id).update({
-              source_count: db.raw('COALESCE(source_count, 1) + 1'),
-              confidence_score: db.raw('LEAST(99, COALESCE(confidence_score, 50) + 10)'),
-              updated_at: new Date()
-            });
-            // Still log the source report linked to existing incident
-            await db('source_reports').insert({
-              id: uuidv4(),
-              incident_id: nearby.id,
-              data_source_id: wazeDs.id,
-              source_type: 'waze',
-              source_reference: record.source_reference,
-              raw_data: JSON.stringify(record.raw),
-              parsed_data: JSON.stringify({ title: record.title, description: record.description }),
-              contributed_fields: ['corroboration', 'severity', 'location'],
-              confidence: record.confidence,
-              is_verified: false,
-              fetched_at: new Date(),
-              processed_at: new Date(),
-              created_at: new Date()
-            });
-            results.skipped++;
-            continue;
+            await db('incidents').where('id', nearby.id).update({ source_count: db.raw('COALESCE(source_count, 1) + 1'), confidence_score: db.raw('LEAST(99, COALESCE(confidence_score, 50) + 10)'), updated_at: new Date() });
+            await db('source_reports').insert({ id: uuidv4(), incident_id: nearby.id, data_source_id: wazeDs.id, source_type: 'waze', source_reference: record.source_reference, raw_data: JSON.stringify(record.raw), parsed_data: JSON.stringify({ title: record.title, description: record.description }), contributed_fields: ['corroboration', 'severity', 'location'], confidence: record.confidence, is_verified: false, fetched_at: new Date(), processed_at: new Date(), created_at: new Date() });
+            results.skipped++; continue;
           }
         }
-
         if (existing) { results.skipped++; continue; }
-
         const incidentId = uuidv4();
         const now = new Date();
-
-        await db('incidents').insert({
-          id: incidentId,
-          incident_number: `WAZE-${now.getFullYear().toString().slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9999).toString().padStart(4,'0')}`,
-          incident_type: record.incident_type,
-          severity: record.severity,
-          status: 'new',
-          priority: record.priority,
-          confidence_score: record.confidence,
-          address: record.title,
-          city: record.city,
-          state: record.state,
-          latitude: record.lat,
-          longitude: record.lng,
-          occurred_at: record.occurred_at ? new Date(record.occurred_at) : now,
-          reported_at: now,
-          discovered_at: now,
-          description: record.description,
-          injuries_count: record.injuries_count,
-          fatalities_count: record.fatalities_count,
-          vehicles_involved: record.vehicles_involved,
-          metro_area_id: metroMap[record.city] || null,
-          source_count: 1,
-          first_source_id: wazeDs.id,
-          tags: ['waze', 'crowdsourced'],
-          created_at: now,
-          updated_at: now
-        });
-
-        await db('source_reports').insert({
-          id: uuidv4(),
-          incident_id: incidentId,
-          data_source_id: wazeDs.id,
-          source_type: 'waze',
-          source_reference: record.source_reference,
-          raw_data: JSON.stringify(record.raw),
-          parsed_data: JSON.stringify({ title: record.title, description: record.description, type: record.incident_type, severity: record.severity }),
-          contributed_fields: ['description', 'incident_type', 'severity', 'location'],
-          confidence: record.confidence,
-          is_verified: false,
-          fetched_at: now,
-          processed_at: now,
-          created_at: now
-        });
-
+        await db('incidents').insert({ id: incidentId, incident_number: `WAZE-${now.getFullYear().toString().slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9999).toString().padStart(4,'0')}`, incident_type: record.incident_type, severity: record.severity, status: 'new', priority: record.priority, confidence_score: record.confidence, address: record.title, city: record.city, state: record.state, latitude: record.lat, longitude: record.lng, occurred_at: record.occurred_at ? new Date(record.occurred_at) : now, reported_at: now, discovered_at: now, description: record.description, injuries_count: record.injuries_count, fatalities_count: record.fatalities_count, vehicles_involved: record.vehicles_involved, metro_area_id: metroMap[record.city] || null, source_count: 1, first_source_id: wazeDs.id, tags: ['waze', 'crowdsourced'], created_at: now, updated_at: now });
+        await db('source_reports').insert({ id: uuidv4(), incident_id: incidentId, data_source_id: wazeDs.id, source_type: 'waze', source_reference: record.source_reference, raw_data: JSON.stringify(record.raw), parsed_data: JSON.stringify({ title: record.title, description: record.description, type: record.incident_type, severity: record.severity }), contributed_fields: ['description', 'incident_type', 'severity', 'location'], confidence: record.confidence, is_verified: false, fetched_at: now, processed_at: now, created_at: now });
         results.inserted++;
-      } catch (e) {
-        results.errors.push(`waze: ${e.message}`);
-      }
+      } catch (e) { results.errors.push(`waze: ${e.message}`); }
     }
-
-    // Update data source timestamp
-    await db('data_sources').where('id', wazeDs.id).update({
-      last_polled_at: new Date(),
-      last_success_at: new Date(),
-      updated_at: new Date()
-    });
-
-    res.json({
-      success: true,
-      message: `Waze: Ingested ${results.inserted} accidents, corroborated/skipped ${results.skipped}`,
-      total_alerts: allAlerts.length,
-      ...results,
-      timestamp: new Date().toISOString()
-    });
+    await db('data_sources').where('id', wazeDs.id).update({ last_polled_at: new Date(), last_success_at: new Date(), updated_at: new Date() });
+    res.json({ success: true, message: `Waze: Ingested ${results.inserted} accidents, corroborated/skipped ${results.skipped}`, total_alerts: allAlerts.length, ...results, timestamp: new Date().toISOString() });
   } catch (err) {
     console.error('Waze ingestion error:', err);
     res.status(500).json({ error: err.message, results });
