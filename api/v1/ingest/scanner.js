@@ -305,7 +305,6 @@ module.exports = async function handler(req, res) {
         name: 'Radio Scanner (Whisper AI)',
         source_type: 'scanner',
         is_active: true,
-        poll_interval_minutes: 5,
         created_at: new Date(),
         updated_at: new Date()
       });

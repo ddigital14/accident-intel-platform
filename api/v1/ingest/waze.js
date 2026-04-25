@@ -154,7 +154,7 @@ module.exports = async function handler(req, res) {
     let wazeDs = await db('data_sources').where('name', 'like', '%Waze%').first();
     if (!wazeDs) {
       const dsId = uuidv4();
-      await db('data_sources').insert({ id: dsId, name: 'Waze Live Map', source_type: 'api', api_endpoint: 'https://www.waze.com/live-map/api/georss', is_active: true, poll_interval_minutes: 10, last_polled_at: new Date(), created_at: new Date(), updated_at: new Date() });
+      await db('data_sources').insert({ id: dsId, name: 'Waze Live Map', source_type: 'api', is_active: true, last_polled_at: new Date(), created_at: new Date(), updated_at: new Date() });
       wazeDs = { id: dsId };
     }
     for (const record of allAlerts) {

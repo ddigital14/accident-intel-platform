@@ -191,9 +191,7 @@ module.exports = async function handler(req, res) {
       id: dsId,
       name: 'City Open Data 911',
       source_type: 'api',
-      api_endpoint: 'multiple city portals',
       is_active: true,
-      poll_interval_minutes: 10,
       last_polled_at: new Date(),
       created_at: new Date(),
       updated_at: new Date()
