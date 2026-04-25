@@ -14,6 +14,8 @@
  * Body (optional): { transcripts: [{ text, timestamp, talkgroup, system }] }
  */
 const { getDb } = require('../../_db');
+const { reportError } = require('../system/_errors');
+const { dedupCache } = require('../_cache');
 const { v4: uuidv4 } = require('uuid');
 
 // ── Talkgroup-to-metro mapping ────────────────────────────────────────
@@ -392,7 +394,7 @@ module.exports = async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.error('Scanner pipeline error:', err);
-    res.status(500).json({ error: err.message, results });
+    await reportError(db, 'scanner', null, err.message);
+        res.status(500).json({ error: err.message, results });
   }
 };

@@ -146,6 +146,9 @@ export default function App() {
   const [integrations, setIntegrations] = useState([]);
   const [integrationStats, setIntegrationStats] = useState({});
   const [enriching, setEnriching] = useState(false);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [recentErrors, setRecentErrors] = useState([]);
+  const [changelogEntries, setChangelogEntries] = useState([]);
 
   // Inject global CSS
   useEffect(() => {
@@ -167,6 +170,28 @@ export default function App() {
   useEffect(() => {
     if (user) api("/dashboard/metro-areas").then((d) => setMetros(d.data || []));
   }, [user]);
+
+  // Load pipeline health, errors, and changelog
+  const loadSystemPanels = useCallback(async () => {
+    try {
+      const [h, e, c] = await Promise.all([
+        fetch(`${API}/system/health`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${API}/system/errors?limit=20`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${API}/system/changelog?limit=10`).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+      if (h?.success) setSystemHealth(h);
+      if (e?.success) setRecentErrors(e.errors || []);
+      if (c?.success) setChangelogEntries(c.entries || []);
+    } catch (err) {
+      console.warn('System panel load failed:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSystemPanels();
+    const t = setInterval(loadSystemPanels, 60000);
+    return () => clearInterval(t);
+  }, [loadSystemPanels]);
 
   // Load public dashboard stats (no auth required)
   const loadPublicStats = useCallback(async () => {
@@ -308,7 +333,7 @@ export default function App() {
       <div style={{ display: "flex" }}>
         <Sidebar filters={filters} setFilters={setFilters} metros={metros} onRefresh={loadData} />
         <main style={{ flex: 1, padding: "24px 28px", overflow: "auto", maxHeight: "calc(100vh - 64px)" }}>
-          {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} />}
+          {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} systemHealth={systemHealth} recentErrors={recentErrors} changelogEntries={changelogEntries} />}
           {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} />}
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
@@ -551,7 +576,7 @@ function Sidebar({ filters, setFilters, metros, onRefresh }) {
 // ============================================================================
 // DASHBOARD VIEW — Color-changing KPIs, animated cards
 // ============================================================================
-function DashboardView({ stats, incidents, onSelect, loading }) {
+function DashboardView({ stats, incidents, onSelect, loading, systemHealth, recentErrors, changelogEntries }) {
   const [time, setTime] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setTime(Date.now()), 3000);
@@ -702,6 +727,108 @@ function DashboardView({ stats, incidents, onSelect, loading }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Pipeline Health Panel */}
+      {systemHealth && (
+        <div style={{ ...enhancedCardStyle, marginBottom: 16, borderColor: "rgba(79,107,255,0.2)" }}>
+          <h3 style={enhancedCardTitle}>
+            <span style={{ marginRight: 8 }}>&#x1F4E1;</span>Pipeline Health
+            <span style={{ fontSize: 11, color: "#a0b0d0", fontWeight: 400, marginLeft: 8 }}>
+              ({systemHealth.counts?.active_sources || 0} sources / {systemHealth.counts?.incidents_24h || 0} incidents 24h / {systemHealth.counts?.errors_24h || 0} errors)
+            </span>
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            {(systemHealth.pipelines || []).map(p => {
+              const errCount = parseInt(p.errors_24h) || 0;
+              const color = errCount === 0 ? "#34d399" : errCount < 5 ? "#fbbf24" : "#ff4757";
+              return (
+                <div key={p.name} style={{ background: "#0d1424", borderRadius: 8, padding: "10px 12px", borderLeft: `3px solid ${color}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: 3, background: color }} />
+                    <span style={{ color: "#f4f7ff", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{p.name}</span>
+                  </div>
+                  <div style={{ color: "#a0b0d0", fontSize: 10, marginTop: 4 }}>cron: {p.cron}</div>
+                  <div style={{ color: errCount > 0 ? "#ff4757" : "#34d399", fontSize: 11, fontWeight: 600, marginTop: 2 }}>
+                    {errCount} errors / 24h
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {systemHealth.database && (
+            <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(52,211,153,0.06)", borderRadius: 8, fontSize: 11, color: "#a0b0d0" }}>
+              <strong style={{ color: "#34d399" }}>Database:</strong> PostGIS {systemHealth.database.postgis ? "ENABLED" : "MISSING"} | geom column {systemHealth.database.geom_column ? "OK" : "MISSING"}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Source Breakdown Panel */}
+      {systemHealth?.source_breakdown_24h && systemHealth.source_breakdown_24h.length > 0 && (
+        <div style={{ ...enhancedCardStyle, marginBottom: 16 }}>
+          <h3 style={enhancedCardTitle}>
+            <span style={{ marginRight: 8 }}>&#x1F4CA;</span>Sources Contributing (last 24h)
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+            {systemHealth.source_breakdown_24h.map(s => {
+              const max = Math.max(...systemHealth.source_breakdown_24h.map(x => parseInt(x.count) || 0), 1);
+              const pct = (parseInt(s.count) / max) * 100;
+              const color = sourceTypeColor(s.source_type);
+              return (
+                <div key={s.source_type} style={{ background: "#0d1424", borderRadius: 8, padding: "10px 12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ color: "#f4f7ff", fontSize: 11, fontWeight: 600 }}>{s.source_type}</span>
+                    <span style={{ color, fontWeight: 700, fontSize: 13 }}>{s.count}</span>
+                  </div>
+                  <div style={{ width: "100%", height: 4, background: "#1c2b4d", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 2 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Errors Panel */}
+      {recentErrors && recentErrors.length > 0 && (
+        <div style={{ ...enhancedCardStyle, marginBottom: 16, borderColor: "rgba(255,71,87,0.2)" }}>
+          <h3 style={enhancedCardTitle}>
+            <span style={{ marginRight: 8 }}>&#x26A0;&#xFE0F;</span>Recent Pipeline Errors
+            <span style={{ fontSize: 11, color: "#a0b0d0", fontWeight: 400, marginLeft: 8 }}>(last 20)</span>
+          </h3>
+          <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            {recentErrors.slice(0, 10).map(e => (
+              <div key={e.id} style={{ padding: "8px 10px", borderBottom: "1px solid rgba(28,43,77,0.4)", fontSize: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#ff7b3a", fontWeight: 600 }}>{e.pipeline}{e.source ? ` / ${e.source}` : ""}</span>
+                  <span style={{ color: "#a0b0d0", fontSize: 10 }}>{formatTime(e.created_at)}</span>
+                </div>
+                <div style={{ color: "#a0b0d0", marginTop: 2 }}>{(e.message || "").substring(0, 200)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Changelog Panel */}
+      {changelogEntries && changelogEntries.length > 0 && (
+        <div style={{ ...enhancedCardStyle, marginBottom: 16 }}>
+          <h3 style={enhancedCardTitle}>
+            <span style={{ marginRight: 8 }}>&#x1F4DD;</span>Update Log
+          </h3>
+          {changelogEntries.slice(0, 5).map(c => (
+            <div key={c.id} style={{ padding: "8px 10px", borderBottom: "1px solid rgba(28,43,77,0.4)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ background: changelogKindColor(c.kind), color: "#0b0f1a", fontSize: 9, fontWeight: 700, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10 }}>{c.kind}</span>
+                <span style={{ color: "#a0b0d0", fontSize: 10 }}>{formatTime(c.created_at)}</span>
+              </div>
+              <div style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600, marginTop: 4 }}>{c.title}</div>
+              {c.summary && <div style={{ color: "#a0b0d0", fontSize: 11, marginTop: 2 }}>{c.summary.substring(0, 200)}</div>}
+            </div>
+          ))}
         </div>
       )}
 
@@ -1003,13 +1130,47 @@ function IncidentRow({ incident: inc, onSelect, compact }) {
       <div style={{ flex: 1 }}>
         <div style={{ color: "#f4f7ff", fontSize: 14, fontWeight: 500 }}>{inc.address || `${inc.city}, ${inc.state}`}</div>
         {!compact && <div style={{ color: "#a0b0d0", fontSize: 12, marginTop: 3 }}>{inc.description?.substring(0, 80)}...</div>}
+        {inc.tags && inc.tags.length > 0 && (
+          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+            {inc.tags.slice(0, 4).map(tg => (
+              <span key={tg} style={{
+                background: "rgba(79,107,255,0.12)",
+                color: sourceTypeColor("opendata_" + tg) === "#5e739e" ? "#a0b0d0" : sourceTypeColor("opendata_" + tg),
+                fontSize: 9,
+                padding: "1px 6px",
+                borderRadius: 8,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.3px"
+              }}>{tg}</span>
+            ))}
+          </div>
+        )}
       </div>
       <div style={{ textAlign: "right" }}>
         <div style={{ color: "#a0b0d0", fontSize: 12 }}>{formatTime(inc.discovered_at)}</div>
         {inc.injuries_count > 0 && <div style={{ color: "#ff4757", fontSize: 11, fontWeight: 700, marginTop: 2 }}>{inc.injuries_count} injured</div>}
+        {inc.source_count > 1 && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 4, background: "rgba(34,211,238,0.15)", padding: "1px 6px", borderRadius: 8 }}>
+            <span style={{ color: "#22d3ee", fontSize: 9, fontWeight: 700 }}>{inc.source_count}× SOURCES</span>
+          </div>
+        )}
+        {inc.confidence_score && (
+          <div style={{ color: confidenceColor(inc.confidence_score), fontSize: 10, marginTop: 2, fontWeight: 600 }}>
+            {Math.round(inc.confidence_score)}% conf
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function confidenceColor(s) {
+  const v = parseInt(s) || 0;
+  if (v >= 90) return "#34d399";
+  if (v >= 75) return "#22d3ee";
+  if (v >= 60) return "#fbbf24";
+  return "#ff7b3a";
 }
 
 function Section({ title, children }) {
@@ -1062,6 +1223,38 @@ function contactStatusColor(status) {
 // ============================================================================
 // HELPERS
 // ============================================================================
+function sourceTypeColor(t) {
+  const map = {
+    "tomtom": "#4f6bff",
+    "waze": "#34d399",
+    "opendata_seattle": "#22d3ee",
+    "opendata_sf": "#a855f7",
+    "opendata_dallas": "#ff7b3a",
+    "opendata_chicago": "#fbbf24",
+    "opendata_cincinnati": "#14b8a6",
+    "opendata_houston": "#ff4da6",
+    "opendata_atlanta": "#e040fb",
+    "scanner": "#ff4757",
+    "newsapi": "#ff4da6",
+    "nhtsa": "#a855f7",
+    "state_txdot": "#fbbf24",
+    "state_ga511": "#34d399",
+    "state_fl511": "#22d3ee",
+  };
+  return map[t] || "#5e739e";
+}
+function changelogKindColor(k) {
+  const map = {
+    "deploy": "#34d399",
+    "schema": "#a855f7",
+    "pipeline": "#4f6bff",
+    "feature": "#22d3ee",
+    "fix": "#fbbf24",
+    "config": "#ff7b3a"
+  };
+  return map[k] || "#a0b0d0";
+}
+
 function formatType(t) {
   return (t || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

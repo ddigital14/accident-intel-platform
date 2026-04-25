@@ -10,6 +10,8 @@
  * GET /api/v1/ingest/waze?secret=ingest-now
  */
 const { getDb } = require('../../_db');
+const { reportError } = require('../system/_errors');
+const { dedupCache } = require('../_cache');
 const { v4: uuidv4 } = require('uuid');
 
 // Metro bounding boxes for Waze queries
@@ -179,7 +181,7 @@ module.exports = async function handler(req, res) {
     await db('data_sources').where('id', wazeDs.id).update({ last_polled_at: new Date(), last_success_at: new Date(), updated_at: new Date() });
     res.json({ success: true, message: `Waze: Ingested ${results.inserted} accidents, corroborated/skipped ${results.skipped}`, total_alerts: allAlerts.length, ...results, timestamp: new Date().toISOString() });
   } catch (err) {
-    console.error('Waze ingestion error:', err);
-    res.status(500).json({ error: err.message, results });
+    await reportError(db, 'waze', null, err.message);
+        res.status(500).json({ error: err.message, results });
   }
 };

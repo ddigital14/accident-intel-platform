@@ -10,6 +10,8 @@
  * POST /api/v1/ingest/run  (with cron secret or admin auth)
  */
 const { getDb } = require('../../_db');
+const { reportError } = require('../system/_errors');
+const { dedupCache } = require('../_cache');
 const { v4: uuidv4 } = require('uuid');
 
 // ── helpers ────────────────────────────────────────────────────────────
@@ -492,7 +494,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('Ingestion error:', err);
-    res.status(500).json({ error: err.message, results });
+    await reportError(db, 'run', null, err.message);
+        res.status(500).json({ error: err.message, results });
   }
 };

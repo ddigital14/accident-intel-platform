@@ -13,18 +13,25 @@
  * GET /api/v1/ingest/correlate?secret=ingest-now
  */
 const { getDb } = require('../../_db');
+const { reportError } = require('../system/_errors');
+const { dedupCache, geoCache } = require('../_cache');
 
 // Source reliability weights (higher = more trusted)
 const SOURCE_WEIGHTS = {
-  'opendata_houston': 95,
+  'opendata_chicago': 95,
   'opendata_seattle': 95,
   'opendata_sf': 95,
   'opendata_dallas': 90,
-  'opendata_atlanta': 90,
+  'opendata_houston': 90,
+  'opendata_atlanta': 88,
+  'opendata_cincinnati': 90,
+  'state_txdot': 92,
+  'state_ga511': 90,
+  'state_fl511': 90,
   'scanner': 85,
   'tomtom': 80,
   'waze': 70,
-  'newsapi': 50,
+  'newsapi': 60,
   'nhtsa': 65,
 };
 
@@ -67,25 +74,43 @@ module.exports = async function handler(req, res) {
       const windowStart = new Date(occTime.getTime() - 60 * 60 * 1000);
       const windowEnd = new Date(occTime.getTime() + 60 * 60 * 1000);
 
-      const nearby = await db('incidents')
-        .where('id', '!=', incident.id)
-        .where('occurred_at', '>', windowStart)
-        .where('occurred_at', '<', windowEnd)
-        .whereNotNull('latitude')
-        .whereNotNull('longitude')
-        .whereRaw(`
-          (6371000 * acos(
-            LEAST(1.0, GREATEST(-1.0,
-              cos(radians(?)) * cos(radians(latitude)) *
-              cos(radians(longitude) - radians(?)) +
-              sin(radians(?)) * sin(radians(latitude))
-            ))
-          )) < 1000
-        `, [incident.latitude, incident.longitude, incident.latitude])
-        .select('id', 'latitude', 'longitude', 'occurred_at', 'severity',
-                'confidence_score', 'source_count', 'incident_type',
-                'description', 'injuries_count', 'fatalities_count', 'vehicles_involved')
-        .limit(10);
+      let nearby;
+      try {
+        const postgisRes = await db.raw(`
+          SELECT id, latitude, longitude, occurred_at, severity,
+                 confidence_score, source_count, incident_type,
+                 description, injuries_count, fatalities_count, vehicles_involved
+          FROM incidents
+          WHERE id != $1
+            AND occurred_at > $2
+            AND occurred_at < $3
+            AND geom IS NOT NULL
+            AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography, 1000)
+          LIMIT 10
+        `, [incident.id, windowStart, windowEnd, incident.longitude, incident.latitude]);
+        nearby = postgisRes.rows;
+      } catch (postgisErr) {
+        // Fall back to Haversine
+        nearby = await db('incidents')
+          .where('id', '!=', incident.id)
+          .where('occurred_at', '>', windowStart)
+          .where('occurred_at', '<', windowEnd)
+          .whereNotNull('latitude')
+          .whereNotNull('longitude')
+          .whereRaw(`
+            (6371000 * acos(
+              LEAST(1.0, GREATEST(-1.0,
+                cos(radians(?)) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(?)) +
+                sin(radians(?)) * sin(radians(latitude))
+              ))
+            )) < 1000
+          `, [incident.latitude, incident.longitude, incident.latitude])
+          .select('id', 'latitude', 'longitude', 'occurred_at', 'severity',
+                  'confidence_score', 'source_count', 'incident_type',
+                  'description', 'injuries_count', 'fatalities_count', 'vehicles_involved')
+          .limit(10);
+      }
 
       if (nearby.length === 0) continue;
 
@@ -214,6 +239,7 @@ module.exports = async function handler(req, res) {
     });
   } catch (err) {
     console.error('Correlation error:', err);
+    await reportError(db, 'correlate', null, err.message, { stack: (err.stack||'').substring(0,1000) });
     res.status(500).json({ error: err.message, results });
   }
 };

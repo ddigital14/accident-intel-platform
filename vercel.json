@@ -8,35 +8,18 @@
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/**/*.js": {
-      "memory": 512,
-      "maxDuration": 30
-    }
+    "api/**/*.js": { "memory": 512, "maxDuration": 30 }
   },
   "crons": [
-    {
-      "path": "/api/v1/ingest/run?secret=ingest-now",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/v1/ingest/waze?secret=ingest-now",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/v1/ingest/opendata?secret=ingest-now",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/v1/ingest/scanner?secret=ingest-now",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/v1/ingest/correlate?secret=ingest-now",
-      "schedule": "*/20 * * * *"
-    },
-    {
-      "path": "/api/v1/enrich/run?secret=enrich-now",
-      "schedule": "*/15 * * * *"
-    }
+    { "path": "/api/v1/ingest/run?secret=ingest-now",         "schedule": "*/10 * * * *" },
+    { "path": "/api/v1/ingest/waze?secret=ingest-now",        "schedule": "*/10 * * * *" },
+    { "path": "/api/v1/ingest/opendata?secret=ingest-now",    "schedule": "*/10 * * * *" },
+    { "path": "/api/v1/ingest/scanner?secret=ingest-now",     "schedule": "*/15 * * * *" },
+    { "path": "/api/v1/ingest/news?secret=ingest-now",        "schedule": "*/30 * * * *" },
+    { "path": "/api/v1/ingest/state-crash?secret=ingest-now", "schedule": "0 */2 * * *" },
+    { "path": "/api/v1/ingest/court?secret=ingest-now",       "schedule": "0 */6 * * *" },
+    { "path": "/api/v1/ingest/correlate?secret=ingest-now",   "schedule": "*/20 * * * *" },
+    { "path": "/api/v1/enrich/run?secret=enrich-now",         "schedule": "*/15 * * * *" },
+    { "path": "/api/v1/system/errors?action=clear&secret=ingest-now&days=14", "schedule": "0 4 * * 0" }
   ]
 }
