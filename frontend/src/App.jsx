@@ -149,6 +149,8 @@ export default function App() {
   const [systemHealth, setSystemHealth] = useState(null);
   const [recentErrors, setRecentErrors] = useState([]);
   const [changelogEntries, setChangelogEntries] = useState([]);
+  const [feedView, setFeedView] = useState('qualified'); // 'qualified' | 'pending' | 'all'
+  const [feedIncidents, setFeedIncidents] = useState([]);
 
   // Inject global CSS
   useEffect(() => {
@@ -170,6 +172,25 @@ export default function App() {
   useEffect(() => {
     if (user) api("/dashboard/metro-areas").then((d) => setMetros(d.data || []));
   }, [user]);
+
+  // Load feed by qualification state (tab filter)
+  const loadFeed = useCallback(async (state = feedView) => {
+    try {
+      const r = await fetch(`${API}/dashboard/feed?state=${state}&limit=50&minutes=10080`);
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d.data)) setFeedIncidents(d.data);
+      }
+    } catch (err) {
+      console.warn('feed load failed', err);
+    }
+  }, [feedView]);
+
+  useEffect(() => {
+    loadFeed(feedView);
+    const t = setInterval(() => loadFeed(feedView), 30000);
+    return () => clearInterval(t);
+  }, [feedView, loadFeed]);
 
   // Load pipeline health, errors, and changelog
   const loadSystemPanels = useCallback(async () => {
@@ -333,7 +354,7 @@ export default function App() {
       <div style={{ display: "flex" }}>
         <Sidebar filters={filters} setFilters={setFilters} metros={metros} onRefresh={loadData} />
         <main style={{ flex: 1, padding: "24px 28px", overflow: "auto", maxHeight: "calc(100vh - 64px)" }}>
-          {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} systemHealth={systemHealth} recentErrors={recentErrors} changelogEntries={changelogEntries} />}
+          {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} systemHealth={systemHealth} recentErrors={recentErrors} changelogEntries={changelogEntries} feedView={feedView} setFeedView={setFeedView} feedIncidents={feedIncidents} />}
           {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} />}
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
@@ -576,7 +597,7 @@ function Sidebar({ filters, setFilters, metros, onRefresh }) {
 // ============================================================================
 // DASHBOARD VIEW — Color-changing KPIs, animated cards
 // ============================================================================
-function DashboardView({ stats, incidents, onSelect, loading, systemHealth, recentErrors, changelogEntries }) {
+function DashboardView({ stats, incidents, onSelect, loading, systemHealth, recentErrors, changelogEntries, feedView, setFeedView, feedIncidents }) {
   const [time, setTime] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setTime(Date.now()), 3000);
@@ -847,12 +868,55 @@ function DashboardView({ stats, incidents, onSelect, loading, systemHealth, rece
         </div>
       </div>
 
-      {/* Recent Feed */}
+      {/* Qualified vs Pending Lead Tabs */}
+      <div style={{ ...enhancedCardStyle, marginTop: 16, borderColor: feedView === 'qualified' ? "rgba(52,211,153,0.3)" : "rgba(251,191,36,0.3)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h3 style={{ ...enhancedCardTitle, marginBottom: 0 }}>
+            <span style={{ marginRight: 8 }}>&#x1F4CB;</span>Lead Pipeline
+          </h3>
+          <div style={{ display: "flex", gap: 6, background: "#0d1424", borderRadius: 10, padding: 4 }}>
+            {[
+              { key: "qualified", label: "Qualified", color: "#34d399" },
+              { key: "pending_named", label: "Has Name", color: "#22d3ee" },
+              { key: "pending", label: "Pending", color: "#fbbf24" },
+              { key: "all", label: "All", color: "#a0b0d0" }
+            ].map(t => (
+              <button key={t.key}
+                onClick={() => setFeedView(t.key)}
+                style={{
+                  background: feedView === t.key ? t.color : "transparent",
+                  color: feedView === t.key ? "#0b0f1a" : "#a0b0d0",
+                  border: "none", padding: "6px 14px", borderRadius: 8,
+                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {feedView === 'qualified' && (
+          <div style={{ background: "rgba(52,211,153,0.06)", padding: "8px 12px", borderRadius: 8, marginBottom: 12, fontSize: 11, color: "#a0b0d0" }}>
+            Showing only incidents with at least one person + verified contact info (phone/email/address). Scored 0-100 by severity × contact × recency.
+          </div>
+        )}
+        {feedView === 'pending' && (
+          <div style={{ background: "rgba(251,191,36,0.06)", padding: "8px 12px", borderRadius: 8, marginBottom: 12, fontSize: 11, color: "#a0b0d0" }}>
+            Awaiting victim names + contact info. These auto-promote to Qualified once enrichment fills enough data.
+          </div>
+        )}
+
+        {feedIncidents.slice(0, 30).map((inc) => (
+          <QualifiedLeadRow key={inc.id} incident={inc} onSelect={onSelect} />
+        ))}
+        {feedIncidents.length === 0 && <EmptyState text={`No ${feedView} leads`} />}
+      </div>
+
+      {/* Recent Feed (raw) */}
       <div style={{ ...enhancedCardStyle, marginTop: 16 }}>
         <h3 style={enhancedCardTitle}>
-          <span style={{ marginRight: 8 }}>&#x23F1;&#xFE0F;</span>Live Feed &mdash; Most Recent
+          <span style={{ marginRight: 8 }}>&#x23F1;&#xFE0F;</span>All Recent &mdash; Raw Feed
         </h3>
-        {incidents.slice(0, 20).map((inc) => (
+        {incidents.slice(0, 10).map((inc) => (
           <IncidentRow key={inc.id} incident={inc} onSelect={onSelect} />
         ))}
         {incidents.length === 0 && <EmptyState text="No incidents to display" />}
@@ -1115,6 +1179,60 @@ function IncidentDetail({ incident, onClose, user, onUpdate }) {
 // ============================================================================
 function EmptyState({ text }) {
   return <p style={{ color: "#5e739e", textAlign: "center", padding: 32, fontSize: 13 }}>{text}</p>;
+}
+
+function QualifiedLeadRow({ incident: inc, onSelect }) {
+  const persons = inc.persons || [];
+  const score = inc.lead_score || 0;
+  const scoreColor = score >= 80 ? "#34d399" : score >= 60 ? "#22d3ee" : score >= 40 ? "#fbbf24" : "#ff7b3a";
+  return (
+    <div onClick={() => onSelect(inc)} className="incident-row" style={{
+      display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: 12,
+      padding: "14px 10px", borderBottom: "1px solid rgba(28,43,77,0.4)", cursor: "pointer", alignItems: "center"
+    }}>
+      <div style={{ background: scoreColor, color: "#0b0f1a", padding: "6px 10px", borderRadius: 8, fontWeight: 800, fontSize: 14, minWidth: 40, textAlign: "center" }}>{score}</div>
+      <div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <SeverityBadge severity={inc.severity} />
+          <TypeBadge type={inc.incident_type} />
+          <span style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600 }}>
+            {inc.address || `${inc.city || ''}, ${inc.state || ''}`}
+          </span>
+        </div>
+        {persons.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: 12, color: "#a0b0d0" }}>
+            {persons.slice(0, 2).map(p => (
+              <div key={p.id || p.full_name}>
+                <strong style={{ color: "#f4f7ff" }}>{p.full_name}</strong>
+                {p.phone && <span style={{ color: "#34d399", marginLeft: 8 }}>☎ {p.phone}</span>}
+                {p.email && <span style={{ color: "#22d3ee", marginLeft: 8 }}>✉ {p.email}</span>}
+                {p.address && <span style={{ color: "#fbbf24", marginLeft: 8 }}>⌂ {p.address.substring(0, 40)}</span>}
+                {p.has_attorney && <span style={{ color: "#ff4757", marginLeft: 8, fontSize: 10, fontWeight: 700 }}>HAS ATTORNEY</span>}
+              </div>
+            ))}
+            {persons.length > 2 && <span style={{ color: "#5e739e", fontSize: 11 }}>+ {persons.length - 2} more</span>}
+          </div>
+        )}
+        {inc.tags && inc.tags.length > 0 && (
+          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+            {inc.tags.slice(0, 5).map(tg => (
+              <span key={tg} style={{ background: "rgba(79,107,255,0.12)", color: "#a0b0d0", fontSize: 9, padding: "1px 6px", borderRadius: 8, fontWeight: 700, textTransform: "uppercase" }}>{tg}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ color: "#a0b0d0", fontSize: 11 }}>{inc.source_count}× sources</div>
+        <div style={{ color: "#a0b0d0", fontSize: 10, marginTop: 2 }}>{inc.confidence_score}% conf</div>
+      </div>
+      <div style={{ textAlign: "right", color: "#a0b0d0", fontSize: 11 }}>
+        {formatTime(inc.qualified_at || inc.discovered_at)}
+      </div>
+      {inc.fatalities_count > 0 && (
+        <div style={{ background: "#ff4757", color: "#fff", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 800 }}>FATAL</div>
+      )}
+    </div>
+  );
 }
 
 function IncidentRow({ incident: inc, onSelect, compact }) {

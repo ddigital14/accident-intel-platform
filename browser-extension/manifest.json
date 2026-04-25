@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AIP Lead Claimer",
+  "version": "1.0.0",
+  "description": "One-click 'Claim this lead' overlay for the Accident Intelligence Platform dashboard. Lets reps claim leads without leaving the page they're researching.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://accident-intel-platform.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://accident-intel-platform.vercel.app/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

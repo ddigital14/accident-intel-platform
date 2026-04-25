@@ -1,0 +1,22 @@
+.aip-claim-btn {
+  margin-left: 8px;
+  background: linear-gradient(135deg, #4f6bff, #a855f7);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(79, 107, 255, 0.3);
+}
+.aip-claim-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 107, 255, 0.5);
+}
+.aip-claim-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

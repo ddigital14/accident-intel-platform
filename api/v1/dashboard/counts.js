@@ -190,7 +190,52 @@ module.exports = async function handler(req, res) {
       fieldCompleteness = r.rows[0];
     } catch (e) { /* ignore */ }
 
+
+    // Lead qualification counts
+    let qualificationStats = {};
+    try {
+      const r = await db.raw(`
+        SELECT
+          qualification_state,
+          COUNT(*) as count,
+          AVG(lead_score) as avg_score
+        FROM incidents
+        WHERE discovered_at > NOW() - INTERVAL '7 days'
+        GROUP BY qualification_state
+      `);
+      qualificationStats = {};
+      for (const row of r.rows) {
+        qualificationStats[row.qualification_state || 'unknown'] = {
+          count: parseInt(row.count),
+          avg_score: parseFloat(row.avg_score) || 0
+        };
+      }
+    } catch (e) {
+      qualificationStats = { error: e.message };
+    }
+
+    // Top qualified leads (main view preview)
+    let topQualifiedLeads = [];
+    try {
+      const r = await db.raw(`
+        SELECT i.id, i.incident_type, i.severity, i.city, i.state,
+               i.address, i.discovered_at, i.qualified_at,
+               i.lead_score, i.confidence_score, i.source_count,
+               (SELECT json_agg(json_build_object(
+                  'name', p.full_name, 'phone', p.phone, 'email', p.email,
+                  'address', p.address, 'has_attorney', p.has_attorney
+               )) FROM persons p WHERE p.incident_id = i.id LIMIT 5) as persons
+        FROM incidents i
+        WHERE i.qualification_state = 'qualified'
+        ORDER BY i.lead_score DESC, i.qualified_at DESC NULLS LAST
+        LIMIT 20
+      `);
+      topQualifiedLeads = r.rows;
+    } catch (e) { /* ignore */ }
+
     res.json({
+      qualification: qualificationStats,
+      top_qualified_leads: topQualifiedLeads,
       success: true,
       counts,
       enrichment: enrichmentStats,

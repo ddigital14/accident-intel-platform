@@ -12,7 +12,7 @@ module.exports = async function handler(req, res) {
   const db = getDb();
 
   try {
-    const { minutes = 60, metro, type } = req.query;
+    const { minutes = 1440, metro, type, state: stateFilter = 'qualified', limit = 100 } = req.query;
     const since = new Date(Date.now() - parseInt(minutes) * 60 * 1000);
 
     let query = db('incidents as i')
@@ -20,16 +20,39 @@ module.exports = async function handler(req, res) {
       .where('i.discovered_at', '>=', since)
       .select('i.id', 'i.incident_type', 'i.severity', 'i.status', 'i.priority',
         'i.address', 'i.city', 'i.state', 'i.latitude', 'i.longitude',
-        'i.description', 'i.discovered_at', 'i.source_count', 'i.confidence_score',
+        'i.description', 'i.discovered_at', 'i.occurred_at', 'i.source_count',
+        'i.confidence_score', 'i.lead_score', 'i.qualification_state',
+        'i.qualified_at', 'i.has_contact_info',
         'i.injuries_count', 'i.fatalities_count', 'i.ems_dispatched',
-        'i.helicopter_dispatched', 'i.police_report_number', 'ma.name as metro_area')
+        'i.helicopter_dispatched', 'i.police_report_number', 'i.tags',
+        'ma.name as metro_area')
+      .orderBy('i.lead_score', 'desc')
       .orderBy('i.discovered_at', 'desc');
+
+    // qualification state filter — main view defaults to 'qualified'
+    if (stateFilter === 'qualified') query = query.where('i.qualification_state', 'qualified');
+    else if (stateFilter === 'pending') query = query.whereIn('i.qualification_state', ['pending','pending_named']);
+    else if (stateFilter === 'pending_named') query = query.where('i.qualification_state', 'pending_named');
+    else if (stateFilter === 'all') {} // no filter
+    else query = query.where('i.qualification_state', stateFilter);
 
     if (metro) query = query.where('i.metro_area_id', metro);
     if (type) query = query.where('i.incident_type', type);
 
-    const incidents = await query.limit(100);
-    res.json({ data: incidents, since: since.toISOString() });
+    const incidents = await query.limit(Math.min(500, parseInt(limit)));
+
+    // For each incident, attach person summary (so reps can see contact info at a glance)
+    if (incidents.length) {
+      const ids = incidents.map(i => i.id);
+      const persons = await db('persons')
+        .whereIn('incident_id', ids)
+        .select('id','incident_id','full_name','first_name','last_name','phone','email','address','is_injured','injury_severity','has_attorney','contact_status','enrichment_score');
+      const personsByInc = {};
+      for (const p of persons) (personsByInc[p.incident_id] ||= []).push(p);
+      for (const inc of incidents) inc.persons = personsByInc[inc.id] || [];
+    }
+
+    res.json({ data: incidents, since: since.toISOString(), state_filter: stateFilter });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
