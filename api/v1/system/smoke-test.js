@@ -29,33 +29,31 @@ module.exports = async function handler(req, res) {
   const results = { passed: 0, failed: 0, total: 0, latency_ms: {}, endpoints: [] };
 
   try {
-    for (const ep of ENDPOINTS) {
+    // Run all endpoint tests in PARALLEL (was sequential — exceeded 60s function limit)
+    const checks = await Promise.all(ENDPOINTS.map(async (ep) => {
       const startT = Date.now();
-      let status = 'unknown';
-      let error = null;
       try {
         const resp = await fetch(`${baseUrl}${ep.path}`, {
-          signal: AbortSignal.timeout(ep.timeout),
+          signal: AbortSignal.timeout(Math.min(ep.timeout, 25000)),
           headers: { 'X-Smoke-Test': '1' }
         });
         const latency = Date.now() - startT;
-        results.latency_ms[ep.name] = latency;
         if (resp.ok) {
           const data = await resp.json().catch(() => null);
-          if (data?.success) { status = 'pass'; results.passed++; }
-          else { status = 'fail'; error = data?.error || 'no success flag'; results.failed++; }
-        } else {
-          status = 'fail';
-          error = `HTTP ${resp.status}`;
-          results.failed++;
+          if (data?.success) return { name: ep.name, path: ep.path, status: 'pass', latency_ms: latency };
+          return { name: ep.name, path: ep.path, status: 'fail', error: data?.error || 'no success flag', latency_ms: latency };
         }
+        return { name: ep.name, path: ep.path, status: 'fail', error: `HTTP ${resp.status}`, latency_ms: latency };
       } catch (e) {
-        status = 'fail';
-        error = e.message;
-        results.failed++;
+        return { name: ep.name, path: ep.path, status: 'fail', error: e.message, latency_ms: Date.now() - startT };
       }
+    }));
+
+    for (const c of checks) {
+      if (c.status === 'pass') results.passed++; else results.failed++;
       results.total++;
-      results.endpoints.push({ name: ep.name, path: ep.path, status, error, latency_ms: Date.now() - startT });
+      results.latency_ms[c.name] = c.latency_ms;
+      results.endpoints.push(c);
     }
 
     // Optionally log summary to changelog if anything failed
