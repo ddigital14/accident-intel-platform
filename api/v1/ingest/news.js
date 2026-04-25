@@ -6,8 +6,8 @@
 const { getDb } = require('../../_db');
 const { v4: uuidv4 } = require('uuid');
 const { reportError } = require('../system/_errors');
-const { batchInsert } = require('../_batch');
-const { dedupCache } = require('../_cache');
+const { batchInsert } = require('../../_batch');
+const { dedupCache } = require('../../_cache');
 
 const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

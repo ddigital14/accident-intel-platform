@@ -14,7 +14,7 @@
  */
 const { getDb } = require('../../_db');
 const { reportError } = require('../system/_errors');
-const { dedupCache, geoCache } = require('../_cache');
+const { dedupCache, geoCache } = require('../../_cache');
 
 // Source reliability weights (higher = more trusted)
 const SOURCE_WEIGHTS = {

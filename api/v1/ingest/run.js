@@ -11,7 +11,7 @@
  */
 const { getDb } = require('../../_db');
 const { reportError } = require('../system/_errors');
-const { dedupCache } = require('../_cache');
+const { dedupCache } = require('../../_cache');
 const { v4: uuidv4 } = require('uuid');
 
 // ── helpers ────────────────────────────────────────────────────────────
