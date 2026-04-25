@@ -19,12 +19,6 @@ const { v4: uuidv4 } = require('uuid');
 // ── City Feed Configurations ──────────────────────────────────────────
 const CITY_FEEDS = [
   {
-    name: 'Houston',
-    state: 'TX',
-    url: 'https://data.houstontx.gov/resource/bsng-ej6s.json?$where=call_type_desc%20like%20%27%25ACCIDENT%25%27%20OR%20call_type_desc%20like%20%27%25CRASH%25%27%20OR%20call_type_desc%20like%20%27%25COLLISION%25%27&$limit=25&$order=call_date%20DESC',
-    parser: 'houston',
-  },
-  {
     name: 'Seattle',
     state: 'WA',
     url: 'https://data.seattle.gov/resource/kzjm-xkqj.json?$where=type%20like%20%27%25MVA%25%27%20OR%20type%20like%20%27%25Collision%25%27%20OR%20type%20like%20%27%25Vehicle%25%27&$limit=25&$order=datetime%20DESC',
@@ -33,21 +27,14 @@ const CITY_FEEDS = [
   {
     name: 'San Francisco',
     state: 'CA',
-    url: 'https://data.sfgov.org/resource/gnap-fj3t.json?$where=call_type_original_desc%20like%20%27%25ACCIDENT%25%27%20OR%20call_type_original_desc%20like%20%27%25COLLISION%25%27%20OR%20call_type_original_desc%20like%20%27%25VEHICLE%25%27&$limit=25&$order=call_datetime%20DESC',
+    url: 'https://data.sfgov.org/resource/nuek-vuh3.json?$where=call_type%20like%20%27%25Traffic%25%27%20OR%20call_type%20like%20%27%25Vehicle%25%27&$limit=25&$order=call_date%20DESC',
     parser: 'sf',
   },
   {
     name: 'Dallas',
     state: 'TX',
-    url: 'https://www.dallasopendata.com/resource/are8-xahz.json?$where=nature_of_call%20like%20%27%25ACCIDENT%25%27%20OR%20nature_of_call%20like%20%27%25CRASH%25%27&$limit=25&$order=date1%20DESC',
+    url: 'https://www.dallasopendata.com/resource/9fxf-t2tr.json?$limit=50',
     parser: 'dallas',
-  },
-  {
-    name: 'Atlanta',
-    state: 'GA',
-    // Atlanta PD uses Socrata open data — this endpoint varies; fallback to manual
-    url: 'https://opendata.atlantapd.org/resource/jb7d-dhz3.json?$where=type%20like%20%27%25ACCIDENT%25%27%20OR%20type%20like%20%27%25COLLISION%25%27&$limit=25&$order=report_date%20DESC',
-    parser: 'atlanta',
   },
 ];
 
@@ -56,10 +43,10 @@ function parseHouston(records) {
   return records.map(r => ({
     source: 'opendata_houston',
     source_reference: `HOUCA-${r.incident_number || r.call_no || Date.now()}`,
-    title: `${r.call_type_desc || 'Accident'} - ${r.block_address || 'Houston'}`,
-    description: `Houston 911 dispatch: ${r.call_type_desc || 'Traffic incident'} at ${r.block_address || 'unknown location'}. Agency: ${r.agency || 'HPD'}`,
-    incident_type: classifyType(r.call_type_desc),
-    severity: classifySeverityFromDispatch(r.call_type_desc),
+    title: `${r.call_type || r.call_type_desc || 'Accident'} - ${r.block_address || r.location || r.address || 'Houston'}`,
+    description: `Houston 911 dispatch: ${r.call_type || r.call_type_desc || 'Traffic incident'} at ${r.block_address || r.location || r.address || 'unknown location'}. Agency: ${r.agency || 'HPD'}`,
+    incident_type: classifyType(r.call_type || r.call_type_desc),
+    severity: classifySeverityFromDispatch(r.call_type || r.call_type_desc),
     city: 'Houston',
     state: 'TX',
     lat: parseFloat(r.latitude) || parseFloat(r.combined_location?.latitude) || 29.760,
