@@ -190,7 +190,8 @@ module.exports = async function handler(req, res) {
     await db('data_sources').insert({
       id: dsId,
       name: 'City Open Data 911',
-      source_type: 'api',
+      type: 'api',
+      api_endpoint: 'multiple city portals',
       is_active: true,
       last_polled_at: new Date(),
       created_at: new Date(),

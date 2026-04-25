@@ -303,7 +303,7 @@ module.exports = async function handler(req, res) {
       await db('data_sources').insert({
         id: dsId,
         name: 'Radio Scanner (Whisper AI)',
-        source_type: 'scanner',
+        type: 'scanner',
         is_active: true,
         created_at: new Date(),
         updated_at: new Date()
@@ -360,7 +360,7 @@ module.exports = async function handler(req, res) {
           id: uuidv4(),
           incident_id: incidentId,
           data_source_id: scannerDs.id,
-          source_type: 'scanner',
+          type: 'scanner',
           source_reference: sourceRef,
           raw_data: JSON.stringify({ transcript: transcript.text, talkgroup: transcript.talkgroup, system: transcript.system }),
           parsed_data: JSON.stringify(extracted),
