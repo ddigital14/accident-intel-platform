@@ -30,7 +30,7 @@ async function fetchObitsForCity(city, state) {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AIP/1.0; +https://accident-intel-platform.vercel.app)' },
       signal: AbortSignal.timeout(12000)
     });
-    if (!resp.ok) return [];
+    if (!resp.ok) return null;
     const html = await resp.text();
     return html.substring(0, 80000);
   } catch (_) { return null; }
