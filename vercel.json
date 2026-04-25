@@ -41,8 +41,24 @@
       "memory": 1024,
       "maxDuration": 60
     },
+    "api/v1/ingest/reddit.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/v1/ingest/police-social.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
     "api/v1/enrich/people-search.js": {
       "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/v1/enrich/trigger.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/v1/system/smoke-test.js": {
+      "memory": 512,
       "maxDuration": 60
     },
     "api/**/*.js": {
@@ -118,6 +134,26 @@
     {
       "path": "/api/v1/system/auto-assign?secret=ingest-now",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/v1/ingest/reddit?secret=ingest-now",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/v1/ingest/police-social?secret=ingest-now",
+      "schedule": "*/20 * * * *"
+    },
+    {
+      "path": "/api/v1/enrich/trigger?secret=ingest-now",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/v1/system/smoke-test",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/v1/system/digest?secret=ingest-now&post=true",
+      "schedule": "0 9 * * *"
     }
   ]
 }
