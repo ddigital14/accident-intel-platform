@@ -66,6 +66,7 @@ const sysAutoAssign = require('../lib/v1/system/auto-assign');
 const sysChangelog = require('../lib/v1/system/changelog');
 const sysErrors = require('../lib/v1/system/errors');
 const sysCost = require('../lib/v1/system/cost');
+const sysCostDebug = require('../lib/v1/system/cost-debug');
 const sysSetup = require('../lib/v1/system/setup');
 const sysDigest = require('../lib/v1/system/digest');
 const sysSmoke = require('../lib/v1/system/smoke-test');
