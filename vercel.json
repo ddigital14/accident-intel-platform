@@ -17,61 +17,13 @@
     }
   ],
   "functions": {
-    "api/v1/ingest/news.js": {
+    "api/v1/[...slug].js": {
       "memory": 1024,
       "maxDuration": 60
     },
-    "api/v1/ingest/news-rss.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/court.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/scanner.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/obituaries.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/trauma.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/reddit.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/ingest/police-social.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/enrich/people-search.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/enrich/trigger.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/system/smoke-test.js": {
+    "api/health.js": {
       "memory": 512,
-      "maxDuration": 60
-    },
-    "api/**/*.js": {
-      "memory": 512,
-      "maxDuration": 30
-    },
-    "api/v1/ingest/pd-press.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    },
-    "api/v1/cron/dispatch.js": {
-      "memory": 1024,
-      "maxDuration": 60
+      "maxDuration": 10
     }
   },
   "crons": [
