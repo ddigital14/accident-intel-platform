@@ -124,6 +124,7 @@ const ROUTES = {
   'system/changelog': sysChangelog,
   'system/errors': sysErrors,
   'system/cost': sysCost,
+  'system/cost-debug': sysCostDebug,
   'system/setup': sysSetup,
   'system/digest': sysDigest,
   'system/smoke-test': sysSmoke,
