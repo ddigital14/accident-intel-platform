@@ -9,7 +9,7 @@
     },
     {
       "source": "/api/v1/:path*",
-      "destination": "/api/_router"
+      "destination": "/api/router"
     },
     {
       "source": "/((?!api/).*)",
@@ -17,7 +17,7 @@
     }
   ],
   "functions": {
-    "api/_router.js": {
+    "api/router.js": {
       "memory": 1024,
       "maxDuration": 60
     },
