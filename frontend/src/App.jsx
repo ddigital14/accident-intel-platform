@@ -151,6 +151,9 @@ export default function App() {
   const [changelogEntries, setChangelogEntries] = useState([]);
   const [feedView, setFeedView] = useState('qualified'); // 'qualified' | 'pending' | 'all'
   const [feedIncidents, setFeedIncidents] = useState([]);
+  const [incidentsView, setIncidentsView] = useState('qualified'); // tab on Incidents page
+  const [resyncing, setResyncing] = useState(false);
+  const [resyncResult, setResyncResult] = useState(null);
 
   // Inject global CSS
   useEffect(() => {
@@ -191,6 +194,25 @@ export default function App() {
     const t = setInterval(() => loadFeed(feedView), 30000);
     return () => clearInterval(t);
   }, [feedView, loadFeed]);
+
+  // Refresh Sync — re-runs all enrichment APIs against existing leads
+  const handleResync = useCallback(async () => {
+    setResyncing(true);
+    setResyncResult(null);
+    try {
+      const r = await fetch(`${API}/system/resync?secret=ingest-now`);
+      if (r.ok) {
+        const d = await r.json();
+        setResyncResult(d);
+        // Refresh data after resync
+        if (user) loadData(); else loadPublicStats();
+        loadFeed(feedView);
+      }
+    } catch (err) {
+      setResyncResult({ success: false, error: err.message });
+    }
+    setResyncing(false);
+  }, [user, loadData, loadPublicStats, loadFeed, feedView]);
 
   // Load pipeline health, errors, and changelog
   const loadSystemPanels = useCallback(async () => {
@@ -280,6 +302,9 @@ export default function App() {
     const params = new URLSearchParams(
       Object.entries(filters).filter(([, v]) => v)
     );
+    if (incidentsView && incidentsView !== 'all') {
+      params.set('qualification_state', incidentsView);
+    }
     const [incData, statsData, notifData] = await Promise.all([
       api(`/incidents?${params}&limit=100`),
       api(`/dashboard/stats?period=${filters.period || "today"}&metro=${filters.metro || ""}`),
@@ -289,7 +314,7 @@ export default function App() {
     setStats(statsData);
     setNotifs(notifData.data || []);
     setLoading(false);
-  }, [user, filters]);
+  }, [user, filters, incidentsView]);
 
   // Load on auth or fallback to public
   useEffect(() => {
@@ -355,7 +380,7 @@ export default function App() {
         <Sidebar filters={filters} setFilters={setFilters} metros={metros} onRefresh={loadData} />
         <main style={{ flex: 1, padding: "24px 28px", overflow: "auto", maxHeight: "calc(100vh - 64px)" }}>
           {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} systemHealth={systemHealth} recentErrors={recentErrors} changelogEntries={changelogEntries} feedView={feedView} setFeedView={setFeedView} feedIncidents={feedIncidents} />}
-          {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} />}
+          {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} incidentsView={incidentsView} setIncidentsView={setIncidentsView} onResync={handleResync} resyncing={resyncing} resyncResult={resyncResult} />}
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
           {page === "integrations" && <IntegrationsView integrations={integrations} stats={integrationStats} onAction={integrationAction} onRefresh={loadIntegrations} />}
@@ -928,14 +953,51 @@ function DashboardView({ stats, incidents, onSelect, loading, systemHealth, rece
 // ============================================================================
 // INCIDENT LIST VIEW
 // ============================================================================
-function IncidentList({ incidents, onSelect, filters, setFilters }) {
+function IncidentList({ incidents, onSelect, filters, setFilters, incidentsView, setIncidentsView, onResync, resyncing, resyncResult }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h2 style={{ color: "#f4f7ff", margin: 0, fontSize: 22, fontWeight: 800 }}>All Incidents</h2>
-          <p style={{ color: "#a0b0d0", margin: "4px 0 0", fontSize: 13 }}>{incidents.length} total results</p>
+          <h2 style={{ color: "#f4f7ff", margin: 0, fontSize: 22, fontWeight: 800 }}>Incidents</h2>
+          <p style={{ color: "#a0b0d0", margin: "4px 0 0", fontSize: 13 }}>{incidents.length} {incidentsView === 'qualified' ? 'qualified leads (with name + contact)' : incidentsView === 'pending_named' ? 'incidents with name (awaiting contact info)' : incidentsView === 'pending' ? 'incidents pending name extraction' : 'total'}</p>
         </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button onClick={onResync} disabled={resyncing} style={{
+            background: resyncing ? "#1c2b4d" : "linear-gradient(135deg, #34d399, #22d3ee)",
+            color: "#0b0f1a", border: "none", padding: "8px 16px", borderRadius: 10,
+            fontSize: 12, fontWeight: 800, cursor: resyncing ? "wait" : "pointer",
+            display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s"
+          }} title="Re-runs Trestle + PDL + Tracerfy + SearchBug + people-search against all named leads, then re-qualifies">
+            {resyncing ? "⏳ Syncing..." : "🔄 Re-Sync All APIs"}
+          </button>
+        </div>
+      </div>
+
+      {resyncResult && (
+        <div style={{ background: resyncResult.success ? "rgba(52,211,153,0.1)" : "rgba(255,71,87,0.1)", border: `1px solid ${resyncResult.success ? "rgba(52,211,153,0.3)" : "rgba(255,71,87,0.3)"}`, padding: "10px 14px", borderRadius: 10, marginBottom: 16, fontSize: 12, color: "#f4f7ff" }}>
+          {resyncResult.summary || resyncResult.error}
+        </div>
+      )}
+
+      {/* Tab strip */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, background: "rgba(13,20,36,0.6)", padding: 6, borderRadius: 10, width: "fit-content" }}>
+        {[
+          { key: "qualified", label: "Qualified", color: "#34d399", desc: "Name + contact" },
+          { key: "pending_named", label: "Has Name", color: "#22d3ee", desc: "Awaiting contact" },
+          { key: "pending", label: "Pending", color: "#fbbf24", desc: "No name yet" },
+          { key: "all", label: "All", color: "#a0b0d0", desc: "Everything" }
+        ].map(t => (
+          <button key={t.key} onClick={() => setIncidentsView(t.key)} title={t.desc}
+            style={{
+              background: incidentsView === t.key ? t.color : "transparent",
+              color: incidentsView === t.key ? "#0b0f1a" : "#a0b0d0",
+              border: "none", padding: "8px 16px", borderRadius: 8,
+              fontSize: 12, fontWeight: 700, cursor: "pointer"
+            }}>{t.label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
         <div style={{ position: "relative" }}>
           <input
             placeholder="Search address, report #, description..."
@@ -951,7 +1013,7 @@ function IncidentList({ incidents, onSelect, filters, setFilters }) {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid rgba(79,107,255,0.15)" }}>
-              {["Priority", "Type", "Severity", "Location", "Time", "Injuries", "Sources", "Status", "Persons"].map((h) => (
+              {["State", "Priority", "Type", "Severity", "Location", "Time", "Injuries", "Sources", "Status", "Persons"].map((h) => (
                 <th key={h} style={{ textAlign: "left", padding: "12px 8px", color: "#4f6bff", fontSize: 10, textTransform: "uppercase", letterSpacing: "1px", fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
@@ -960,6 +1022,7 @@ function IncidentList({ incidents, onSelect, filters, setFilters }) {
             {incidents.map((inc) => (
               <tr key={inc.id} onClick={() => onSelect(inc)} className="table-row"
                 style={{ borderBottom: "1px solid rgba(28,43,77,0.4)", cursor: "pointer" }}>
+                <td style={tdStyle}><QualificationBadge state={inc.qualification_state} score={inc.lead_score} /></td>
                 <td style={tdStyle}><PriorityBadge p={inc.priority} /></td>
                 <td style={tdStyle}><TypeBadge type={inc.incident_type} /></td>
                 <td style={tdStyle}><SeverityBadge severity={inc.severity} /></td>
@@ -975,7 +1038,26 @@ function IncidentList({ incidents, onSelect, filters, setFilters }) {
                 <td style={tdStyle}><span style={{ color: inc.injuries_count > 0 ? "#ff4757" : "#a0b0d0", fontWeight: inc.injuries_count > 0 ? 700 : 400 }}>{inc.injuries_count || 0}</span></td>
                 <td style={tdStyle}><span style={{ color: "#4f6bff" }}>{inc.source_count || 1}</span></td>
                 <td style={tdStyle}><StatusBadge status={inc.status} /></td>
-                <td style={tdStyle}><span style={{ color: "#a0b0d0", fontSize: 12 }}>{(inc.persons || []).length}</span></td>
+                <td style={tdStyle}>
+                  {(inc.persons || []).length === 0 ? (
+                    <span style={{ color: "#5e739e", fontSize: 11 }}>—</span>
+                  ) : (
+                    <div>
+                      {(inc.persons || []).slice(0, 2).map(p => (
+                        <div key={p.id || p.full_name} style={{ marginBottom: 3 }}>
+                          <div style={{ color: "#f4f7ff", fontSize: 12, fontWeight: 600 }}>{p.full_name || "unknown"}</div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 10 }}>
+                            {p.phone && <span style={{ color: "#34d399" }}>☎ {p.phone}</span>}
+                            {p.email && <span style={{ color: "#22d3ee" }}>✉ {p.email.substring(0, 20)}</span>}
+                            {p.address && <span style={{ color: "#fbbf24" }}>⌂ {p.address.substring(0, 25)}</span>}
+                            {!p.phone && !p.email && !p.address && <span style={{ color: "#5e739e" }}>no contact yet</span>}
+                          </div>
+                        </div>
+                      ))}
+                      {(inc.persons || []).length > 2 && <span style={{ color: "#5e739e", fontSize: 10 }}>+ {(inc.persons || []).length - 2} more</span>}
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1065,6 +1147,8 @@ function IncidentDetail({ incident, onClose, user, onUpdate }) {
           <SeverityBadge severity={d.severity} />
           <PriorityBadge p={d.priority} />
           <StatusBadge status={d.status} />
+          {d.qualification_state && <QualificationBadge state={d.qualification_state} score={d.lead_score} />}
+          {d.lead_score > 0 && <span style={{ ...badgeBase, background: "linear-gradient(135deg, #34d399, #22d3ee)", color: "#0b0f1a", fontWeight: 800 }}>SCORE {d.lead_score}</span>}
           {d.confidence_score && <span style={{ ...badgeBase, background: "rgba(79,107,255,0.15)", color: "#7dd3fc", border: "1px solid rgba(79,107,255,0.2)" }}>{Math.round(d.confidence_score)}% confidence</span>}
           {d.source_count > 1 && <span style={{ ...badgeBase, background: "rgba(79,107,255,0.15)", color: "#7dd3fc", border: "1px solid rgba(79,107,255,0.2)" }}>{d.source_count} sources</span>}
         </div>
@@ -1090,6 +1174,20 @@ function IncidentDetail({ incident, onClose, user, onUpdate }) {
                   <div>discovered:</div>
                   <div style={{ color: "#a0b0d0" }}>{formatAccidentDateTime(d.discovered_at)}</div>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* What's missing for qualification */}
+        {d.qualification_state !== 'qualified' && (
+          <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
+            <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>⏳ Awaiting</div>
+            <div style={{ color: "#fef3c7", fontSize: 13, lineHeight: 1.5 }}>
+              {(detail?.persons || d.persons || []).length === 0 ? (
+                <>No victim names extracted yet. Sources: {d.tags?.join(', ') || 'unknown'}. Names typically come in via news, PD press releases, or obituaries within 24-72h.</>
+              ) : (
+                <>Have {(detail?.persons || d.persons).length} named person(s) but missing contact info. <strong>Re-Sync All APIs</strong> on the Incidents page will run Trestle + PDL + Tracerfy + people-search to fill in phone/email/address.</>
               )}
             </div>
           </div>
@@ -1349,6 +1447,21 @@ function InfoRow({ label, value }) {
     <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
       <span style={{ color: "#a0b0d0", fontSize: 13 }}>{label}</span>
       <span style={{ color: "#f4f7ff", fontSize: 13, textAlign: "right", maxWidth: "60%" }}>{value}</span>
+    </div>
+  );
+}
+
+function QualificationBadge({ state, score }) {
+  const map = {
+    qualified: { color: "#34d399", label: "QUAL" },
+    pending_named: { color: "#22d3ee", label: "NAMED" },
+    pending: { color: "#fbbf24", label: "PEND" },
+  };
+  const cfg = map[state] || { color: "#5e739e", label: "?" };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+      <span style={{ background: cfg.color, color: "#0b0f1a", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, letterSpacing: "0.5px" }}>{cfg.label}</span>
+      {score > 0 && <span style={{ color: cfg.color, fontSize: 9, fontWeight: 700 }}>{score}</span>}
     </div>
   );
 }

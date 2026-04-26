@@ -65,6 +65,7 @@ const sysDigest = require('../lib/v1/system/digest');
 const sysSmoke = require('../lib/v1/system/smoke-test');
 const sysTriggers = require('../lib/v1/system/triggers');
 const sysAudit = require('../lib/v1/system/audit');
+const sysResync = require('../lib/v1/system/resync');
 
 // ── Cron ──
 const cronDispatch = require('../lib/v1/cron/dispatch');
