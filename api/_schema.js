@@ -28,7 +28,7 @@ const SOURCE_TYPES = [
   // News / social
   'newsapi', 'rss', 'reddit', 'police_social', 'obituary', 'trauma_hems',
   // Public records
-  'court_records', 'people_search', 'pdl', 'hunter_io', 'tracerfy',
+  'court_records', 'people_search', 'nhtsa_complaint', 'pdl', 'hunter_io', 'tracerfy',
   'searchbug', 'numverify', 'openweather'
 ];
 

@@ -26,6 +26,16 @@ function tpsUrl(name, state) {
 function fpsUrl(name, state) {
   return `https://www.fastpeoplesearch.com/name/${encodeURIComponent(name.replace(/\s+/g, '-'))}_${encodeURIComponent(state || '')}`;
 }
+function whitepagesUrl(name, state) {
+  // whitepages.com/name search free form
+  const slug = name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+  return `https://www.whitepages.com/name/${slug}/${(state || '').toLowerCase()}`;
+}
+function spokeoFreeUrl(name, state) {
+  // Spokeo's free results page (not API — limited info but free)
+  const slug = name.replace(/\s+/g, '-');
+  return `https://www.spokeo.com/${slug}/${state || ''}`;
+}
 
 async function scrape(url) {
   try {
@@ -135,18 +145,20 @@ module.exports = async function handler(req, res) {
         const lookupCity = p.city || p.incident_city;
         const personCtx = { full_name: p.full_name, city: lookupCity, state: lookupState, age: p.age };
 
-        // Try TruePeopleSearch first
-        let html = await scrape(tpsUrl(p.full_name, lookupState));
-        let parsed = html ? await extractContact(html, personCtx) : null;
-        let source = 'truepeoplesearch';
-
-        // Fallback to FastPeopleSearch
-        if (!parsed?.best_match || (parsed.best_match.match_confidence || 0) < 60) {
-          html = await scrape(fpsUrl(p.full_name, lookupState));
-          if (html) {
-            parsed = await extractContact(html, personCtx);
-            source = 'fastpeoplesearch';
-          }
+        // Cascade through 4 free people-search sites until we get a confident match
+        const sites = [
+          { src: 'truepeoplesearch', urlFn: tpsUrl },
+          { src: 'fastpeoplesearch', urlFn: fpsUrl },
+          { src: 'whitepages',       urlFn: whitepagesUrl },
+          { src: 'spokeo_free',      urlFn: spokeoFreeUrl },
+        ];
+        let html = null, parsed = null, source = null;
+        for (const site of sites) {
+          html = await scrape(site.urlFn(p.full_name, lookupState));
+          if (!html) continue;
+          parsed = await extractContact(html, personCtx);
+          source = site.src;
+          if (parsed?.best_match && (parsed.best_match.match_confidence || 0) >= 60) break;
         }
 
         results.scraped++;
@@ -184,7 +196,7 @@ module.exports = async function handler(req, res) {
           field_name: 'people_search',
           old_value: null,
           new_value: JSON.stringify(update),
-          source_url: source === 'truepeoplesearch' ? tpsUrl(p.full_name, lookupState) : fpsUrl(p.full_name, lookupState),
+          source_url: ({ truepeoplesearch: tpsUrl, fastpeoplesearch: fpsUrl, whitepages: whitepagesUrl, spokeo_free: spokeoFreeUrl })[source]?.(p.full_name, lookupState) || null,
           source: source,
           confidence: m.match_confidence,
           verified: false,

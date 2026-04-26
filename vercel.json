@@ -64,6 +64,10 @@
     "api/**/*.js": {
       "memory": 512,
       "maxDuration": 30
+    },
+    "api/v1/ingest/pd-press.js": {
+      "memory": 1024,
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -136,14 +140,6 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/ingest/reddit?secret=ingest-now",
-      "schedule": "*/30 * * * *"
-    },
-    {
-      "path": "/api/v1/ingest/police-social?secret=ingest-now",
-      "schedule": "*/20 * * * *"
-    },
-    {
       "path": "/api/v1/enrich/trigger?secret=ingest-now",
       "schedule": "*/5 * * * *"
     },
@@ -154,6 +150,14 @@
     {
       "path": "/api/v1/system/digest?secret=ingest-now&post=true",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/v1/ingest/pd-press?secret=ingest-now",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/v1/system/audit?fix=true&secret=ingest-now",
+      "schedule": "0 5 * * *"
     }
   ]
 }
