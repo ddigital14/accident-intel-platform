@@ -4,12 +4,12 @@
   "outputDirectory": "frontend/build",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "/api/_router"
     },
     {
       "source": "/((?!api/).*)",
@@ -17,7 +17,7 @@
     }
   ],
   "functions": {
-    "api/v1/[...slug].js": {
+    "api/_router.js": {
       "memory": 1024,
       "maxDuration": 60
     },
