@@ -964,7 +964,14 @@ function IncidentList({ incidents, onSelect, filters, setFilters }) {
                 <td style={tdStyle}><TypeBadge type={inc.incident_type} /></td>
                 <td style={tdStyle}><SeverityBadge severity={inc.severity} /></td>
                 <td style={tdStyle}><span style={{ color: "#f4f7ff", fontSize: 13 }}>{inc.city}, {inc.state}</span><br /><span style={{ color: "#a0b0d0", fontSize: 11 }}>{inc.address?.substring(0, 40)}</span></td>
-                <td style={{ ...tdStyle, color: "#a0b0d0", fontSize: 12 }}>{formatTime(inc.discovered_at)}</td>
+                <td style={{ ...tdStyle, color: "#a0b0d0", fontSize: 12 }}>
+                  {inc.occurred_at && (
+                    <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, fontFamily: "monospace" }}>
+                      ⏱ {formatAccidentDateTime(inc.occurred_at)}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 10, color: "#5e739e" }}>discovered {formatTime(inc.discovered_at)}</div>
+                </td>
                 <td style={tdStyle}><span style={{ color: inc.injuries_count > 0 ? "#ff4757" : "#a0b0d0", fontWeight: inc.injuries_count > 0 ? 700 : 400 }}>{inc.injuries_count || 0}</span></td>
                 <td style={tdStyle}><span style={{ color: "#4f6bff" }}>{inc.source_count || 1}</span></td>
                 <td style={tdStyle}><StatusBadge status={inc.status} /></td>
@@ -1061,6 +1068,32 @@ function IncidentDetail({ incident, onClose, user, onUpdate }) {
           {d.confidence_score && <span style={{ ...badgeBase, background: "rgba(79,107,255,0.15)", color: "#7dd3fc", border: "1px solid rgba(79,107,255,0.2)" }}>{Math.round(d.confidence_score)}% confidence</span>}
           {d.source_count > 1 && <span style={{ ...badgeBase, background: "rgba(79,107,255,0.15)", color: "#7dd3fc", border: "1px solid rgba(79,107,255,0.2)" }}>{d.source_count} sources</span>}
         </div>
+
+        {/* When did the accident happen */}
+        {(d.occurred_at || d.discovered_at) && (
+          <div style={{
+            background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)",
+            borderRadius: 10, padding: "12px 16px", marginBottom: 16
+          }}>
+            <div style={{ color: "#fbbf24", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>⏱ Accident Time</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <div style={{ color: "#fef3c7", fontSize: 16, fontWeight: 700, fontFamily: "monospace" }}>
+                  {formatAccidentDateTime(d.occurred_at || d.discovered_at)}
+                </div>
+                <div style={{ color: "#a0b0d0", fontSize: 11, marginTop: 2 }}>
+                  {formatAccidentDate(d.occurred_at || d.discovered_at)}
+                </div>
+              </div>
+              {d.discovered_at && d.occurred_at && d.discovered_at !== d.occurred_at && (
+                <div style={{ textAlign: "right", fontSize: 10, color: "#5e739e" }}>
+                  <div>discovered:</div>
+                  <div style={{ color: "#a0b0d0" }}>{formatAccidentDateTime(d.discovered_at)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
@@ -1192,12 +1225,17 @@ function QualifiedLeadRow({ incident: inc, onSelect }) {
     }}>
       <div style={{ background: scoreColor, color: "#0b0f1a", padding: "6px 10px", borderRadius: 8, fontWeight: 800, fontSize: 14, minWidth: 40, textAlign: "center" }}>{score}</div>
       <div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <SeverityBadge severity={inc.severity} />
           <TypeBadge type={inc.incident_type} />
           <span style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600 }}>
             {inc.address || `${inc.city || ''}, ${inc.state || ''}`}
           </span>
+          {(inc.occurred_at || inc.discovered_at) && (
+            <span style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, fontFamily: "monospace", background: "rgba(251,191,36,0.1)", padding: "2px 8px", borderRadius: 6 }}>
+              ⏱ {formatAccidentDateTime(inc.occurred_at || inc.discovered_at)}
+            </span>
+          )}
         </div>
         {persons.length > 0 && (
           <div style={{ marginTop: 6, fontSize: 12, color: "#a0b0d0" }}>
@@ -1247,6 +1285,11 @@ function IncidentRow({ incident: inc, onSelect, compact }) {
       <SeverityBadge severity={inc.severity} />
       <div style={{ flex: 1 }}>
         <div style={{ color: "#f4f7ff", fontSize: 14, fontWeight: 500 }}>{inc.address || `${inc.city}, ${inc.state}`}</div>
+        {(inc.occurred_at || inc.discovered_at) && (
+          <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 600, marginTop: 2, fontFamily: "monospace" }}>
+            ⏱ {formatAccidentDateTime(inc.occurred_at || inc.discovered_at)}
+          </div>
+        )}
         {!compact && <div style={{ color: "#a0b0d0", fontSize: 12, marginTop: 3 }}>{inc.description?.substring(0, 80)}...</div>}
         {inc.tags && inc.tags.length > 0 && (
           <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
@@ -1377,6 +1420,31 @@ function formatType(t) {
   return (t || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function formatAccidentDate(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "—";
+  const now = new Date();
+  const diffMs = now - d;
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(hours / 24);
+  let rel;
+  if (hours < 1) rel = `${Math.floor(diffMs/60000)}m ago`;
+  else if (hours < 24) rel = `${hours}h ago`;
+  else if (days < 7) rel = `${days}d ago`;
+  else rel = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return rel;
+}
+function formatAccidentDateTime(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    hour12: true
+  });
+}
+
 function formatTime(ts) {
   if (!ts) return "";
   const d = new Date(ts);
@@ -1501,7 +1569,7 @@ function ContactsView({ contacts, summary, filters, setFilters, onEnrich, enrich
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(28,43,77,0.5)" }}>
-              {["Name", "Phone", "Email", "Location", "Incident", "Injury", "Attorney", "Enrichment", "Status", "Actions"].map(h => (
+              {["Name", "Phone", "Email", "Accident Date", "Location", "Incident", "Injury", "Attorney", "Enrichment", "Status", "Actions"].map(h => (
                 <th key={h} style={{ padding: "10px 8px", fontSize: 10, fontWeight: 700, color: "#5e739e", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "left" }}>{h}</th>
               ))}
             </tr>
@@ -1522,6 +1590,18 @@ function ContactsView({ contacts, summary, filters, setFilters, onEnrich, enrich
                   </td>
                   <td style={tdStyle}>
                     {c.email ? <span style={{ color: "#22d3ee", fontSize: 12 }}>{c.email}</span> : <span style={{ color: "#5e739e" }}>—</span>}
+                  </td>
+                  <td style={tdStyle}>
+                    {(c.incident_occurred_at || c.occurred_at || c.incident_discovered_at) ? (
+                      <div>
+                        <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, fontFamily: "monospace" }}>
+                          {formatAccidentDateTime(c.incident_occurred_at || c.occurred_at || c.incident_discovered_at)}
+                        </div>
+                        <div style={{ color: "#5e739e", fontSize: 9 }}>
+                          {formatAccidentDate(c.incident_occurred_at || c.occurred_at || c.incident_discovered_at)}
+                        </div>
+                      </div>
+                    ) : <span style={{ color: "#5e739e" }}>—</span>}
                   </td>
                   <td style={tdStyle}>
                     <span style={{ color: "#a0b0d0", fontSize: 12 }}>{c.incident_city || c.city || ""}{c.incident_state || c.state ? `, ${c.incident_state || c.state}` : ""}</span>
