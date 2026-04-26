@@ -97,6 +97,7 @@ const ROUTES = {
   'ingest/news-rss': ingestNewsRss,
   'ingest/state-crash': ingestStateCrash,
   'ingest/court': ingestCourt,
+  'ingest/courtlistener': ingestCourtListener,
   'ingest/correlate': ingestCorrelate,
   'ingest/obituaries': ingestObituaries,
   'ingest/trauma': ingestTrauma,
