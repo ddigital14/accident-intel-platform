@@ -48,6 +48,7 @@ const ingestFars = require('../lib/v1/ingest/fars');
 const enrichRun = require('../lib/v1/enrich/run');
 const enrichTrigger = require('../lib/v1/enrich/trigger');
 const enrichPeopleSearch = require('../lib/v1/enrich/people-search');
+const enrichTrestleTest = require('../lib/v1/enrich/trestle-test');
 const enrichCrossref = require('../lib/v1/enrich/crossref');
 
 // ── System ──
@@ -99,6 +100,7 @@ const ROUTES = {
   'enrich/run': enrichRun,
   'enrich/trigger': enrichTrigger,
   'enrich/people-search': enrichPeopleSearch,
+  'enrich/trestle-test': enrichTrestleTest,
   'enrich/crossref': enrichCrossref,
   'system/health': sysHealth,
   'system/postgis': sysPostgis,
