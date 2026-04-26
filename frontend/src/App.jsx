@@ -382,6 +382,7 @@ export default function App() {
           {page === "dashboard" && <DashboardView stats={stats} incidents={incidents} onSelect={setSelectedIncident} loading={loading} systemHealth={systemHealth} recentErrors={recentErrors} changelogEntries={changelogEntries} feedView={feedView} setFeedView={setFeedView} feedIncidents={feedIncidents} />}
           {page === "incidents" && <IncidentList incidents={incidents} onSelect={setSelectedIncident} filters={filters} setFilters={setFilters} incidentsView={incidentsView} setIncidentsView={setIncidentsView} onResync={handleResync} resyncing={resyncing} resyncResult={resyncResult} />}
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
+          {page === "cost" && <CostView costData={costData} onRefresh={loadCost} />}
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
           {page === "integrations" && <IntegrationsView integrations={integrations} stats={integrationStats} onAction={integrationAction} onRefresh={loadIntegrations} />}
         </main>
@@ -483,7 +484,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
-          {["dashboard", "incidents", "my-leads", "contacts", "integrations"].map((p) => (
+          {["dashboard", "incidents", "my-leads", "contacts", "integrations", "cost"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
@@ -496,6 +497,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
               {p === "my-leads" && "\u2605 "}
               {p === "contacts" && "\uD83D\uDCCB "}
               {p === "integrations" && "\u2699 "}
+              {p === "cost" && "\uD83D\uDCB0 "}
               {p.replace("-", " ").toUpperCase()}
             </button>
           ))}
@@ -1586,6 +1588,108 @@ const badgeBase = { fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRa
 // ============================================================================
 // CONTACTS VIEW — Full contact management with filters & enrichment
 // ============================================================================
+function CostView({ costData, onRefresh }) {
+  const [time, setTime] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setTime(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!costData) return (
+    <div style={{ textAlign: "center", padding: 80 }}>
+      <div style={{ width: 48, height: 48, border: "3px solid #1c2b4d", borderTopColor: "#34d399", borderRadius: "50%", margin: "0 auto 16px", animation: "gradientShift 1s linear infinite" }} />
+      <div style={{ color: "#a0b0d0", fontSize: 14 }}>Loading cost data...</div>
+    </div>
+  );
+
+  const totals = costData.total_cost_usd || {};
+  const byService = costData.by_service_24h || [];
+  const byPipeline = costData.by_pipeline_24h || [];
+  const monthlyRunRate = costData.monthly_run_rate || 0;
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ color: "#f4f7ff", margin: 0, fontSize: 22, fontWeight: 800 }}>API Cost & Spend</h2>
+          <p style={{ color: "#a0b0d0", margin: "4px 0 0", fontSize: 13 }}>Real-time enrichment + AI spend, auto-tracked per call</p>
+        </div>
+        <button onClick={onRefresh} style={{ ...btnSmall, background: "rgba(52,211,153,0.15)", color: "#34d399", border: "1px solid rgba(52,211,153,0.3)" }}>↻ Refresh</button>
+      </div>
+
+      {/* Big totals */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
+        {[
+          { label: "Last 24 Hours", value: totals["24h"] || 0, color: "linear-gradient(135deg, #34d399, #22d3ee)" },
+          { label: "Last 7 Days", value: totals["7d"] || 0, color: "linear-gradient(135deg, #4f6bff, #a855f7)" },
+          { label: "Last 30 Days", value: totals["30d"] || 0, color: "linear-gradient(135deg, #ff7b3a, #ff4da6)" },
+          { label: "Monthly Run Rate", value: monthlyRunRate, color: "linear-gradient(135deg, #fbbf24, #ff7b3a)" },
+        ].map(card => (
+          <div key={card.label} style={{ background: "#151d32", border: "1px solid #1c2b4d", borderRadius: 14, padding: "22px 20px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: card.color }} />
+            <div style={{ color: "#a0b0d0", fontSize: 11, textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}>{card.label}</div>
+            <div style={{ background: card.color, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: 36, fontWeight: 800, marginTop: 6, fontFamily: "'Orbitron', monospace" }}>
+              \${(parseFloat(card.value) || 0).toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Service breakdown */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+        <div style={enhancedCardStyle}>
+          <h3 style={enhancedCardTitle}>💸 By Service (24h)</h3>
+          {byService.length === 0 ? (
+            <EmptyState text="No API calls tracked yet — make some enrichment calls to see breakdown" />
+          ) : (
+            byService.map(s => (
+              <div key={s.service} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(28,43,77,0.4)" }}>
+                <div>
+                  <div style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600 }}>{s.service}</div>
+                  <div style={{ color: "#a0b0d0", fontSize: 10 }}>{s.calls} calls</div>
+                </div>
+                <div style={{ color: "#34d399", fontWeight: 700, fontSize: 14, fontFamily: "monospace" }}>\${parseFloat(s.cost).toFixed(4)}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div style={enhancedCardStyle}>
+          <h3 style={enhancedCardTitle}>⚙️ By Pipeline (24h)</h3>
+          {byPipeline.length === 0 ? (
+            <EmptyState text="No pipeline costs tracked yet" />
+          ) : (
+            byPipeline.map(p => (
+              <div key={p.pipeline} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(28,43,77,0.4)" }}>
+                <div>
+                  <div style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600 }}>{p.pipeline}</div>
+                  <div style={{ color: "#a0b0d0", fontSize: 10 }}>{p.calls} calls</div>
+                </div>
+                <div style={{ color: "#22d3ee", fontWeight: 700, fontSize: 14, fontFamily: "monospace" }}>\${parseFloat(p.cost).toFixed(4)}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Pricing reference */}
+      <div style={{ ...enhancedCardStyle, marginTop: 16 }}>
+        <h3 style={enhancedCardTitle}>📋 Pricing Reference</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8, fontSize: 12 }}>
+          {Object.entries(costData.pricing_table || {}).map(([k, v]) => (
+            <div key={k} style={{ background: "#0d1424", padding: "8px 12px", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#a0b0d0" }}>{k}</span>
+              <span style={{ color: "#fbbf24", fontFamily: "monospace" }}>
+                {v.flat !== undefined ? `\$${v.flat}/call` : `\$${v.in}/M in, \$${v.out}/M out`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ContactsView({ contacts, summary, filters, setFilters, onEnrich, enriching, onRefresh, onSelect }) {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);

@@ -42,6 +42,7 @@ const ingestTrauma = require('../lib/v1/ingest/trauma');
 const ingestReddit = require('../lib/v1/ingest/reddit');
 const ingestPoliceSocial = require('../lib/v1/ingest/police-social');
 const ingestPdPress = require('../lib/v1/ingest/pd-press');
+const ingestCourtListener = require('../lib/v1/ingest/courtlistener');
 const ingestFars = require('../lib/v1/ingest/fars');
 
 // ── Enrich ──
@@ -51,6 +52,7 @@ const enrichPeopleSearch = require('../lib/v1/enrich/people-search');
 const enrichTrestleTest = require('../lib/v1/enrich/trestle-test');
 const enrichVoterRolls = require('../lib/v1/enrich/voter-rolls');
 const enrichPropertyRecords = require('../lib/v1/enrich/property-records');
+const enrichCrossExam = require('../lib/v1/enrich/cross-exam');
 const enrichCrossref = require('../lib/v1/enrich/crossref');
 
 // ── System ──
@@ -106,6 +108,7 @@ const ROUTES = {
   'enrich/trestle-test': enrichTrestleTest,
   'enrich/voter-rolls': enrichVoterRolls,
   'enrich/property-records': enrichPropertyRecords,
+  'enrich/cross-exam':      enrichCrossExam,
   'enrich/crossref': enrichCrossref,
   'system/health': sysHealth,
   'system/postgis': sysPostgis,
