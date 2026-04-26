@@ -49,6 +49,8 @@ const enrichRun = require('../lib/v1/enrich/run');
 const enrichTrigger = require('../lib/v1/enrich/trigger');
 const enrichPeopleSearch = require('../lib/v1/enrich/people-search');
 const enrichTrestleTest = require('../lib/v1/enrich/trestle-test');
+const enrichVoterRolls = require('../lib/v1/enrich/voter-rolls');
+const enrichPropertyRecords = require('../lib/v1/enrich/property-records');
 const enrichCrossref = require('../lib/v1/enrich/crossref');
 
 // ── System ──
@@ -102,6 +104,8 @@ const ROUTES = {
   'enrich/trigger': enrichTrigger,
   'enrich/people-search': enrichPeopleSearch,
   'enrich/trestle-test': enrichTrestleTest,
+  'enrich/voter-rolls': enrichVoterRolls,
+  'enrich/property-records': enrichPropertyRecords,
   'enrich/crossref': enrichCrossref,
   'system/health': sysHealth,
   'system/postgis': sysPostgis,
