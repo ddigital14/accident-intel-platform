@@ -116,6 +116,7 @@ const ROUTES = {
   'system/smoke-test': sysSmoke,
   'system/triggers': sysTriggers,
   'system/audit': sysAudit,
+  'system/resync': sysResync,
   'cron/dispatch': cronDispatch,
 };
 
