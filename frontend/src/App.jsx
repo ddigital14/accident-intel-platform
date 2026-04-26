@@ -195,25 +195,6 @@ export default function App() {
     return () => clearInterval(t);
   }, [feedView, loadFeed]);
 
-  // Refresh Sync — re-runs all enrichment APIs against existing leads
-  const handleResync = useCallback(async () => {
-    setResyncing(true);
-    setResyncResult(null);
-    try {
-      const r = await fetch(`${API}/system/resync?secret=ingest-now`);
-      if (r.ok) {
-        const d = await r.json();
-        setResyncResult(d);
-        // Refresh data after resync
-        if (user) loadData(); else loadPublicStats();
-        loadFeed(feedView);
-      }
-    } catch (err) {
-      setResyncResult({ success: false, error: err.message });
-    }
-    setResyncing(false);
-  }, [user, loadData, loadPublicStats, loadFeed, feedView]);
-
   // Load pipeline health, errors, and changelog
   const loadSystemPanels = useCallback(async () => {
     try {
@@ -315,6 +296,25 @@ export default function App() {
     setNotifs(notifData.data || []);
     setLoading(false);
   }, [user, filters, incidentsView]);
+
+  // Refresh Sync — re-runs all enrichment APIs against existing leads
+  const handleResync = useCallback(async () => {
+    setResyncing(true);
+    setResyncResult(null);
+    try {
+      const r = await fetch(`${API}/system/resync?secret=ingest-now`);
+      if (r.ok) {
+        const d = await r.json();
+        setResyncResult(d);
+        // Refresh data after resync
+        if (user) loadData(); else loadPublicStats();
+        loadFeed(feedView);
+      }
+    } catch (err) {
+      setResyncResult({ success: false, error: err.message });
+    }
+    setResyncing(false);
+  }, [user, loadData, loadPublicStats, loadFeed, feedView]);
 
   // Load on auth or fallback to public
   useEffect(() => {
