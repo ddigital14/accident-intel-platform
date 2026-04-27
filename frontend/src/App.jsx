@@ -154,6 +154,7 @@ export default function App() {
   const [incidentsView, setIncidentsView] = useState('qualified'); // tab on Incidents page
   const [resyncing, setResyncing] = useState(false);
   const [resyncResult, setResyncResult] = useState(null);
+  const [costData, setCostData] = useState(null);
 
   // Inject global CSS
   useEffect(() => {
@@ -349,6 +350,27 @@ export default function App() {
     setIntegrations(data.integrations || []);
     setIntegrationStats(data.stats || {});
   }, [user]);
+
+  const loadCost = useCallback(async () => {
+    if (!user) return;
+    try {
+      const r = await fetch(`${API}/api/v1/system/cost?secret=ingest-now`);
+      if (r.ok) {
+        const d = await r.json();
+        setCostData(d);
+      }
+    } catch (e) { /* ignore */ }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && page === 'cost') loadCost();
+  }, [page, user, loadCost]);
+
+  useEffect(() => {
+    if (!user || page !== 'cost') return;
+    const t = setInterval(loadCost, 60000);
+    return () => clearInterval(t);
+  }, [page, user, loadCost]);
 
   useEffect(() => { if (user && page === "integrations") loadIntegrations(); }, [page, user, loadIntegrations]);
 
