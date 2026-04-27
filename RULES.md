@@ -103,3 +103,29 @@ Every change to AIP must support the multi-cross-conversion directive:
 
 If a proposed change WEAKENS this — adds dead-end data, breaks the
 linkage chain, or misaligns properties — DO NOT SHIP IT.
+
+## NEW ENGINE INTEGRATION RULE (added 2026-04-26)
+
+Every NEW engine/integration must obey the following — no engine ships without all 14 boxes checked.
+
+1. **Use the FULL surface area of the third-party API**, not just one endpoint. Examples:
+   - Twilio → Messaging + MMS + Lookup + Verify + Voice + Conversations webhooks (NOT just SMS)
+   - Trestle → Reverse Phone + CNAM + Reverse Address + Caller ID + Real Contact
+   - PDL → person_search + work_history + education + skills + social URLs
+   - Audit the third-party's full endpoint catalog and pick every endpoint that returns data we can cross-reference.
+2. **Emit `enqueueCascade(db, personId, 'engine_name')`** after every INSERT/UPDATE on `persons`.
+3. **Use canonical normalizers** from `lib/_schema.js` before any DB write.
+4. **Add to `lib/v1/enrich/_routing.js`** with cost + capability matrix.
+5. **Add to cross-exam SOURCE_WEIGHTS** in `lib/v1/enrich/cross-exam.js` (50–99).
+6. **Auto-instrument every API call with `trackApiCall(db, pipeline, service, tin, tout, success)`**.
+7. **Log to `system_changelog` via `logChange(db, {kind:'pipeline', ...})`** when shipped.
+8. **Register the cron job** via dispatcher `JOB_HANDLERS` in `lib/v1/cron/dispatch.js`.
+9. **Add to `api/router.js` ROUTES table** statically required from `lib/v1/<pipeline>/<engine>.js`.
+10. **Run smoke + audit + cross-exam** after deploy (must remain 7/7 pass + 0 audit issues).
+11. **Update `RULES.md`, `CORE_INTENT.md`, and Claude memory**.
+12. **If engine is two-way (read+write)**: wire inbound webhook to `/api/v1/webhooks/<engine>` and route through cascade.
+13. **If engine returns identity-relevant fields**: map to canonical schema, log to `enrichment_logs`, add to `gatherEvidence()`.
+14. **Add `service_name` PRICING entry** in `lib/v1/system/cost.js`.
+
+This rule supersedes the older guidance — any engine missing items from this list is OUT OF COMPLIANCE
+and MUST be brought into compliance before adding new functionality.

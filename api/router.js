@@ -56,6 +56,8 @@ const enrichCrossExam = require('../lib/v1/enrich/cross-exam');
 const enrichSocialSearch = require('../lib/v1/enrich/social-search');
 const enrichFlVoterLoader = require('../lib/v1/enrich/fl-voter-loader');
 const enrichCrossref = require('../lib/v1/enrich/crossref');
+const enrichTwilio = require('../lib/v1/enrich/twilio');
+const webhookTwilioSms = require('../lib/v1/webhooks/twilio-sms');
 
 // ── System ──
 const sysHealth = require('../lib/v1/system/health');
@@ -117,6 +119,8 @@ const ROUTES = {
   'enrich/social-search':   enrichSocialSearch,
   'enrich/fl-voter-loader': enrichFlVoterLoader,
   'enrich/crossref': enrichCrossref,
+  'enrich/twilio': enrichTwilio,
+  'webhooks/twilio-sms': webhookTwilioSms,
   'system/health': sysHealth,
   'system/postgis': sysPostgis,
   'system/qualify': sysQualify,
