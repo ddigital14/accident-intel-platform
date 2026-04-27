@@ -483,14 +483,14 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
             <div style={{ fontSize: 9, fontWeight: 600, color: "#a0b0d0", letterSpacing: "1.5px", textTransform: "uppercase" }}>Donovan Digital</div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 4 }}>
-          {["dashboard", "incidents", "my-leads", "contacts", "integrations", "cost"].map((p) => (
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {["dashboard", "incidents", "cost", "my-leads", "contacts", "integrations"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
                 background: page === p ? "rgba(79,107,255,0.1)" : "none", border: "none", cursor: "pointer",
-                fontSize: 12, fontWeight: 600, letterSpacing: "0.5px", padding: "10px 16px", borderRadius: 8,
-                color: page === p ? "#4f6bff" : "#a0b0d0"
+                fontSize: 11, fontWeight: 600, letterSpacing: "0.3px", padding: "10px 12px", borderRadius: 8,
+                color: page === p ? "#4f6bff" : "#a0b0d0", whiteSpace: "nowrap"
               }}>
               {p === "dashboard" && "\u25A3 "}
               {p === "incidents" && "\u26A0 "}
