@@ -112,8 +112,11 @@ async function api(path, opts = {}) {
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
     if (res.status === 401) {
+      // Drop token + force re-render to login screen — DO NOT reload (causes infinite loop)
       localStorage.removeItem("aip_token");
-      window.location.reload();
+      // Trigger a global event so the App component can clear user state
+      window.dispatchEvent(new CustomEvent('aip:auth-expired'));
+      return { error: 'Unauthorized', data: [], _expired: true };
     }
     if (!res.ok) {
       const text = await res.text();
@@ -132,6 +135,12 @@ async function api(path, opts = {}) {
 // ============================================================================
 export default function App() {
   const [user, setUser] = useState(null);
+  // Listen for token-expired events from api() helper — clears user without reload
+  useEffect(() => {
+    const handler = () => { setUser(null); };
+    window.addEventListener('aip:auth-expired', handler);
+    return () => window.removeEventListener('aip:auth-expired', handler);
+  }, []);
   const [page, setPage] = useState("dashboard");
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState(null);
@@ -155,6 +164,7 @@ export default function App() {
   const [resyncing, setResyncing] = useState(false);
   const [resyncResult, setResyncResult] = useState(null);
   const [costData, setCostData] = useState(null);
+  const loadDataInflightRef = useRef(false);
 
   // Inject global CSS
   useEffect(() => {
@@ -277,6 +287,9 @@ export default function App() {
   // Load data (authenticated mode)
   const loadData = useCallback(async () => {
     if (!user) return;
+    if (loadDataInflightRef.current) return; // skip if previous still running
+    if (typeof document !== 'undefined' && document.hidden) return; // skip while tab hidden
+    loadDataInflightRef.current = true;
     setLoading(true);
     const params = new URLSearchParams(
       Object.entries(filters).filter(([, v]) => v)
@@ -293,6 +306,7 @@ export default function App() {
     setStats(statsData);
     setNotifs(notifData.data || []);
     setLoading(false);
+    loadDataInflightRef.current = false;
   }, [user, filters, incidentsView]);
 
   // Refresh Sync — re-runs all enrichment APIs against existing leads
