@@ -67,6 +67,7 @@ const sysChangelog = require('../lib/v1/system/changelog');
 const sysErrors = require('../lib/v1/system/errors');
 const sysCost = require('../lib/v1/system/cost');
 const sysCostDebug = require('../lib/v1/system/cost-debug');
+const sysCascade = require('../lib/v1/system/cascade');
 const sysSetup = require('../lib/v1/system/setup');
 const sysDigest = require('../lib/v1/system/digest');
 const sysSmoke = require('../lib/v1/system/smoke-test');
@@ -125,6 +126,7 @@ const ROUTES = {
   'system/errors': sysErrors,
   'system/cost': sysCost,
   'system/cost-debug': sysCostDebug,
+  'system/cascade': sysCascade,
   'system/setup': sysSetup,
   'system/digest': sysDigest,
   'system/smoke-test': sysSmoke,

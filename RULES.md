@@ -91,3 +91,15 @@ Re-run `GET /api/v1/system/triggers?secret=ingest-now` after any DB connection r
 - Always log to `system_changelog` (`logChange(db, {kind, title, summary, ...})`) for any deploy or schema change
 - Always use `batchInsert(db, table, rows)` from `lib/_batch.js` for >1 row insert — NEVER per-row INSERT in a loop
 - Always use `dedupCache.has()` / `.set()` from `lib/_cache.js` for source_reference dedup BEFORE hitting DB
+
+## CORE INTENT — Multi-cross-conversion (read CORE_INTENT.md)
+
+Every change to AIP must support the multi-cross-conversion directive:
+- New pipelines emit cascade events after linking data
+- Cascade engine fires every applicable enricher
+- Cross-exam scores identity_confidence
+- Repeat until convergence
+- Properties stay synced across all engines + UI/UX
+
+If a proposed change WEAKENS this — adds dead-end data, breaks the
+linkage chain, or misaligns properties — DO NOT SHIP IT.
