@@ -1102,24 +1102,79 @@ function IncidentList({ incidents, onSelect, filters, setFilters, incidentsView,
 }
 
 // ============================================================================
-// MY LEADS VIEW
+// MY LEADS VIEW — Phase 23 #2: Fallback view with Claim button
 // ============================================================================
 function MyLeads({ user, onSelect }) {
   const [leads, setLeads] = useState([]);
-  useEffect(() => {
-    api("/dashboard/my-assignments").then((d) => setLeads(d.data || []));
-  }, [user]);
+  const [fallback, setFallback] = useState([]);
+  const [mode, setMode] = useState("assigned");
+  const [claiming, setClaiming] = useState(null);
+
+  const reload = () => {
+    api("/dashboard/my-assignments").then((d) => {
+      setLeads(d.data || []);
+      setFallback(d.fallback || []);
+      setMode(d.mode || "assigned");
+    });
+  };
+  useEffect(() => { reload(); }, [user]);
+
+  const claim = async (incidentId) => {
+    setClaiming(incidentId);
+    try {
+      await api("/dashboard/my-assignments?action=claim&incidentId=" + incidentId, { method: "POST" });
+      reload();
+    } catch (e) {
+      alert("Claim failed: " + e.message);
+    } finally {
+      setClaiming(null);
+    }
+  };
+
+  const showFallback = leads.length === 0 && fallback.length > 0;
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ color: "#f4f7ff", margin: 0, fontSize: 22, fontWeight: 800 }}>My Assigned Leads</h2>
-        <p style={{ color: "#a0b0d0", margin: "4px 0 0", fontSize: 13 }}>{leads.length} leads assigned to you</p>
+        <p style={{ color: "#a0b0d0", margin: "4px 0 0", fontSize: 13 }}>
+          {leads.length} leads assigned to you{showFallback ? " — showing top qualified unassigned leads below" : ""}
+        </p>
       </div>
       <div style={enhancedCardStyle}>
         {leads.map((inc) => <IncidentRow key={inc.id} incident={inc} onSelect={onSelect} />)}
-        {leads.length === 0 && <EmptyState text="No leads assigned to you yet" />}
+        {leads.length === 0 && fallback.length === 0 && <EmptyState text="No leads assigned to you yet" />}
       </div>
+
+      {showFallback && (
+        <div style={{ marginTop: 28 }}>
+          <h3 style={{ color: "#fbbf24", margin: "0 0 12px", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", padding: "3px 10px", borderRadius: 6, fontSize: 10, color: "#0b0f1a", fontWeight: 800, letterSpacing: "1px" }}>FALLBACK</span>
+            Available {mode === "fallback_pending_named" ? "Pending-Named" : "Qualified"} Leads (click Claim)
+          </h3>
+          <div style={enhancedCardStyle}>
+            {fallback.map((inc) => (
+              <div key={inc.id} style={{ position: "relative" }}>
+                <IncidentRow incident={inc} onSelect={onSelect} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); claim(inc.id); }}
+                  disabled={claiming === inc.id}
+                  style={{
+                    position: "absolute", top: 14, right: 14,
+                    background: claiming === inc.id ? "#475569" : "linear-gradient(135deg, #34d399, #22d3ee)",
+                    border: "none", color: "#0b0f1a", padding: "6px 14px",
+                    borderRadius: 6, fontSize: 11, fontWeight: 800, letterSpacing: "0.5px",
+                    cursor: claiming === inc.id ? "wait" : "pointer",
+                    boxShadow: "0 2px 8px rgba(52,211,153,0.3)",
+                  }}
+                >
+                  {claiming === inc.id ? "CLAIMING..." : "CLAIM"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2173,18 +2228,26 @@ function MapView() {
   const [incidents, setIncidents] = React.useState([]);
   const [filter, setFilter] = React.useState("qualified");
   const [loaded, setLoaded] = React.useState(false);
+  const [heatmap, setHeatmap] = React.useState(false);
+  const heatLayerRef = useRef(null);
 
-  // Load Leaflet from CDN once
+  // Load Leaflet (+ heat plugin) from CDN once
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.L) { setLoaded(true); return; }
+    if (window.L && window.L.heatLayer) { setLoaded(true); return; }
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
     document.head.appendChild(css);
     const script = document.createElement("script");
     script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.onload = () => setLoaded(true);
+    script.onload = () => {
+      const heat = document.createElement("script");
+      heat.src = "https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js";
+      heat.onload = () => setLoaded(true);
+      heat.onerror = () => setLoaded(true);
+      document.body.appendChild(heat);
+    };
     document.body.appendChild(script);
   }, []);
 
@@ -2211,7 +2274,15 @@ function MapView() {
     }
     const map = mapInstanceRef.current;
     map.eachLayer(l => { if (l._latlng) map.removeLayer(l); });
+    if (heatLayerRef.current) {
+      try { map.removeLayer(heatLayerRef.current); } catch(_) {}
+      heatLayerRef.current = null;
+    }
     const colorFor = (sev) => sev === "fatal" ? "#ff4757" : sev === "serious" ? "#ff7b3a" : sev === "moderate" ? "#fbbf24" : "#22d3ee";
+    if (heatmap && window.L && window.L.heatLayer) {
+      const points = incidents.filter(i => i.latitude && i.longitude).map(i => [i.latitude, i.longitude, ((i.lead_score || 50) / 100)]);
+      heatLayerRef.current = window.L.heatLayer(points, { radius: 25, blur: 18, maxZoom: 12, gradient: { 0.2: "#22d3ee", 0.4: "#fbbf24", 0.6: "#ff7b3a", 0.9: "#ff4757" } }).addTo(map);
+    }
     incidents.forEach(inc => {
       if (!inc.latitude || !inc.longitude) return;
       const m = window.L.circleMarker([inc.latitude, inc.longitude], {
@@ -2231,13 +2302,24 @@ function MapView() {
         ${inc.injuries_count ? `Injuries: ${inc.injuries_count}<br>` : ""}
       </div>`);
     });
-  }, [incidents, loaded]);
+  }, [incidents, loaded, heatmap]);
 
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 style={{ color: "#fff", margin: 0, fontSize: 24, letterSpacing: "-0.4px" }}>Incident Map</h2>
         <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setHeatmap(h => !h)}
+            style={{
+              background: heatmap ? "rgba(255,71,87,0.2)" : "transparent",
+              border: "1px solid #1c2b4d",
+              color: heatmap ? "#ff7b3a" : "#a0b0d0",
+              padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+              fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px",
+              marginRight: 6
+            }}>
+            HEATMAP {heatmap ? "ON" : "OFF"}
+          </button>
           {["qualified", "pending", "all"].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{

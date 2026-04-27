@@ -36,7 +36,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop",
       "schedule": "*/5 * * * *"
     },
     {
@@ -48,7 +48,7 @@
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill,pdl-by-name",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill,pdl-by-name,identity-investigator,homegrown-rotation",
       "schedule": "*/30 * * * *"
     },
     {

@@ -89,6 +89,9 @@ const enrichSmartRouter = require('../lib/v1/enrich/_smart_router');
 const enrichPdlByName = require('../lib/v1/enrich/pdl-by-name');
 const enrichGaVoterLoader = require('../lib/v1/enrich/ga-voter-loader');
 const enrichTxVoterLoader = require('../lib/v1/enrich/tx-voter-loader');
+const claudeIdentityInvestigator = require('../lib/v1/enrich/claude-identity-investigator');
+const sysConstantCrossLoop = require('../lib/v1/system/_constant_cross_loop');
+const ingestHomegrownRotation = require('../lib/v1/ingest/_homegrown_rotation');
 
 // ── Cron ──
 const cronDispatch = require('../lib/v1/cron/dispatch');
@@ -163,6 +166,9 @@ const ROUTES = {
   'enrich/pdl-by-name': enrichPdlByName,
   'enrich/ga-voter-loader': enrichGaVoterLoader,
   'enrich/tx-voter-loader': enrichTxVoterLoader,
+  'enrich/claude-identity-investigator': claudeIdentityInvestigator,
+  'system/constant-cross-loop': sysConstantCrossLoop,
+  'ingest/homegrown-rotation': ingestHomegrownRotation,
   'cron/dispatch': cronDispatch,
 };
 
