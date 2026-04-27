@@ -1779,6 +1779,7 @@ function ContactsView({ contacts, summary, filters, setFilters, onEnrich, enrich
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Search name, phone, email..."
           style={{ ...inputStyle, width: 280, marginBottom: 0, borderRadius: 8, padding: "8px 14px", fontSize: 13 }} />
         {[
+          { key: "has_any_contact", label: "✓ Has Contact Info", val: "true" },
           { key: "has_phone", label: "Has Phone", val: "true" },
           { key: "has_email", label: "Has Email", val: "true" },
           { key: "has_address", label: "Has Address", val: "true" },
