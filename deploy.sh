@@ -105,10 +105,16 @@ do_setup() {
     -f "$APP_DIR/database/seeds/001_metro_areas.sql" 2>&1 | tail -3
   success "Metro areas seeded"
 
-  log "Seeding test data..."
-  PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" \
-    -f "$APP_DIR/database/seeds/002_test_data.sql" 2>&1 | tail -3
-  success "Test data seeded"
+  # Phase 24 — NEVER seed test data unless explicitly requested via WITH_TEST_DATA=1
+  # Production deploys MUST NOT apply 002_test_data.sql (creates fake Emily Chen, James Tucker, etc.)
+  if [ "${WITH_TEST_DATA:-0}" = "1" ] && [ "${NODE_ENV:-development}" != "production" ]; then
+    log "Seeding test data (DEV ONLY - WITH_TEST_DATA=1)..."
+    PGPASSWORD="$DB_PASSWORD" psql -U "$DB_USER" -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" \
+      -f "$APP_DIR/database/seeds/002_test_data.sql" 2>&1 | tail -3
+    success "Test data seeded (DEV)"
+  else
+    log "Skipping 002_test_data.sql — Phase 24 zero-fake-data rule (set WITH_TEST_DATA=1 for dev)"
+  fi
 
   # Build frontend
   log "Building React frontend..."

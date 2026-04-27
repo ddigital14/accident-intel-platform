@@ -1,4 +1,20 @@
 -- ============================================================================
+-- WARNING — Phase 24 ZERO-FAKE-DATA RULE
+-- ============================================================================
+-- This file contains TEST DATA ONLY (fake names, fake phones, fake reports).
+-- IT MUST NEVER BE APPLIED TO PRODUCTION.
+--
+-- Hardcoded values: Emily Chen, David Kim, James Tucker, Angela Martinez,
+-- Robert Garcia, Tanisha Brown, phone numbers 404555xxxx/770555xxxx/678555xxxx,
+-- police reports APD-2026-040301..040308 / CCPD-2026-001122.
+--
+-- If applied accidentally, purge with:
+--   GET /api/v1/system/audit?secret=ingest-now&purge_seeds=true
+--
+-- deploy.sh applies this only when WITH_TEST_DATA=1 AND NODE_ENV != production.
+-- ============================================================================
+
+-- ============================================================================
 -- ACCIDENT INTEL PLATFORM - Realistic Test Data
 -- Run after migrations: psql -d accident_intel -f database/seeds/002_test_data.sql
 -- ============================================================================

@@ -269,3 +269,74 @@ Still 11/11 (Hobby max) — all new work folded into existing slots.
 | <600 lines | 278 lines |
 | Idempotent | yes (no overwrite of existing fields) |
 | Fallback if env missing | yes (no-op if `PDL_API_KEY` unset) |
+
+---
+
+## Phase 24 — ZERO-FAKE-DATA RULE (CRITICAL)
+
+**NO seed/dummy/mock/fake/sample/placeholder data may EVER be applied to production.**
+
+### What counts as fake data
+- Any rows from `database/seeds/002_test_data.sql`
+- Hardcoded names: Emily Chen, David Kim, James Tucker, Angela Martinez, Robert Garcia, Tanisha Brown, Sarah Johnson, Marcus Williams, Lisa Chen
+- Hardcoded phone patterns: `404555xxxx`, `770555xxxx`, `678555xxxx` (555-prefix area)
+- Hardcoded police_report_numbers: `APD-2026-040301..040308`, `CCPD-2026-001122`
+- Any incident with `tags = ['test'|'seed'|'demo']`
+- Any "fallback" mock response from a pipeline when an API returns no data
+
+### Enforcement
+1. `database/seeds/002_test_data.sql` is **DEV/TEST only**. NEVER run against production DATABASE_URL.
+2. `deploy.sh` (and any CI workflow) MUST NOT call `psql ... -f database/seeds/002_test_data.sql`.
+3. Verify with: `GET /api/v1/system/audit?secret=ingest-now` -> issues.seed_incidents + issues.seed_persons must be 0.
+4. To purge if found: `GET /api/v1/system/audit?secret=ingest-now&purge_seeds=true`.
+5. Pipelines MUST return real values OR null/skip — never substitute placeholder strings.
+6. New ingestion engines MUST NOT include test fixture rows in their first run.
+7. `lib/v1/ingest/_homegrown_rotation.js` and all RSS/news pipelines extract from REAL feed responses only — no inline sample objects.
+
+### Audit cron
+`audit` cron runs daily at 5 AM UTC; it now reports `seed_incidents` and `seed_persons` counts. Any non-zero value triggers an error in `system_errors`.
+
+---
+
+## Phase 24 — PI-broad keyword filter
+
+`lib/v1/ingest/news-rss.js` `CRASH_KEYWORDS` regex was widened from ~15 vehicle terms
+to a full personal-injury surface area (vehicle, pedestrian/cyclist, water, workplace,
+premises, medical malpractice, product liability, catastrophic injury, DUI/wrongful death).
+
+`lib/v1/ingest/_homegrown_rotation.js` keyword filters in 5 places were unified to the
+same broad PI regex — captures truck/motorcycle/work/dog-bite/elevator/boat etc.
+
+When adding a new ingest source, copy the canonical PI regex. Do NOT use a narrow
+"crash|accident|collision" filter — Mason wants ANY personal-injury lead.
+
+---
+
+## Phase 24 — Auto-assign re-rotate
+
+`lib/v1/system/auto-assign.js` now releases stale assignments before assigning new ones:
+- Assigned >7d ago AND status in (new|unclaimed|assigned) -> release back to pool
+- Status='declined' -> release immediately
+Override stale window via `?stale_days=N`.
+
+---
+
+## Phase 24 — WhitePages structured-data parser
+
+`lib/v1/enrich/people-search.js` now extracts persons from `<script id="__NEXT_DATA__">`
+JSON blocks before falling back to GPT regex extraction. Much more reliable when WP
+returns a Next.js-rendered page.
+
+---
+
+## Phase 24 — identity_confidence backfill + canonicalization
+
+`lib/v1/enrich/claude-identity-investigator.js` now exposes:
+- `?action=backfill_ic&limit=200` -> backfill NULL identity_confidence via `crossExamine`
+- `?action=batch` auto-runs a 50-row backfill on each call
+
+`lib/v1/enrich/_smart_router.js` already reads `identity_confidence` first in the
+`<70 -> claude-cross-reasoner` threshold check. Confirmed canonical column.
+
+When adding a new enrichment engine, write to `persons.identity_confidence` (NOT just
+`confidence_score`) when you have multi-source verification.
