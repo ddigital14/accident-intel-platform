@@ -85,6 +85,7 @@ const sysBackfillNameless = require('../lib/v1/system/backfill-nameless');
 const enrichCourtReverseLink = require('../lib/v1/enrich/court-reverse-link');
 const enrichObitBackfill = require('../lib/v1/enrich/obit-backfill');
 const claudeCrossReasoner = require('../lib/v1/enrich/claude-cross-reasoner');
+const enrichSmartRouter = require('../lib/v1/enrich/_smart_router');
 
 // ── Cron ──
 const cronDispatch = require('../lib/v1/cron/dispatch');
@@ -155,6 +156,7 @@ const ROUTES = {
   'enrich/court-reverse-link': enrichCourtReverseLink,
   'enrich/obit-backfill': enrichObitBackfill,
   'enrich/claude-cross-reasoner': claudeCrossReasoner,
+  'enrich/smart-router': enrichSmartRouter,
   'cron/dispatch': cronDispatch,
 };
 

@@ -187,3 +187,38 @@ without joining persons. Don't break this contract.
 ### Required env vars (in addition to existing)
 - ANTHROPIC_API_KEY    — for Claude cross-reasoner + provider fallback
 - OPENWEATHER_API_KEY  — for weather snapshots (free tier sufficient)
+
+
+## Phase 21 — Cross-Link Maximization + Smart Router (2026-04-27)
+
+### New cross-links shipped
+| # | Wire | File | Trigger | Effect |
+|---|------|------|---------|--------|
+| 1 | VIN recalls → severity boost | `enrich/vehicle-history.js` | recall_count > 0 | lead_score += 5 (10 if 3+) |
+| 2 | Court plaintiff → has_attorney=true | `enrich/court-reverse-link.js` | name match existing victim | persons.has_attorney=true + incidents.has_attorney_known=true |
+| 3 | Obit → relatives → cascade | `enrich/obit-backfill.js` | name match | enroll relatives + cascade each |
+| 4 | Twilio caller_name agreement | `enrich/twilio.js` | caller_name == full_name | identity_confidence += 15 |
+| 5 | PD-press name → news/court pull | `ingest/pd-press.js` | new named person | enqueueCascade priority 8 |
+| 6 | Property owner last_name match | `enrich/cross-wires.js` | owner_name LIKE last_name | likely_family_residence=true |
+| 7 | Voter DOB validation | `enrich/cross-wires.js` | abs(age-yob)<=2 / >5 | identity_confidence +5 / identity_conflict=true |
+| 8 | Cross-source name validation | `enrich/cross-wires.js` | 3+ sources agree | identity_confidence += 20 |
+| 9 | Incident-level cascade | `system/_cascade.js` (enqueueIncidentCascade) | qualify_state / case_value / lead_score change | re-cross-exam all persons |
+| 10 | contact_quality (cold/warm/hot) | `enrich/twilio.js` | post-Twilio Lookup | persons.contact_quality column |
+
+### Smart router (`lib/v1/enrich/_smart_router.js`)
+Pure decision function `pickNextAction(person, incident, ic)` chooses cheapest valuable next-step.
+Action priority: backfill-nameless → pdl-by-name → twilio-lookup → hunter-find → searchbug+voter → social-search → family-tree → court-reverse-link → claude-reasoner → ready-for-rep.
+Endpoints: `?action=pick&person_id=` and `?action=batch&limit=15`.
+Cron: folded into 5-min slot alongside qualify.
+
+### New columns
+- persons.identity_confidence (INT, indexed)
+- persons.identity_conflict (BOOL)
+- persons.likely_family_residence (BOOL)
+- persons.contact_quality (cold|warm|hot)
+- persons.caller_name (carrier-reported owner)
+- persons.has_relatives_searched (BOOL)
+- incidents.has_attorney_known (BOOL)
+- incidents.vehicle_recalls_count (INT)
+
+All ALTER TABLEs live inside qualify.js ensureColumns flow → applied on every qualify cron tick.
