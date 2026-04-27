@@ -81,6 +81,9 @@ const sysTriggers = require('../lib/v1/system/triggers');
 const sysAudit = require('../lib/v1/system/audit');
 const sysResync = require('../lib/v1/system/resync');
 const sysTestGpt = require('../lib/v1/system/test-gpt');
+const sysBackfillNameless = require('../lib/v1/system/backfill-nameless');
+const enrichCourtReverseLink = require('../lib/v1/enrich/court-reverse-link');
+const enrichObitBackfill = require('../lib/v1/enrich/obit-backfill');
 const claudeCrossReasoner = require('../lib/v1/enrich/claude-cross-reasoner');
 
 // ── Cron ──
@@ -148,6 +151,9 @@ const ROUTES = {
   'system/audit': sysAudit,
   'system/resync': sysResync,
   'system/test-gpt': sysTestGpt,
+  'system/backfill-nameless': sysBackfillNameless,
+  'enrich/court-reverse-link': enrichCourtReverseLink,
+  'enrich/obit-backfill': enrichObitBackfill,
   'enrich/claude-cross-reasoner': claudeCrossReasoner,
   'cron/dispatch': cronDispatch,
 };
