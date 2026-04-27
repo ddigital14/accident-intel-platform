@@ -57,6 +57,10 @@ const enrichSocialSearch = require('../lib/v1/enrich/social-search');
 const enrichFlVoterLoader = require('../lib/v1/enrich/fl-voter-loader');
 const enrichCrossref = require('../lib/v1/enrich/crossref');
 const enrichTwilio = require('../lib/v1/enrich/twilio');
+const enrichFamilyTree = require('../lib/v1/enrich/family-tree');
+const enrichVehicleHistory = require('../lib/v1/enrich/vehicle-history');
+const enrichRelativesSearch = require('../lib/v1/enrich/relatives-search');
+const enrichTcpaCheck = require('../lib/v1/enrich/tcpa-litigator-check');
 const webhookTwilioSms = require('../lib/v1/webhooks/twilio-sms');
 
 // ── System ──
@@ -120,6 +124,10 @@ const ROUTES = {
   'enrich/fl-voter-loader': enrichFlVoterLoader,
   'enrich/crossref': enrichCrossref,
   'enrich/twilio': enrichTwilio,
+  'enrich/family-tree': enrichFamilyTree,
+  'enrich/vehicle-history': enrichVehicleHistory,
+  'enrich/relatives-search': enrichRelativesSearch,
+  'enrich/tcpa-litigator-check': enrichTcpaCheck,
   'webhooks/twilio-sms': webhookTwilioSms,
   'system/health': sysHealth,
   'system/postgis': sysPostgis,
