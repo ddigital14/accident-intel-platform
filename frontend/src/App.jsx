@@ -180,11 +180,8 @@ export default function App() {
   // Load feed by qualification state (tab filter)
   const loadFeed = useCallback(async (state = feedView) => {
     try {
-      const r = await fetch(`${API}/dashboard/feed?state=${state}&limit=50&minutes=10080`);
-      if (r.ok) {
-        const d = await r.json();
-        if (Array.isArray(d.data)) setFeedIncidents(d.data);
-      }
+      const d = await api(`/dashboard/feed?state=${state}&limit=50&minutes=10080`);
+      if (Array.isArray(d.data)) setFeedIncidents(d.data);
     } catch (err) {
       console.warn('feed load failed', err);
     }
@@ -200,13 +197,13 @@ export default function App() {
   const loadSystemPanels = useCallback(async () => {
     try {
       const [h, e, c] = await Promise.all([
-        fetch(`${API}/system/health`).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(`${API}/system/errors?limit=20`).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(`${API}/system/changelog?limit=10`).then(r => r.ok ? r.json() : null).catch(() => null)
+        api('/system/health'),
+        api('/system/errors?limit=20&secret=ingest-now'),
+        api('/system/changelog?limit=10&secret=ingest-now'),
       ]);
-      if (h?.success) setSystemHealth(h);
-      if (e?.success) setRecentErrors(e.errors || []);
-      if (c?.success) setChangelogEntries(c.entries || []);
+      if (h?.success || h?.status) setSystemHealth(h);
+      if (Array.isArray(e?.errors) || Array.isArray(e?.rows)) setRecentErrors(e.errors || e.rows || []);
+      if (Array.isArray(c?.entries) || Array.isArray(c?.rows)) setChangelogEntries(c.entries || c.rows || []);
     } catch (err) {
       console.warn('System panel load failed:', err);
     }
@@ -303,14 +300,10 @@ export default function App() {
     setResyncing(true);
     setResyncResult(null);
     try {
-      const r = await fetch(`${API}/system/resync?secret=ingest-now`);
-      if (r.ok) {
-        const d = await r.json();
-        setResyncResult(d);
-        // Refresh data after resync
-        if (user) loadData(); else loadPublicStats();
-        loadFeed(feedView);
-      }
+      const d = await api('/system/resync?secret=ingest-now');
+      setResyncResult(d);
+      if (user) loadData(); else loadPublicStats();
+      loadFeed(feedView);
     } catch (err) {
       setResyncResult({ success: false, error: err.message });
     }
@@ -354,7 +347,7 @@ export default function App() {
   const loadCost = useCallback(async () => {
     if (!user) return;
     try {
-      const r = await fetch(`${API}/api/v1/system/cost?secret=ingest-now`);
+      const r = await fetch(`${API}/system/cost`);
       if (r.ok) {
         const d = await r.json();
         setCostData(d);
@@ -618,11 +611,11 @@ function Sidebar({ filters, setFilters, metros, onRefresh }) {
 
       <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#a0b0d0", fontSize: 13, cursor: "pointer" }}>
-          <input type="checkbox" checked={!!filters.hasContactInfo} onChange={(e) => update("hasContactInfo", e.target.checked ? "true" : "")} style={{ accentColor: "#34d399" }} />
+          <input type="checkbox" checked={!!filters.has_contact_info} onChange={(e) => update("has_contact_info", e.target.checked ? "true" : "")} style={{ accentColor: "#34d399" }} />
           Has Contact Info
         </label>
         <label style={{ display: "flex", alignItems: "center", gap: 8, color: "#a0b0d0", fontSize: 13, cursor: "pointer" }}>
-          <input type="checkbox" checked={!!filters.hasAttorney} onChange={(e) => update("hasAttorney", e.target.checked ? "false" : "")} style={{ accentColor: "#4f6bff" }} />
+          <input type="checkbox" checked={filters.hasAttorney === "false"} onChange={(e) => update("hasAttorney", e.target.checked ? "false" : "")} style={{ accentColor: "#4f6bff" }} />
           No Attorney
         </label>
       </div>

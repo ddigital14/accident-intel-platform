@@ -36,7 +36,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam",
       "schedule": "*/5 * * * *"
     },
     {
@@ -44,11 +44,11 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup",
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree",
       "schedule": "*/30 * * * *"
     },
     {
@@ -56,11 +56,11 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search",
       "schedule": "0 */2 * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history",
       "schedule": "0 */6 * * *"
     },
     {
