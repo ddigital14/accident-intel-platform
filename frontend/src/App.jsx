@@ -413,6 +413,7 @@ export default function App() {
           {page === "my-leads" && <MyLeads user={user} onSelect={setSelectedIncident} />}
           {page === "cost" && <CostView costData={costData} onRefresh={loadCost} />}
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
+          {page === "map" && <MapView />}
           {page === "integrations" && <IntegrationsView integrations={integrations} stats={integrationStats} onAction={integrationAction} onRefresh={loadIntegrations} />}
         </main>
       </div>
@@ -513,7 +514,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {["dashboard", "incidents", "cost", "my-leads", "contacts", "integrations"].map((p) => (
+          {["dashboard", "incidents", "map", "cost", "my-leads", "contacts", "integrations"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
@@ -526,6 +527,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
               {p === "my-leads" && "\u2605 "}
               {p === "contacts" && "\uD83D\uDCCB "}
               {p === "integrations" && "\u2699 "}
+              {p === "map" && "\u25C9 "}
               {p === "cost" && "\uD83D\uDCB0 "}
               {p.replace("-", " ").toUpperCase()}
             </button>
@@ -2160,3 +2162,103 @@ function IntegrationsView({ integrations, stats, onAction, onRefresh }) {
     </div>
   );
 }
+
+
+// ============================================================================
+// MAP VIEW — Phase 19: Interactive incident map (Leaflet from CDN)
+// ============================================================================
+function MapView() {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const [incidents, setIncidents] = React.useState([]);
+  const [filter, setFilter] = React.useState("qualified");
+  const [loaded, setLoaded] = React.useState(false);
+
+  // Load Leaflet from CDN once
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.L) { setLoaded(true); return; }
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.onload = () => setLoaded(true);
+    document.body.appendChild(script);
+  }, []);
+
+  // Load incidents
+  useEffect(() => {
+    fetch(`${API}/dashboard/feed?state=${filter}&limit=300&minutes=10080`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("aip_token") || ""}` }
+    })
+      .then(r => r.json())
+      .then(d => setIncidents((d.data || []).filter(i => i.latitude && i.longitude)))
+      .catch(() => {});
+  }, [filter]);
+
+  // Render map
+  useEffect(() => {
+    if (!loaded || !mapRef.current || !window.L) return;
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = window.L.map(mapRef.current).setView([39.8, -98.5], 4);
+      window.L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
+        attribution: "&copy; OSM &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 19,
+      }).addTo(mapInstanceRef.current);
+    }
+    const map = mapInstanceRef.current;
+    map.eachLayer(l => { if (l._latlng) map.removeLayer(l); });
+    const colorFor = (sev) => sev === "fatal" ? "#ff4757" : sev === "serious" ? "#ff7b3a" : sev === "moderate" ? "#fbbf24" : "#22d3ee";
+    incidents.forEach(inc => {
+      if (!inc.latitude || !inc.longitude) return;
+      const m = window.L.circleMarker([inc.latitude, inc.longitude], {
+        radius: 6 + (inc.lead_score || 0) / 20,
+        fillColor: colorFor(inc.severity),
+        color: "#0b0f1a",
+        weight: 1.5,
+        opacity: 1,
+        fillOpacity: 0.85,
+      }).addTo(map);
+      m.bindPopup(`<div style="color:#0b0f1a;font-family:Inter,sans-serif;min-width:200px">
+        <strong>${inc.severity?.toUpperCase() || ""} - ${inc.incident_type || ""}</strong><br>
+        ${inc.city || ""}, ${inc.state || ""}<br>
+        Score: <b>${inc.lead_score || 0}</b><br>
+        ${inc.case_value_band ? `Value: <b>${inc.case_value_band}</b><br>` : ""}
+        ${inc.fatalities_count ? `Fatalities: ${inc.fatalities_count}<br>` : ""}
+        ${inc.injuries_count ? `Injuries: ${inc.injuries_count}<br>` : ""}
+      </div>`);
+    });
+  }, [incidents, loaded]);
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h2 style={{ color: "#fff", margin: 0, fontSize: 24, letterSpacing: "-0.4px" }}>Incident Map</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          {["qualified", "pending", "all"].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              style={{
+                background: filter === f ? "rgba(79,107,255,0.2)" : "transparent",
+                border: "1px solid #1c2b4d",
+                color: filter === f ? "#4f6bff" : "#a0b0d0",
+                padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px"
+              }}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ background: "#101729", border: "1px solid #1c2b4d", borderRadius: 12, padding: 12 }}>
+        <div ref={mapRef} style={{ width: "100%", height: 600, borderRadius: 8 }} />
+        <div style={{ marginTop: 12, color: "#a0b0d0", fontSize: 12 }}>
+          {incidents.length} incidents on map - circle size = lead_score, color = severity
+        </div>
+      </div>
+    </div>
+  );
+}
+

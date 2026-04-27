@@ -80,6 +80,8 @@ const sysSmoke = require('../lib/v1/system/smoke-test');
 const sysTriggers = require('../lib/v1/system/triggers');
 const sysAudit = require('../lib/v1/system/audit');
 const sysResync = require('../lib/v1/system/resync');
+const sysTestGpt = require('../lib/v1/system/test-gpt');
+const claudeCrossReasoner = require('../lib/v1/enrich/claude-cross-reasoner');
 
 // ── Cron ──
 const cronDispatch = require('../lib/v1/cron/dispatch');
@@ -145,6 +147,8 @@ const ROUTES = {
   'system/triggers': sysTriggers,
   'system/audit': sysAudit,
   'system/resync': sysResync,
+  'system/test-gpt': sysTestGpt,
+  'enrich/claude-cross-reasoner': claudeCrossReasoner,
   'cron/dispatch': cronDispatch,
 };
 

@@ -129,3 +129,61 @@ Every NEW engine/integration must obey the following — no engine ships without
 
 This rule supersedes the older guidance — any engine missing items from this list is OUT OF COMPLIANCE
 and MUST be brought into compliance before adding new functionality.
+
+
+## Phase 19 — AI Router + Claude + Beyond-Competitor Features (2026-04-27)
+
+### AI Router (`lib/v1/enrich/_ai_router.js`) — REQUIRED
+EVERY new GPT/Claude call MUST go through the AI router. NO direct fetch() calls
+to api.openai.com or api.anthropic.com from any other file. The router gives us:
+- Tier routing (cheap=gpt-4o-mini, premium=gpt-4o, auto=fatal->premium)
+- Provider failover (OpenAI -> Claude when 5xx/quota)
+- Token usage tracked into system_api_calls.tokens_in/out
+- Centralized error logging (no more silent catches)
+
+If you're tempted to write `await fetch('https://api.openai.com/...')` again — STOP.
+Use `extractJson(db, { pipeline, systemPrompt, userPrompt, tier, severityHint })` instead.
+
+### Model registry (single source of truth)
+`MODELS` map in `_ai_router.js`. Update only there when new versions ship.
+- gpt-4o-mini    — high-volume cheap extraction
+- gpt-4o         — fatal/serious incidents + obituaries + court (high-value cases)
+- whisper-1      — scanner audio
+- claude-haiku-4-5     — fallback / cheap Claude path
+- claude-sonnet-4-6    — Claude cross-reasoner (top leads)
+- claude-opus-4-6      — manual long-document reasoning (use sparingly)
+
+### Claude cross-reasoner (`lib/v1/enrich/claude-cross-reasoner.js`)
+Cron: every 5 min via `qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason`.
+For top-15 leads with score≥50 + no recent reasoning, runs Claude Sonnet over ALL
+evidence and produces verdict (high_confidence|moderate|low|contradictory|duplicate).
+Boost in [-15,+15] applied to person.confidence_score → emits cascade.
+
+### Cross-wires (`lib/v1/enrich/cross-wires.js`)
+Free, fast, applied to every newly qualified incident in qualify.js:
+- weatherSnapshot          (OpenWeather, free tier)
+- priorIncidentsAtLocation (PostGIS ±100m / 5 years)
+- vehicleRecallSummary     (NHTSA, free)
+- timeOfDayBucket          (rush_hour | overnight | weekend | day | evening)
+- first_responder_agency   (heuristic from police_department)
+
+### Predictive case value (`lib/v1/system/_case_value.js`)
+Logistic-style score → band:
+- low      ($5k–$25k)
+- moderate ($25k–$100k)
+- high     ($100k–$500k)
+- premium  ($500k+)
+
+Stored on `incidents.case_value_*` columns. Set during qualify cron.
+
+### Test endpoint (`/api/v1/system/test-gpt?secret=ingest-now`)
+P0 debug: returns env_keys_set + sample extraction round-trip with timings.
+First stop when "GPT extraction returns null" symptoms appear.
+
+### Court → has_attorney → incident.tags
+court.js now bubbles `has_attorney` up to `incidents.tags` so dashboards filter
+without joining persons. Don't break this contract.
+
+### Required env vars (in addition to existing)
+- ANTHROPIC_API_KEY    — for Claude cross-reasoner + provider fallback
+- OPENWEATHER_API_KEY  — for weather snapshots (free tier sufficient)
