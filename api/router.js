@@ -86,6 +86,9 @@ const enrichCourtReverseLink = require('../lib/v1/enrich/court-reverse-link');
 const enrichObitBackfill = require('../lib/v1/enrich/obit-backfill');
 const claudeCrossReasoner = require('../lib/v1/enrich/claude-cross-reasoner');
 const enrichSmartRouter = require('../lib/v1/enrich/_smart_router');
+const enrichPdlByName = require('../lib/v1/enrich/pdl-by-name');
+const enrichGaVoterLoader = require('../lib/v1/enrich/ga-voter-loader');
+const enrichTxVoterLoader = require('../lib/v1/enrich/tx-voter-loader');
 
 // ── Cron ──
 const cronDispatch = require('../lib/v1/cron/dispatch');
@@ -157,6 +160,9 @@ const ROUTES = {
   'enrich/obit-backfill': enrichObitBackfill,
   'enrich/claude-cross-reasoner': claudeCrossReasoner,
   'enrich/smart-router': enrichSmartRouter,
+  'enrich/pdl-by-name': enrichPdlByName,
+  'enrich/ga-voter-loader': enrichGaVoterLoader,
+  'enrich/tx-voter-loader': enrichTxVoterLoader,
   'cron/dispatch': cronDispatch,
 };
 

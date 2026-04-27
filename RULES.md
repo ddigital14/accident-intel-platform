@@ -222,3 +222,50 @@ Cron: folded into 5-min slot alongside qualify.
 - incidents.vehicle_recalls_count (INT)
 
 All ALTER TABLEs live inside qualify.js ensureColumns flow → applied on every qualify cron tick.
+
+---
+
+## Phase 22 — PDL-by-name + voter loaders + property records expansion + tributes.com swap (2026-04-27)
+
+### New endpoints
+| Path | Purpose | Cron |
+|---|---|---|
+| `/api/v1/enrich/pdl-by-name` | Bulk PDL Person Enrichment for `pending_named` persons missing phone+email | folded into 30-min `pd-press,obituaries,...` slot as `pdl-by-name` job |
+| `/api/v1/enrich/ga-voter-loader` | GA voter-roll bulk loader (pipe-delimited) | n/a — manual POST after Mason downloads file |
+| `/api/v1/enrich/tx-voter-loader` | TX voter-roll bulk loader (pipe-delimited) | n/a — manual POST after Mason buys file |
+
+### Property records: 4 new counties
+`lib/v1/enrich/property-records.js` COUNTY_ENDPOINTS now includes:
+- `GA:Fulton` (Atlanta) — Fulton GIS ArcGIS feature service
+- `FL:MiamiDade` (Miami) — public assessor address-search
+- `TX:Travis` (Austin) — TravisCAD ArcGIS feature service
+- `AZ:Maricopa` (Phoenix) — `api.mcassessor.maricopa.gov/parcel/search`
+
+City→county map expanded for the major cities of each.
+
+### Obituary source swap
+- `lib/v1/enrich/obit-backfill.js` + `lib/v1/ingest/obituaries.js` now hit **tributes.com** first; legacy.com is fallback. UA changed from `AIP-Backfill/1.0` to `Mozilla/5.0 (compatible; AIP/1.0; research)` to avoid bot blocks.
+
+### Smart-router execution upgrade
+`enrich-pdl-by-name` action is now executed inline (not just deferred) when smart router picks it — closes the "router decides + nothing happens" gap.
+
+### Cron count
+Still 11/11 (Hobby max) — all new work folded into existing slots.
+
+### 14-point compliance for PDL-by-name engine
+| Check | Status |
+|---|---|
+| Static `require()` | yes (no dynamic) |
+| Canonical normalizers | yes (`normalizePerson` import; non-overwrite policy) |
+| `trackApiCall(db, 'enrich-pdl-by-name', 'pdl', …)` | yes |
+| `enqueueCascade()` per success | yes (priority 8) |
+| Cron registered in `dispatch.js` JOB_HANDLERS | yes (`pdl-by-name`) |
+| Router registered in `api/router.js` ROUTES | yes (`enrich/pdl-by-name`) |
+| `logChange()` aggregate write | yes (kind=enrichment) |
+| `reportError()` per failure | yes |
+| `dedupCache` to avoid loops | yes (`pdlbn:<id>`) |
+| Time-budget guard (<50s) | yes |
+| Confidence merge (LEAST/Math.max) | yes |
+| <600 lines | 278 lines |
+| Idempotent | yes (no overwrite of existing fields) |
+| Fallback if env missing | yes (no-op if `PDL_API_KEY` unset) |

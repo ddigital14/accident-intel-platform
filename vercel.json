@@ -48,7 +48,7 @@
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill,pdl-by-name",
       "schedule": "*/30 * * * *"
     },
     {
