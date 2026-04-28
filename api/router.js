@@ -101,6 +101,10 @@ const sysAbSmsOptimizer = require('../lib/v1/system/ab-sms-optimizer');
 const sysRepStats = require('../lib/v1/system/rep-stats');
 const sysConfidenceTrail = require('../lib/v1/system/confidence-trail');
 const sysPluginExport = require('../lib/v1/system/plugin-export');
+const migratePerfViews = require('../lib/v1/migrate/perf-views');
+const sysRefreshMv = require('../lib/v1/system/refresh-mv');
+const sysTranscriptionQueue = require('../lib/v1/system/transcription-queue');
+const sysKvCursor = require('../lib/v1/system/kv-cursor');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -237,6 +241,10 @@ const ROUTES = {
   'system/rep-stats': sysRepStats,
   'system/confidence-trail': sysConfidenceTrail,
   'system/plugin-export': sysPluginExport,
+  'migrate/perf-views': migratePerfViews,
+  'system/refresh-mv': sysRefreshMv,
+  'system/transcription-queue': sysTranscriptionQueue,
+  'system/kv-cursor': sysKvCursor,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,

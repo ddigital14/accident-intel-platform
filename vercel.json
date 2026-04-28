@@ -32,11 +32,11 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=scanner,enrich",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=scanner,enrich,transcription-drain",
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source,refresh-mv",
       "schedule": "*/5 * * * *"
     },
     {
