@@ -96,6 +96,11 @@ const ingestTelegramPolice = require('../lib/v1/ingest/telegram-police');
 const ingestCitizenProbe = require('../lib/v1/ingest/citizen-probe');
 const ingestWhoisLLC = require('../lib/v1/ingest/whois-llc');
 const ingestHospitalRSS = require('../lib/v1/ingest/hospital-rss');
+const enrichPredictiveAtSource = require('../lib/v1/enrich/predictive-at-source');
+const sysAbSmsOptimizer = require('../lib/v1/system/ab-sms-optimizer');
+const sysRepStats = require('../lib/v1/system/rep-stats');
+const sysConfidenceTrail = require('../lib/v1/system/confidence-trail');
+const sysPluginExport = require('../lib/v1/system/plugin-export');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -227,6 +232,11 @@ const ROUTES = {
   'ingest/citizen-probe': ingestCitizenProbe,
   'ingest/whois-llc': ingestWhoisLLC,
   'ingest/hospital-rss': ingestHospitalRSS,
+  'enrich/predictive-at-source': enrichPredictiveAtSource,
+  'system/ab-sms-optimizer': sysAbSmsOptimizer,
+  'system/rep-stats': sysRepStats,
+  'system/confidence-trail': sysConfidenceTrail,
+  'system/plugin-export': sysPluginExport,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,

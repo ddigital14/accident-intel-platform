@@ -415,6 +415,9 @@ export default function App() {
           {page === "contacts" && <ContactsView contacts={contacts} summary={contactSummary} filters={contactFilters} setFilters={setContactFilters} onEnrich={enrichPerson} enriching={enriching} onRefresh={loadContacts} onSelect={setSelectedIncident} />}
           {page === "map" && <MapView />}
           {page === "integrations" && <IntegrationsView integrations={integrations} stats={integrationStats} onAction={integrationAction} onRefresh={loadIntegrations} />}
+          {page === "live-feed" && <LiveFeedView />}
+          {page === "rep-stats" && <RepStatsView />}
+          {page === "alerts" && <SavedAlertsView />}
         </main>
       </div>
 
@@ -514,7 +517,7 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {["dashboard", "incidents", "map", "cost", "my-leads", "contacts", "integrations"].map((p) => (
+          {["dashboard", "live-feed", "incidents", "map", "my-leads", "rep-stats", "alerts", "cost", "contacts", "integrations"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
@@ -2339,6 +2342,128 @@ function MapView() {
         <div style={{ marginTop: 12, color: "#a0b0d0", fontSize: 12 }}>
           {incidents.length} incidents on map - circle size = lead_score, color = severity
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────── PHASE 32 — operational layer page components ─────────────
+
+function LiveFeedView() {
+  const [items, setItems] = React.useState([]);
+  const [since, setSince] = React.useState(new Date(Date.now() - 30 * 60 * 1000).toISOString());
+  const [paused, setPaused] = React.useState(false);
+  React.useEffect(() => {
+    if (paused) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const d = await api(`/system/realtime-feed?since=${encodeURIComponent(since)}&min_score=70`);
+        if (!alive) return;
+        if (d?.items?.length) {
+          setItems(prev => [...d.items, ...prev].slice(0, 200));
+          setSince(d.server_time);
+        }
+      } catch (_) {}
+    };
+    tick();
+    const t = setInterval(tick, 5000);
+    return () => { alive = false; clearInterval(t); };
+  }, [paused, since]);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ color: "#fff", margin: 0 }}>◉ LIVE FEED <span style={{ fontSize: 11, color: paused ? "#ff7b3a" : "#34d399", marginLeft: 8 }}>{paused ? "PAUSED" : "● LIVE — 5s poll"}</span></h2>
+        <button onClick={() => setPaused(p => !p)} style={{ background: paused ? "#34d399" : "#ff7b3a", color: "#000", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{paused ? "▶ RESUME" : "⏸ PAUSE"}</button>
+      </div>
+      <div style={{ background: "rgba(20,24,41,0.7)", borderRadius: 8, border: "1px solid rgba(79,107,255,0.2)", overflow: "hidden" }}>
+        {items.length === 0 && <div style={{ padding: 32, textAlign: "center", color: "#a0b0d0" }}>Waiting for new high-score incidents (≥70)…</div>}
+        {items.map((it, i) => (
+          <div key={`${it.id}-${i}`} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "grid", gridTemplateColumns: "60px 1fr 200px", gap: 16, alignItems: "center" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: it.lead_score >= 90 ? "#ff4757" : it.lead_score >= 80 ? "#ff7b3a" : "#fbbf24" }}>{it.lead_score}</span>
+            <div>
+              <div style={{ color: "#fff", fontSize: 13 }}>{(it.description || "").slice(0, 140)}</div>
+              <div style={{ color: "#a0b0d0", fontSize: 11 }}>{it.city}, {it.state} · {it.severity} · {it.full_name || "(no name yet)"}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ color: "#a0b0d0", fontSize: 10 }}>{new Date(it.created_at).toLocaleTimeString()}</div>
+              {it.phone && <div style={{ color: "#34d399", fontSize: 11 }}>📞 {it.phone}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RepStatsView() {
+  const [reps, setReps] = React.useState([]);
+  const [days, setDays] = React.useState(7);
+  React.useEffect(() => {
+    api(`/system/rep-stats?days=${days}`).then(d => setReps(d.reps || []));
+  }, [days]);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ color: "#fff", margin: 0 }}>★ REP PERFORMANCE</h2>
+        <select value={days} onChange={e => setDays(parseInt(e.target.value))} style={{ background: "#1c2b4d", color: "#fff", border: "1px solid #2a3b6e", borderRadius: 6, padding: "6px 10px" }}>
+          <option value={1}>Last 24h</option><option value={7}>Last 7 days</option><option value={30}>Last 30 days</option>
+        </select>
+      </div>
+      <div style={{ background: "rgba(20,24,41,0.7)", borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", padding: "10px 16px", background: "rgba(79,107,255,0.1)", color: "#a0b0d0", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+          <div>Rep</div><div>Claimed</div><div>Qualified</div><div>SMS Sent</div><div>Reply Rate</div><div>Avg Time-to-Contact</div>
+        </div>
+        {reps.map(r => (
+          <div key={r.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#fff", fontSize: 13 }}>
+            <div>{r.first_name} {r.last_name}<div style={{ color: "#a0b0d0", fontSize: 10 }}>{r.email}</div></div>
+            <div>{r.leads_claimed}</div><div style={{ color: "#34d399" }}>{r.leads_qualified}</div><div>{r.sms_sent}</div>
+            <div style={{ color: r.reply_rate > 20 ? "#34d399" : "#a0b0d0" }}>{r.reply_rate}%</div>
+            <div>{r.avg_minutes_to_first_contact != null ? `${r.avg_minutes_to_first_contact}m` : "—"}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SavedAlertsView() {
+  const [alerts, setAlerts] = React.useState([]);
+  const [creating, setCreating] = React.useState(false);
+  const [form, setForm] = React.useState({ name: "", filter: { severity: "fatal", min_score: 80, no_attorney: true }, notify_channel: "slack", notify_target: "" });
+  const refresh = async () => { const d = await api("/system/saved-alerts?action=list"); setAlerts(d.rows || []); };
+  React.useEffect(() => { refresh(); }, []);
+  const create = async () => { await api("/system/saved-alerts?action=create", { method: "POST", body: form }); setCreating(false); refresh(); };
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ color: "#fff", margin: 0 }}>🔔 SAVED ALERTS</h2>
+        <button onClick={() => setCreating(c => !c)} style={{ background: "#4f6bff", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", cursor: "pointer", fontWeight: 700 }}>+ NEW ALERT</button>
+      </div>
+      {creating && (
+        <div style={{ background: "rgba(20,24,41,0.7)", padding: 16, borderRadius: 8, marginBottom: 16, border: "1px solid #4f6bff" }}>
+          <input placeholder="Alert name (e.g., 'Fatals in Houston no attorney')" value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={{ width: "100%", padding: 8, marginBottom: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e", borderRadius: 4 }} />
+          <select value={form.filter.severity} onChange={e => setForm({...form, filter: {...form.filter, severity: e.target.value}})} style={{ padding: 8, marginBottom: 8, marginRight: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e" }}><option value="">Any severity</option><option value="fatal">Fatal only</option><option value="serious">Serious+</option></select>
+          <input placeholder="State (OH/TX/GA/FL/AZ)" maxLength={2} value={form.filter.state || ""} onChange={e => setForm({...form, filter: {...form.filter, state: e.target.value.toUpperCase()}})} style={{ padding: 8, marginBottom: 8, marginRight: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e", borderRadius: 4, width: 80 }} />
+          <input type="number" placeholder="Min score" value={form.filter.min_score || ""} onChange={e => setForm({...form, filter: {...form.filter, min_score: parseInt(e.target.value)}})} style={{ padding: 8, marginBottom: 8, marginRight: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e", borderRadius: 4, width: 100 }} />
+          <label style={{ color: "#fff", marginRight: 8 }}><input type="checkbox" checked={!!form.filter.no_attorney} onChange={e => setForm({...form, filter: {...form.filter, no_attorney: e.target.checked}})} /> No attorney</label>
+          <br />
+          <select value={form.notify_channel} onChange={e => setForm({...form, notify_channel: e.target.value})} style={{ padding: 8, marginRight: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e" }}><option value="slack">Slack</option><option value="sms">SMS</option><option value="email">Email</option></select>
+          <input placeholder="Target (channel/phone/email)" value={form.notify_target} onChange={e => setForm({...form, notify_target: e.target.value})} style={{ padding: 8, marginRight: 8, background: "#0e1530", color: "#fff", border: "1px solid #2a3b6e", borderRadius: 4, width: 250 }} />
+          <button onClick={create} style={{ background: "#34d399", color: "#000", border: "none", borderRadius: 6, padding: "8px 14px", cursor: "pointer", fontWeight: 700 }}>SAVE</button>
+        </div>
+      )}
+      <div style={{ background: "rgba(20,24,41,0.7)", borderRadius: 8 }}>
+        {alerts.length === 0 && <div style={{ padding: 32, textAlign: "center", color: "#a0b0d0" }}>No saved alerts yet. Click + NEW ALERT.</div>}
+        {alerts.map(a => (
+          <div key={a.id} style={{ padding: 14, borderBottom: "1px solid rgba(255,255,255,0.05)", display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr 60px", gap: 12, alignItems: "center" }}>
+            <div style={{ color: "#fff" }}>{a.name}</div>
+            <div style={{ color: "#a0b0d0", fontSize: 11 }}>{JSON.stringify(typeof a.filter_json === "string" ? JSON.parse(a.filter_json) : a.filter_json)}</div>
+            <div style={{ color: "#fbbf24" }}>{a.notify_channel}: {a.notify_target}</div>
+            <div style={{ color: "#34d399" }}>{a.last_match_count || 0} matches</div>
+            <button onClick={async () => { await api(`/system/saved-alerts?action=delete&id=${a.id}`); refresh(); }} style={{ background: "#ff4757", color: "#fff", border: "none", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>×</button>
+          </div>
+        ))}
       </div>
     </div>
   );
