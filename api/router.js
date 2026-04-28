@@ -73,6 +73,16 @@ const enrichActiveLearning = require('../lib/v1/enrich/active-learning');
 const enrichContradictionDetector = require('../lib/v1/enrich/contradiction-detector');
 const enrichFlCountyCourts = require('../lib/v1/enrich/fl-county-courts');
 const enrichQpublic = require('../lib/v1/enrich/qpublic-property');
+const ingestPulsepoint = require('../lib/v1/ingest/pulsepoint');
+const enrichSalvageListings = require('../lib/v1/enrich/salvage-listings');
+const ingestGoFundMe = require('../lib/v1/ingest/gofundme');
+const ingestFuneralHomes = require('../lib/v1/ingest/funeral-homes');
+const enrichInsuranceDOI = require('../lib/v1/enrich/insurance-doi');
+const enrichWorkersComp = require('../lib/v1/enrich/workers-comp');
+const sysSavedAlerts = require('../lib/v1/system/saved-alerts');
+const sysCrmExport = require('../lib/v1/system/crm-export');
+const ingestNextdoor = require('../lib/v1/ingest/nextdoor');
+const enrichYoutubeComments = require('../lib/v1/enrich/youtube-comments');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -181,6 +191,16 @@ const ROUTES = {
   'enrich/contradiction-detector': enrichContradictionDetector,
   'enrich/fl-county-courts': enrichFlCountyCourts,
   'enrich/qpublic-property': enrichQpublic,
+  'ingest/pulsepoint': ingestPulsepoint,
+  'enrich/salvage-listings': enrichSalvageListings,
+  'ingest/gofundme': ingestGoFundMe,
+  'ingest/funeral-homes': ingestFuneralHomes,
+  'enrich/insurance-doi': enrichInsuranceDOI,
+  'enrich/workers-comp': enrichWorkersComp,
+  'system/saved-alerts': sysSavedAlerts,
+  'system/crm-export': sysCrmExport,
+  'ingest/nextdoor': ingestNextdoor,
+  'enrich/youtube-comments': enrichYoutubeComments,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,
