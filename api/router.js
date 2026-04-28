@@ -83,6 +83,16 @@ const sysSavedAlerts = require('../lib/v1/system/saved-alerts');
 const sysCrmExport = require('../lib/v1/system/crm-export');
 const ingestNextdoor = require('../lib/v1/ingest/nextdoor');
 const enrichYoutubeComments = require('../lib/v1/enrich/youtube-comments');
+const sysRealtimeFeed = require('../lib/v1/system/realtime-feed');
+const sysAtomicClaim = require('../lib/v1/system/atomic-claim');
+const enrichLeadStaleRecycler = require('../lib/v1/enrich/lead-stale-recycler');
+const enrichEngagementScore = require('../lib/v1/enrich/engagement-score');
+const enrichFatalFamilyTree = require('../lib/v1/enrich/fatal-family-tree');
+const enrichAttorneyHeatmap = require('../lib/v1/enrich/attorney-heatmap');
+const enrichFraudFilter = require('../lib/v1/enrich/fraud-filter');
+const enrichSpanishExtraction = require('../lib/v1/enrich/spanish-extraction');
+const enrichWhatsappOutreach = require('../lib/v1/enrich/whatsapp-outreach');
+const ingestTelegramPolice = require('../lib/v1/ingest/telegram-police');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -201,6 +211,16 @@ const ROUTES = {
   'system/crm-export': sysCrmExport,
   'ingest/nextdoor': ingestNextdoor,
   'enrich/youtube-comments': enrichYoutubeComments,
+  'system/realtime-feed': sysRealtimeFeed,
+  'system/atomic-claim': sysAtomicClaim,
+  'enrich/lead-stale-recycler': enrichLeadStaleRecycler,
+  'enrich/engagement-score': enrichEngagementScore,
+  'enrich/fatal-family-tree': enrichFatalFamilyTree,
+  'enrich/attorney-heatmap': enrichAttorneyHeatmap,
+  'enrich/fraud-filter': enrichFraudFilter,
+  'enrich/spanish-extraction': enrichSpanishExtraction,
+  'enrich/whatsapp-outreach': enrichWhatsappOutreach,
+  'ingest/telegram-police': ingestTelegramPolice,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,

@@ -36,11 +36,11 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score",
       "schedule": "*/5 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=auto-assign,correlate,nominatim,pulsepoint",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=auto-assign,correlate,nominatim,pulsepoint,telegram-police",
       "schedule": "*/10 * * * *"
     },
     {
@@ -56,11 +56,11 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search,co-residence,vehicle-owner,person-merge,temporal-corroborate,confidence-decay,active-learning,salvage-listings,insurance-doi,workers-comp",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search,co-residence,vehicle-owner,person-merge,temporal-corroborate,confidence-decay,active-learning,salvage-listings,insurance-doi,workers-comp,fatal-family-tree,fraud-filter",
       "schedule": "0 */2 * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe,census-income",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe,census-income,attorney-heatmap,lead-stale-recycler",
       "schedule": "0 */6 * * *"
     },
     {
