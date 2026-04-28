@@ -52,6 +52,7 @@ const enrichPeopleSearch = require('../lib/v1/enrich/people-search');
 const enrichTrestleTest = require('../lib/v1/enrich/trestle-test');
 const enrichVoterRolls = require('../lib/v1/enrich/voter-rolls');
 const enrichPropertyRecords = require('../lib/v1/enrich/property-records');
+const enrichAddressToResidents = require('../lib/v1/enrich/address-to-residents');
 const enrichCrossExam = require('../lib/v1/enrich/cross-exam');
 const enrichSocialSearch = require('../lib/v1/enrich/social-search');
 const enrichFlVoterLoader = require('../lib/v1/enrich/fl-voter-loader');
@@ -132,6 +133,7 @@ const ROUTES = {
   'enrich/trestle-test': enrichTrestleTest,
   'enrich/voter-rolls': enrichVoterRolls,
   'enrich/property-records': enrichPropertyRecords,
+  'enrich/address-to-residents': enrichAddressToResidents,
   'enrich/cross-exam':      enrichCrossExam,
   'enrich/social-search':   enrichSocialSearch,
   'enrich/fl-voter-loader': enrichFlVoterLoader,

@@ -44,7 +44,7 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup,address-to-residents",
       "schedule": "*/30 * * * *"
     },
     {
