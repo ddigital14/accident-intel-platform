@@ -366,3 +366,43 @@ const { deployLog } = require('../system/_deploy');
 await deployLog({ name: 'my-engine', version: 'commit-sha', summary: 'what changed', files: ['lib/v1/...'] });
 ```
 This produces a `system_changelog` row with `kind='deploy'` for audit / blame.
+
+## ⚠️ VICTIM-ONLY DATA RULE — ABSOLUTE (Phase 38)
+
+**Mason directive 2026-04-28:** Contact data attached to a lead MUST be the accident victim's data (or a directly-involved party — driver, passenger, pedestrian). NEVER the contact data of journalists, news authors, officers, witnesses, family quoted, or bystanders.
+
+### Hard rules (no exceptions)
+
+1. **No name extraction skips the deny-list filter.** Every extractor that parses names from raw text MUST call `applyDenyList(name, surroundingText)` from `lib/v1/enrich/_name_filter.js` before storing the name. The filter rejects byline patterns, official titles, journalist tags, and attribution-only mentions ("according to X said").
+
+2. **No contact enrichment runs on unverified persons.** The `victim-resolver` and any new enrichment engine MUST filter on `persons.victim_verified = true`. The verifier is `lib/v1/enrich/victim-verifier.js` (Stage A regex hard rules + Stage B Claude Sonnet fallback).
+
+3. **No incident reaches `qualified` state without ≥1 person where `victim_verified = true`.** The ensemble qualifier query MUST include this constraint.
+
+4. **`persons.victim_role` is set on every verified person.** Valid values: `victim`, `driver`, `passenger`, `pedestrian`, `family` (only for next-of-kin in fatal cases). Anything else (`author`, `officer`, `witness`, `unknown`) means the person is NOT a lead candidate and contact enrichment is skipped.
+
+5. **Cross-source contact validation is mandatory.** When 2+ sources return contact data for the same verified victim, `evidence-cross-checker` runs. Conflicts dock confidence -10 and flag for review. Matches confirm at +25 weight.
+
+6. **Quarantine endpoint exists for retroactive cleanup.** `/api/v1/system/quarantine-fake-victims` — re-runs verification on existing qualified persons; demotes incidents with no remaining verified victims to `pending_unverified`.
+
+### When adding a new ingest source
+
+- If the source contains free text that names people (news, social, court filings, scanner transcripts), wire it through `_name_filter.js` BEFORE storing.
+- After the verifier batch runs, only then can downstream enrichers (PDL, Apollo, Trestle, Maricopa, voter rolls, people-search-multi, Hunter, Google CSE) attach contact data.
+- New extractors MUST add `applyDenyList()` call AND add the surrounding text context to the candidate so Stage B (Claude) has enough signal to classify edge cases.
+
+### When adding a new enrichment engine
+
+- The engine MUST gate on `victim_verified = true` in its candidate selection SQL.
+- The engine MUST emit `enqueueCascade(db, 'person', personId, '<engine>', { weight: N })` so cross-checker can validate.
+- The engine MUST log conflicts when its returned data disagrees with existing person fields, not silently overwrite.
+
+### Smart victim pipeline (composite)
+
+`/api/v1/system/smart-victim-pipeline?secret=ingest-now` runs all stages in order:
+1. `victim-verifier` (Stage A regex + Stage B Claude classification)
+2. `victim-resolver` (PDL Pro Enrichment → Apollo → Maricopa → voter-rolls → people-search-multi → Hunter → Google CSE → Trestle, in priority)
+3. `evidence-cross-checker` (validate phone area code vs state, address city vs incident city, dock conflicts, confirm matches)
+4. `ensemble-qualifier` (promote victim_verified=true persons with evidence_sum >= 120 to qualified)
+
+Anything else (per-engine cron jobs) is supplementary — the composite endpoint is the canonical victim flow.
