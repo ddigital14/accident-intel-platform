@@ -93,6 +93,9 @@ const enrichFraudFilter = require('../lib/v1/enrich/fraud-filter');
 const enrichSpanishExtraction = require('../lib/v1/enrich/spanish-extraction');
 const enrichWhatsappOutreach = require('../lib/v1/enrich/whatsapp-outreach');
 const ingestTelegramPolice = require('../lib/v1/ingest/telegram-police');
+const ingestCitizenProbe = require('../lib/v1/ingest/citizen-probe');
+const ingestWhoisLLC = require('../lib/v1/ingest/whois-llc');
+const ingestHospitalRSS = require('../lib/v1/ingest/hospital-rss');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -221,6 +224,9 @@ const ROUTES = {
   'enrich/spanish-extraction': enrichSpanishExtraction,
   'enrich/whatsapp-outreach': enrichWhatsappOutreach,
   'ingest/telegram-police': ingestTelegramPolice,
+  'ingest/citizen-probe': ingestCitizenProbe,
+  'ingest/whois-llc': ingestWhoisLLC,
+  'ingest/hospital-rss': ingestHospitalRSS,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,

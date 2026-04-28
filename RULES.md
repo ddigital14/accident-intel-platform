@@ -340,3 +340,29 @@ returns a Next.js-rendered page.
 
 When adding a new enrichment engine, write to `persons.identity_confidence` (NOT just
 `confidence_score`) when you have multi-source verification.
+
+## ROLLBACK PATHS (Phase 31)
+
+Every shipped engine MUST document a rollback path. The standard pattern:
+
+1. **Disable the engine via cron removal:** Remove the engine slug from `vercel.json` cron jobs. Engine remains queryable via `/api/v1/{path}` for manual debug, but stops auto-firing.
+
+2. **Disable via system_config feature-flag:**
+   ```sql
+   INSERT INTO system_config (key, value) VALUES ('feature_flags', '{"engine_x_disabled": true}'::jsonb)
+     ON CONFLICT (key) DO UPDATE SET value = system_config.value || EXCLUDED.value;
+   ```
+   Engines should check this flag on entry and short-circuit if disabled.
+
+3. **Hard rollback via git revert:** `git revert <commit-sha>` and push. Vercel auto-redeploys in ~30s.
+
+4. **Drop new schema columns/tables:** Each engine that creates tables/columns must include the corresponding `DROP` SQL in its module-level comment.
+
+## DEPLOY LOG REQUIREMENT (Phase 31)
+
+Every shipped engine MUST log via `lib/v1/system/_deploy.deployLog()` on first run after deploy, OR via the global deploy hook in `system/changelog`. Pattern:
+```js
+const { deployLog } = require('../system/_deploy');
+await deployLog({ name: 'my-engine', version: 'commit-sha', summary: 'what changed', files: ['lib/v1/...'] });
+```
+This produces a `system_changelog` row with `kind='deploy'` for audit / blame.
