@@ -169,6 +169,10 @@ const enrichVictimVerifier = require('../lib/v1/enrich/victim-verifier');
 const enrichVictimResolver = require('../lib/v1/enrich/victim-resolver');
 const enrichEvidenceCrossChecker = require('../lib/v1/enrich/evidence-cross-checker');
 const enrichVictimContactFinder = require('../lib/v1/enrich/victim-contact-finder');
+const sysVoterRollsUpload = require('../lib/v1/system/voter-rolls-upload');
+const enrichFuneralHomeSurvivors = require('../lib/v1/enrich/funeral-home-survivors');
+const sysRunAllSources = require('../lib/v1/system/run-all-sources');
+const dashRepQuickLinks = require('../lib/v1/dashboard/rep-quick-links');
 const dashVictimLeads = require('../lib/v1/dashboard/victim-leads');
 const sysRunContactFinder = require('../lib/v1/system/run-contact-finder');
 const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
@@ -333,6 +337,10 @@ const ROUTES = {
   'system/demote-orphan-qualified': sysDemoteOrphanQualified,
   'system/cleanup-bad-contacts': sysCleanupBadContacts,
   'system/reverify-officer-denials': sysReverifyOfficerDenials,
+  'system/voter-rolls-upload': sysVoterRollsUpload,
+  'enrich/funeral-home-survivors': enrichFuneralHomeSurvivors,
+  'system/run-all-sources': sysRunAllSources,
+  'dashboard/rep-quick-links': dashRepQuickLinks,
   'cron/dispatch': cronDispatch,
 };
 
