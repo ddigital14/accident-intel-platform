@@ -109,6 +109,7 @@ const sysSpatialCluster = require('../lib/v1/system/spatial-cluster');
 const sysVacuumNightly = require('../lib/v1/system/vacuum-nightly');
 const sysSentry = require('../lib/v1/system/sentry');
 const sysSseStream = require('../lib/v1/system/sse-stream');
+const sysCeiPoll = require('../lib/v1/system/cei-poll');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -253,6 +254,7 @@ const ROUTES = {
   'system/vacuum-nightly': sysVacuumNightly,
   'system/sentry': sysSentry,
   'system/sse-stream': sysSseStream,
+  'system/cei-poll': sysCeiPoll,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,
