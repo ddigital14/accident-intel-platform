@@ -165,6 +165,9 @@ const ingestHomegrownRotation = require('../lib/v1/ingest/_homegrown_rotation');
 
 // ── Cron ──
 const enrichVictimVerifier = require('../lib/v1/enrich/victim-verifier');
+const enrichVictimResolver = require('../lib/v1/enrich/victim-resolver');
+const enrichEvidenceCrossChecker = require('../lib/v1/enrich/evidence-cross-checker');
+const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
 const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victims');
 const cronDispatch = require('../lib/v1/cron/dispatch');
 
@@ -312,6 +315,9 @@ const ROUTES = {
   'enrich/apollo-cross-pollinate': enrichApolloCrossPollinate,
   'enrich/property-to-family': enrichPropertyToFamily,
   'enrich/victim-verifier': enrichVictimVerifier,
+  'enrich/victim-resolver': enrichVictimResolver,
+  'enrich/evidence-cross-checker': enrichEvidenceCrossChecker,
+  'system/smart-victim-pipeline': sysSmartVictimPipeline,
   'system/quarantine-fake-victims': sysQuarantineFakeVictims,
   'cron/dispatch': cronDispatch,
 };
