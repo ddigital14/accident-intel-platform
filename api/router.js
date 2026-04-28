@@ -168,6 +168,7 @@ const enrichVictimVerifier = require('../lib/v1/enrich/victim-verifier');
 const enrichVictimResolver = require('../lib/v1/enrich/victim-resolver');
 const enrichEvidenceCrossChecker = require('../lib/v1/enrich/evidence-cross-checker');
 const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
+const sysDemoteOrphanQualified = require('../lib/v1/system/demote-orphan-qualified');
 const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victims');
 const cronDispatch = require('../lib/v1/cron/dispatch');
 
@@ -319,6 +320,7 @@ const ROUTES = {
   'enrich/evidence-cross-checker': enrichEvidenceCrossChecker,
   'system/smart-victim-pipeline': sysSmartVictimPipeline,
   'system/quarantine-fake-victims': sysQuarantineFakeVictims,
+  'system/demote-orphan-qualified': sysDemoteOrphanQualified,
   'cron/dispatch': cronDispatch,
 };
 
