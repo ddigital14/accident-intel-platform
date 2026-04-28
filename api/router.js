@@ -71,6 +71,8 @@ const enrichCensusIncome = require('../lib/v1/enrich/census-income');
 const enrichEnsembleQualifier = require('../lib/v1/enrich/ensemble-qualifier');
 const enrichActiveLearning = require('../lib/v1/enrich/active-learning');
 const enrichContradictionDetector = require('../lib/v1/enrich/contradiction-detector');
+const enrichFlCountyCourts = require('../lib/v1/enrich/fl-county-courts');
+const enrichQpublic = require('../lib/v1/enrich/qpublic-property');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -177,6 +179,8 @@ const ROUTES = {
   'enrich/ensemble-qualifier': enrichEnsembleQualifier,
   'enrich/active-learning': enrichActiveLearning,
   'enrich/contradiction-detector': enrichContradictionDetector,
+  'enrich/fl-county-courts': enrichFlCountyCourts,
+  'enrich/qpublic-property': enrichQpublic,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,
