@@ -36,19 +36,19 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade",
       "schedule": "*/5 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=auto-assign,correlate",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=auto-assign,correlate,nominatim",
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup,address-to-residents",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup,address-to-residents,fcc-carrier,dev-profiles,usps-validate,name-rarity",
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill,pdl-by-name,identity-investigator,homegrown-rotation",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pd-press,obituaries,police-social,family-tree,obit-backfill,pdl-by-name,identity-investigator,homegrown-rotation,reddit-history,archive-search,state-courts,business-registry",
       "schedule": "*/30 * * * *"
     },
     {
@@ -56,11 +56,11 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search,co-residence,vehicle-owner,person-merge,temporal-corroborate,confidence-decay,active-learning",
       "schedule": "0 */2 * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe,census-income",
       "schedule": "0 */6 * * *"
     },
     {

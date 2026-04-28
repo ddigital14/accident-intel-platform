@@ -53,6 +53,31 @@ const enrichTrestleTest = require('../lib/v1/enrich/trestle-test');
 const enrichVoterRolls = require('../lib/v1/enrich/voter-rolls');
 const enrichPropertyRecords = require('../lib/v1/enrich/property-records');
 const enrichAddressToResidents = require('../lib/v1/enrich/address-to-residents');
+const enrichNominatim = require('../lib/v1/enrich/nominatim-geocode');
+const enrichFccCarrier = require('../lib/v1/enrich/fcc-carrier');
+const enrichDevProfiles = require('../lib/v1/enrich/dev-profiles');
+const enrichArchiveSearch = require('../lib/v1/enrich/archive-search');
+const enrichStateCourts = require('../lib/v1/enrich/state-courts');
+const enrichBusinessRegistry = require('../lib/v1/enrich/business-registry');
+const enrichUspsValidate = require('../lib/v1/enrich/usps-validate');
+const enrichRedditHistory = require('../lib/v1/enrich/reddit-history');
+const enrichCoResidence = require('../lib/v1/enrich/co-residence');
+const enrichNameRarity = require('../lib/v1/enrich/name-rarity');
+const enrichVehicleOwner = require('../lib/v1/enrich/vehicle-owner');
+const enrichTemporalCorroborate = require('../lib/v1/enrich/temporal-corroborate');
+const enrichConfidenceDecay = require('../lib/v1/enrich/confidence-decay');
+const enrichPersonMerge = require('../lib/v1/enrich/person-merge');
+const enrichCensusIncome = require('../lib/v1/enrich/census-income');
+const enrichEnsembleQualifier = require('../lib/v1/enrich/ensemble-qualifier');
+const enrichActiveLearning = require('../lib/v1/enrich/active-learning');
+const enrichContradictionDetector = require('../lib/v1/enrich/contradiction-detector');
+const ingestVoterStates = require('../lib/v1/ingest/voter-states');
+const ingestOsha = require('../lib/v1/ingest/osha');
+const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
+const ingestFbiUcr = require('../lib/v1/ingest/fbi-ucr');
+const sysBidirectionalCascade = require('../lib/v1/system/bidirectional-cascade');
+const sysFeedFreshness = require('../lib/v1/system/feed-freshness');
+const sysModelRegistry = require('../lib/v1/system/model-registry');
 const enrichCrossExam = require('../lib/v1/enrich/cross-exam');
 const enrichSocialSearch = require('../lib/v1/enrich/social-search');
 const enrichFlVoterLoader = require('../lib/v1/enrich/fl-voter-loader');
@@ -134,6 +159,31 @@ const ROUTES = {
   'enrich/voter-rolls': enrichVoterRolls,
   'enrich/property-records': enrichPropertyRecords,
   'enrich/address-to-residents': enrichAddressToResidents,
+  'enrich/nominatim-geocode': enrichNominatim,
+  'enrich/fcc-carrier': enrichFccCarrier,
+  'enrich/dev-profiles': enrichDevProfiles,
+  'enrich/archive-search': enrichArchiveSearch,
+  'enrich/state-courts': enrichStateCourts,
+  'enrich/business-registry': enrichBusinessRegistry,
+  'enrich/usps-validate': enrichUspsValidate,
+  'enrich/reddit-history': enrichRedditHistory,
+  'enrich/co-residence': enrichCoResidence,
+  'enrich/name-rarity': enrichNameRarity,
+  'enrich/vehicle-owner': enrichVehicleOwner,
+  'enrich/temporal-corroborate': enrichTemporalCorroborate,
+  'enrich/confidence-decay': enrichConfidenceDecay,
+  'enrich/person-merge': enrichPersonMerge,
+  'enrich/census-income': enrichCensusIncome,
+  'enrich/ensemble-qualifier': enrichEnsembleQualifier,
+  'enrich/active-learning': enrichActiveLearning,
+  'enrich/contradiction-detector': enrichContradictionDetector,
+  'ingest/voter-states': ingestVoterStates,
+  'ingest/osha': ingestOsha,
+  'ingest/cdc-wonder': ingestCdcWonder,
+  'ingest/fbi-ucr': ingestFbiUcr,
+  'system/bidirectional-cascade': sysBidirectionalCascade,
+  'system/feed-freshness': sysFeedFreshness,
+  'system/model-registry': sysModelRegistry,
   'enrich/cross-exam':      enrichCrossExam,
   'enrich/social-search':   enrichSocialSearch,
   'enrich/fl-voter-loader': enrichFlVoterLoader,
