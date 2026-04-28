@@ -153,6 +153,9 @@ const enrichObitBackfill = require('../lib/v1/enrich/obit-backfill');
 const claudeCrossReasoner = require('../lib/v1/enrich/claude-cross-reasoner');
 const enrichSmartRouter = require('../lib/v1/enrich/_smart_router');
 const enrichPdlByName = require('../lib/v1/enrich/pdl-by-name');
+const enrichPeopleSearchMulti = require('../lib/v1/enrich/people-search-multi');
+const enrichApolloCrossPollinate = require('../lib/v1/enrich/apollo-cross-pollinate');
+const enrichPropertyToFamily = require('../lib/v1/enrich/property-to-family');
 const enrichGaVoterLoader = require('../lib/v1/enrich/ga-voter-loader');
 const enrichTxVoterLoader = require('../lib/v1/enrich/tx-voter-loader');
 const claudeIdentityInvestigator = require('../lib/v1/enrich/claude-identity-investigator');
@@ -301,6 +304,9 @@ const ROUTES = {
   'enrich/claude-identity-investigator': claudeIdentityInvestigator,
   'system/constant-cross-loop': sysConstantCrossLoop,
   'ingest/homegrown-rotation': ingestHomegrownRotation,
+  'enrich/people-search-multi': enrichPeopleSearchMulti,
+  'enrich/apollo-cross-pollinate': enrichApolloCrossPollinate,
+  'enrich/property-to-family': enrichPropertyToFamily,
   'cron/dispatch': cronDispatch,
 };
 
