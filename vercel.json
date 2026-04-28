@@ -60,7 +60,7 @@
       "schedule": "0 */2 * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe",
       "schedule": "0 */6 * * *"
     },
     {

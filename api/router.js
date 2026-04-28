@@ -75,6 +75,7 @@ const sysCost = require('../lib/v1/system/cost');
 const sysCostDebug = require('../lib/v1/system/cost-debug');
 const sysCascade = require('../lib/v1/system/cascade');
 const sysSetup = require('../lib/v1/system/setup');
+const sysTrestleProbe = require('../lib/v1/system/trestle-probe');
 const sysDigest = require('../lib/v1/system/digest');
 const sysSmoke = require('../lib/v1/system/smoke-test');
 const sysTriggers = require('../lib/v1/system/triggers');
@@ -152,6 +153,7 @@ const ROUTES = {
   'system/cost-debug': sysCostDebug,
   'system/cascade': sysCascade,
   'system/setup': sysSetup,
+  'system/trestle-probe': sysTrestleProbe,
   'system/digest': sysDigest,
   'system/smoke-test': sysSmoke,
   'system/triggers': sysTriggers,
