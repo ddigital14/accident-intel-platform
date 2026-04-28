@@ -10,6 +10,7 @@ const authMe = require('../lib/v1/auth/me');
 
 // ── Dashboard ──
 const dashCounts = require('../lib/v1/dashboard/counts');
+const dashAwaitingContact = require('../lib/v1/dashboard/awaiting-contact');
 const dashFeed = require('../lib/v1/dashboard/feed');
 const dashMetros = require('../lib/v1/dashboard/metro-areas');
 const dashAssign = require('../lib/v1/dashboard/my-assignments');
@@ -177,6 +178,7 @@ const ROUTES = {
   'auth/login': authLogin,
   'auth/me': authMe,
   'dashboard/counts': dashCounts,
+  'dashboard/awaiting-contact': dashAwaitingContact,
   'dashboard/feed': dashFeed,
   'dashboard/metro-areas': dashMetros,
   'dashboard/my-assignments': dashAssign,
