@@ -105,6 +105,10 @@ const migratePerfViews = require('../lib/v1/migrate/perf-views');
 const sysRefreshMv = require('../lib/v1/system/refresh-mv');
 const sysTranscriptionQueue = require('../lib/v1/system/transcription-queue');
 const sysKvCursor = require('../lib/v1/system/kv-cursor');
+const sysSpatialCluster = require('../lib/v1/system/spatial-cluster');
+const sysVacuumNightly = require('../lib/v1/system/vacuum-nightly');
+const sysSentry = require('../lib/v1/system/sentry');
+const sysSseStream = require('../lib/v1/system/sse-stream');
 const ingestVoterStates = require('../lib/v1/ingest/voter-states');
 const ingestOsha = require('../lib/v1/ingest/osha');
 const ingestCdcWonder = require('../lib/v1/ingest/cdc-wonder');
@@ -245,6 +249,10 @@ const ROUTES = {
   'system/refresh-mv': sysRefreshMv,
   'system/transcription-queue': sysTranscriptionQueue,
   'system/kv-cursor': sysKvCursor,
+  'system/spatial-cluster': sysSpatialCluster,
+  'system/vacuum-nightly': sysVacuumNightly,
+  'system/sentry': sysSentry,
+  'system/sse-stream': sysSseStream,
   'ingest/voter-states': ingestVoterStates,
   'ingest/osha': ingestOsha,
   'ingest/cdc-wonder': ingestCdcWonder,
