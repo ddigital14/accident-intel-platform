@@ -168,6 +168,9 @@ const ingestHomegrownRotation = require('../lib/v1/ingest/_homegrown_rotation');
 const enrichVictimVerifier = require('../lib/v1/enrich/victim-verifier');
 const enrichVictimResolver = require('../lib/v1/enrich/victim-resolver');
 const enrichEvidenceCrossChecker = require('../lib/v1/enrich/evidence-cross-checker');
+const enrichVictimContactFinder = require('../lib/v1/enrich/victim-contact-finder');
+const dashVictimLeads = require('../lib/v1/dashboard/victim-leads');
+const sysRunContactFinder = require('../lib/v1/system/run-contact-finder');
 const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
 const sysReverifyOfficerDenials = require('../lib/v1/system/reverify-officer-denials');
 const sysCleanupBadContacts = require('../lib/v1/system/cleanup-bad-contacts');
@@ -322,6 +325,9 @@ const ROUTES = {
   'enrich/victim-verifier': enrichVictimVerifier,
   'enrich/victim-resolver': enrichVictimResolver,
   'enrich/evidence-cross-checker': enrichEvidenceCrossChecker,
+  'enrich/victim-contact-finder': enrichVictimContactFinder,
+  'dashboard/victim-leads': dashVictimLeads,
+  'system/run-contact-finder': sysRunContactFinder,
   'system/smart-victim-pipeline': sysSmartVictimPipeline,
   'system/quarantine-fake-victims': sysQuarantineFakeVictims,
   'system/demote-orphan-qualified': sysDemoteOrphanQualified,
