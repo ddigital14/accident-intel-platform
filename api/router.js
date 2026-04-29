@@ -172,6 +172,10 @@ const enrichVictimContactFinder = require('../lib/v1/enrich/victim-contact-finde
 const sysVoterRollsUpload = require('../lib/v1/system/voter-rolls-upload');
 const enrichFuneralHomeSurvivors = require('../lib/v1/enrich/funeral-home-survivors');
 const sysRunAllSources = require('../lib/v1/system/run-all-sources');
+const enrichAiNewsExtractor = require('../lib/v1/enrich/ai-news-extractor');
+const enrichAiObituaryParser = require('../lib/v1/enrich/ai-obituary-parser');
+const sysAiCrossSourceMerge = require('../lib/v1/system/ai-cross-source-merge');
+const dashRepCallBrief = require('../lib/v1/dashboard/rep-call-brief');
 const dashRepQuickLinks = require('../lib/v1/dashboard/rep-quick-links');
 const dashVictimLeads = require('../lib/v1/dashboard/victim-leads');
 const sysRunContactFinder = require('../lib/v1/system/run-contact-finder');
@@ -340,6 +344,10 @@ const ROUTES = {
   'system/voter-rolls-upload': sysVoterRollsUpload,
   'enrich/funeral-home-survivors': enrichFuneralHomeSurvivors,
   'system/run-all-sources': sysRunAllSources,
+  'enrich/ai-news-extractor': enrichAiNewsExtractor,
+  'enrich/ai-obituary-parser': enrichAiObituaryParser,
+  'system/ai-cross-source-merge': sysAiCrossSourceMerge,
+  'dashboard/rep-call-brief': dashRepCallBrief,
   'dashboard/rep-quick-links': dashRepQuickLinks,
   'cron/dispatch': cronDispatch,
 };

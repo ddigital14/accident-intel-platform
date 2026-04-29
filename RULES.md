@@ -406,3 +406,40 @@ This produces a `system_changelog` row with `kind='deploy'` for audit / blame.
 4. `ensemble-qualifier` (promote victim_verified=true persons with evidence_sum >= 120 to qualified)
 
 Anything else (per-engine cron jobs) is supplementary — the composite endpoint is the canonical victim flow.
+
+---
+
+## Phase 41 — AI EXTRACTION LAYER (2026-04-28)
+
+Replaces deterministic regex extractors with Claude Sonnet/Opus for higher recall, structured family/vehicle data, and multi-source synthesis. Augments the existing pipeline; does NOT replace it.
+
+### Modules
+
+| Module | File | Model | Job key | Cron interval |
+|---|---|---|---|---|
+| AI News Extractor | `lib/v1/enrich/ai-news-extractor.js` | Claude Sonnet 4.6 | `ai-news-extractor` | every 30 min |
+| AI Obituary Parser | `lib/v1/enrich/ai-obituary-parser.js` | Claude Sonnet 4.6 | `ai-obituary-parser` | hourly |
+| AI Cross-Source Merge | `lib/v1/system/ai-cross-source-merge.js` | Claude Opus 4.6 | `ai-cross-source-merge` | every 2 h |
+| Rep Pre-Call Brief | `lib/v1/dashboard/rep-call-brief.js` | Claude Sonnet 4.6 | (HTTP only, on-demand) | n/a |
+
+### Mandatory rules
+
+1. **Every AI extraction MUST go through `_ai_router.js extract()` / `extractJson()`.** Never call `fetch('https://api.anthropic.com')` directly. The router handles model selection, failover, cost tracking, and JSON parsing.
+2. **Every AI-extracted name MUST be re-checked through `applyDenyList(name, surroundingText)` from `_name_filter.js`** before insert. Claude is asked to skip journalists/officials but the deny-list is a safety net.
+3. **AI-extracted persons get `derived_from='ai-news-extractor'` (or `ai-obituary-parser`, `ai-cross-source-merge`)** so cleanup queries can isolate them and Phase 38 victim_only rule traces source.
+4. **Brief output is cached for 24 hours** in `enrichment_logs` (`source='rep-call-brief'`). Pass `?force=1` to regenerate.
+5. **AI cross-source merge NEVER overwrites high-confidence existing data** — only fills nulls or upgrades when `confidence_per_field >= 80`.
+6. **All AI tokens are logged via `trackApiCall(db, pipeline, model, input_tokens, output_tokens, ok)`** through the router. Cost tab shows per-pipeline breakdown.
+7. **Conflicts surfaced by Module 3 are written to `enrichment_logs.data->>'cross_source_conflicts'`** for audit and manual review.
+
+### Failure-mode contract
+
+- AI returns 401/quota → router falls over to OpenAI per existing logic
+- AI returns malformed JSON → `extractJson` returns null, handler returns `{ ok: false, error: 'ai_no_parse' }` with 200 status (NEVER 500)
+- Network timeout → caught, person row not inserted, error logged via `reportError`
+- Insert constraint failure → retry path strips `victim_verified`/`derived_from` then plain insert; if still fails, skipped row is reported in `samples`
+
+### Cascade fan-out
+
+Every newly-inserted person from an AI module fires `enqueueCascade()` with `trigger_source='ai-<module>'`. This auto-runs the contact-finder + cross-exam chain so AI extraction stays consistent with Phase 39's event-driven trigger model.
+
