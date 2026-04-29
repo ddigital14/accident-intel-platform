@@ -193,6 +193,13 @@ const enrichApolloUnlock = require('../lib/v1/enrich/apollo-unlock');
 const enrichVoyageRouter = require('../lib/v1/enrich/_voyage_router');
 const sysRealtimeVictimAlerts = require('../lib/v1/system/realtime-victim-alerts');
 const cronDispatch = require('../lib/v1/cron/dispatch');
+// ── Phase 44B: plate OCR + admin overview + caller-id + auto-purchase + cross-intel orchestrator + lookup cache
+const enrichPlateOcrVision     = require('../lib/v1/enrich/plate-ocr-vision');
+const enrichAutoPurchase       = require('../lib/v1/enrich/auto-purchase');
+const dashAdminOverview        = require('../lib/v1/dashboard/admin-overview');
+const dashCallerId             = require('../lib/v1/dashboard/caller-id');
+const sysLookupCache           = require('../lib/v1/system/_lookup_cache');
+const sysCrossIntelOrchestrator= require('../lib/v1/system/cross-intel-orchestrator');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -367,6 +374,13 @@ const ROUTES = {
   'enrich/_voyage_router': enrichVoyageRouter,
   'enrich/voyage-router': enrichVoyageRouter,
   'system/realtime-victim-alerts': sysRealtimeVictimAlerts,
+  // Phase 44B
+  'enrich/plate-ocr-vision':     enrichPlateOcrVision,
+  'enrich/auto-purchase':        enrichAutoPurchase,
+  'dashboard/admin-overview':    dashAdminOverview,
+  'dashboard/caller-id':         dashCallerId,
+  'system/lookup-cache':         sysLookupCache,
+  'system/cross-intel-orchestrator': sysCrossIntelOrchestrator,
 };
 
 function tryDynamicIncident(slug, req) {
