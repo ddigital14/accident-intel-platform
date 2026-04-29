@@ -188,6 +188,10 @@ const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victi
 const enrichBraveSearch = require('../lib/v1/enrich/brave-search');
 const enrichFreeOsintExtras = require('../lib/v1/enrich/free-osint-extras');
 const sysBestLeadSynthesizer = require('../lib/v1/system/best-lead-synthesizer');
+// ── Phase 44A: Apollo unlock + smart batcher + realtime alerts + Deepgram + VoyageAI
+const enrichApolloUnlock = require('../lib/v1/enrich/apollo-unlock');
+const enrichVoyageRouter = require('../lib/v1/enrich/_voyage_router');
+const sysRealtimeVictimAlerts = require('../lib/v1/system/realtime-victim-alerts');
 const cronDispatch = require('../lib/v1/cron/dispatch');
 
 const ROUTES = {
@@ -358,6 +362,11 @@ const ROUTES = {
   'enrich/free-osint-extras': enrichFreeOsintExtras,
   'system/best-lead-synthesizer': sysBestLeadSynthesizer,
   'cron/dispatch': cronDispatch,
+  // Phase 44A
+  'enrich/apollo-unlock': enrichApolloUnlock,
+  'enrich/_voyage_router': enrichVoyageRouter,
+  'enrich/voyage-router': enrichVoyageRouter,
+  'system/realtime-victim-alerts': sysRealtimeVictimAlerts,
 };
 
 function tryDynamicIncident(slug, req) {
