@@ -185,6 +185,9 @@ const sysReverifyOfficerDenials = require('../lib/v1/system/reverify-officer-den
 const sysCleanupBadContacts = require('../lib/v1/system/cleanup-bad-contacts');
 const sysDemoteOrphanQualified = require('../lib/v1/system/demote-orphan-qualified');
 const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victims');
+const enrichBraveSearch = require('../lib/v1/enrich/brave-search');
+const enrichFreeOsintExtras = require('../lib/v1/enrich/free-osint-extras');
+const sysBestLeadSynthesizer = require('../lib/v1/system/best-lead-synthesizer');
 const cronDispatch = require('../lib/v1/cron/dispatch');
 
 const ROUTES = {
@@ -351,6 +354,9 @@ const ROUTES = {
   'system/ai-cross-source-merge': sysAiCrossSourceMerge,
   'dashboard/rep-call-brief': dashRepCallBrief,
   'dashboard/rep-quick-links': dashRepQuickLinks,
+  'enrich/brave-search': enrichBraveSearch,
+  'enrich/free-osint-extras': enrichFreeOsintExtras,
+  'system/best-lead-synthesizer': sysBestLeadSynthesizer,
   'cron/dispatch': cronDispatch,
 };
 

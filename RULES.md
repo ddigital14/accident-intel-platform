@@ -443,3 +443,29 @@ Replaces deterministic regex extractors with Claude Sonnet/Opus for higher recal
 
 Every newly-inserted person from an AI module fires `enqueueCascade()` with `trigger_source='ai-<module>'`. This auto-runs the contact-finder + cross-exam chain so AI extraction stays consistent with Phase 39's event-driven trigger model.
 
+
+---
+
+## Phase 43 — Brave fallback + 5 free OSINT extras + best-lead-synthesizer + Opus 4.7
+
+### Modules
+
+| Module | File | Model | Job key | Cron interval |
+|---|---|---|---|---|
+| Brave Search fallback | `lib/v1/enrich/brave-search.js` | n/a (HTTP) | `brave-search` | (lib only — auto-fallback) |
+| Free OSINT Extras (5x) | `lib/v1/enrich/free-osint-extras.js` | n/a (HTTP) | `free-osint-extras` | health-only — invoked from synthesizer |
+| Best Lead Synthesizer | `lib/v1/system/best-lead-synthesizer.js` | Claude Opus 4.7 | `best-lead-synthesizer` | every 4 h, limit 2 |
+
+### Mandatory rules
+
+1. **`_ai_router.js MODELS.premium_anth` is now `claude-opus-4-7`.** Every "tier=premium with provider=claude" or `tier='opus'` request routes here.
+2. **CSE auto-fallback**: every Google CSE call inside `homegrown-osint-miner.js` goes through `searchWithFallback(db, cfg, q, num)`. On 429/403 it transparently calls Brave. Both code paths track via `trackApiCall`.
+3. **No new API keys hardcoded.** Brave/FEC/CScore keys read from `system_config.brave_api_key`, env fallback, then graceful no-op.
+4. **`best-lead-synthesizer` is the closer.** Every other engine MUST keep producing structured JSON output that fits inside the `gather()` slice budget. If a new engine ships, hook its `*One()` function into `synthesizeOne`'s `Promise.all`.
+5. **Opus 4.7 is reserved for premium reasoning paths only** — synthesizer, claude-identity-investigator, premium ai-cross-source-merge. Everything else stays on Sonnet/Haiku/GPT-mini for cost.
+
+### Failure-mode contract additions
+
+- CSE 429 → log info-severity in `system_errors`, call Brave, continue
+- Brave 401 / no key → return `{ ok: false, skipped: true }`, miner records error and moves on
+- Synthesizer's parsed JSON missing required fields → still write log, return raw alongside `parsed`, never 500
