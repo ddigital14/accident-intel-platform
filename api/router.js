@@ -169,6 +169,7 @@ const enrichVictimVerifier = require('../lib/v1/enrich/victim-verifier');
 const enrichVictimResolver = require('../lib/v1/enrich/victim-resolver');
 const enrichEvidenceCrossChecker = require('../lib/v1/enrich/evidence-cross-checker');
 const enrichVictimContactFinder = require('../lib/v1/enrich/victim-contact-finder');
+const enrichHomegrownOsintMiner = require('../lib/v1/enrich/homegrown-osint-miner');
 const sysVoterRollsUpload = require('../lib/v1/system/voter-rolls-upload');
 const enrichFuneralHomeSurvivors = require('../lib/v1/enrich/funeral-home-survivors');
 const sysRunAllSources = require('../lib/v1/system/run-all-sources');
@@ -334,6 +335,7 @@ const ROUTES = {
   'enrich/victim-resolver': enrichVictimResolver,
   'enrich/evidence-cross-checker': enrichEvidenceCrossChecker,
   'enrich/victim-contact-finder': enrichVictimContactFinder,
+  'enrich/homegrown-osint-miner': enrichHomegrownOsintMiner,
   'dashboard/victim-leads': dashVictimLeads,
   'system/run-contact-finder': sysRunContactFinder,
   'system/smart-victim-pipeline': sysSmartVictimPipeline,
