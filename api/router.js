@@ -182,6 +182,7 @@ const dashRepQuickLinks = require('../lib/v1/dashboard/rep-quick-links');
 const dashVictimLeads = require('../lib/v1/dashboard/victim-leads');
 const sysRunContactFinder = require('../lib/v1/system/run-contact-finder');
 const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
+const sysResend = require('../lib/v1/system/resend');
 const sysReverifyOfficerDenials = require('../lib/v1/system/reverify-officer-denials');
 const sysPhase47Fixes = require('../lib/v1/system/phase47-fixes');
 const sysCleanupFalsePositives46 = require('../lib/v1/system/cleanup-false-positives-46');
@@ -365,6 +366,7 @@ const ROUTES = {
   'system/cleanup-false-positives-46': sysCleanupFalsePositives46,
   'system/phase47-fixes': sysPhase47Fixes,
   'system/reverify-officer-denials': sysReverifyOfficerDenials,
+  'system/resend': sysResend.handler,
   'system/voter-rolls-upload': sysVoterRollsUpload,
   'enrich/funeral-home-survivors': enrichFuneralHomeSurvivors,
   'system/run-all-sources': sysRunAllSources,
