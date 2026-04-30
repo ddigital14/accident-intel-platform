@@ -183,6 +183,7 @@ const dashVictimLeads = require('../lib/v1/dashboard/victim-leads');
 const sysRunContactFinder = require('../lib/v1/system/run-contact-finder');
 const sysSmartVictimPipeline = require('../lib/v1/system/smart-victim-pipeline');
 const sysReverifyOfficerDenials = require('../lib/v1/system/reverify-officer-denials');
+const sysCleanupFalsePositives46 = require('../lib/v1/system/cleanup-false-positives-46');
 const sysCleanupBadContacts = require('../lib/v1/system/cleanup-bad-contacts');
 const sysDemoteOrphanQualified = require('../lib/v1/system/demote-orphan-qualified');
 const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victims');
@@ -358,6 +359,7 @@ const ROUTES = {
   'system/quarantine-fake-victims': sysQuarantineFakeVictims,
   'system/demote-orphan-qualified': sysDemoteOrphanQualified,
   'system/cleanup-bad-contacts': sysCleanupBadContacts,
+  'system/cleanup-false-positives-46': sysCleanupFalsePositives46,
   'system/reverify-officer-denials': sysReverifyOfficerDenials,
   'system/voter-rolls-upload': sysVoterRollsUpload,
   'enrich/funeral-home-survivors': enrichFuneralHomeSurvivors,
