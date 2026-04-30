@@ -469,3 +469,53 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 - CSE 429 → log info-severity in `system_errors`, call Brave, continue
 - Brave 401 / no key → return `{ ok: false, skipped: true }`, miner records error and moves on
 - Synthesizer's parsed JSON missing required fields → still write log, return raw alongside `parsed`, never 500
+
+
+---
+
+## Phase 50 — AccidentCommandCenter.com launch: rebrand + Spanish + CEI telemetry + smart cross-ref + watchdog
+
+### Modules
+
+| Module | File | Model | Job key | Cron interval |
+|---|---|---|---|---|
+| Spanish detector + translator | `lib/v1/enrich/spanish-detector.js` | Claude Opus 4.7 | `spanish-detector` | every 30 min, limit 10 |
+| Smart cross-ref reasoner | `lib/v1/enrich/smart-cross-ref.js` | Claude Opus 4.7 | `smart-cross-ref` | every 30 min, limit 5 |
+| CEI telemetry helper | `lib/v1/system/_cei_telemetry.js` | n/a | (lib only — invoked by every engine via `bumpCounter`) | n/a |
+| CEI counters API | `lib/v1/system/cei-counters.js` | n/a | `cei-counters` | every 5 min summary snapshot |
+| Error watchdog | `lib/v1/system/error-watchdog.js` | n/a | `error-watchdog` | every 5 min |
+| PI keyword library | `lib/v1/ingest/_pi_keywords.js` | n/a | (used by news + news-rss) | n/a |
+
+### Branding (frontend)
+
+- Platform name: **Accident Command Center** (logomark "ACC" stacked on navy block + pulsing red dot accent).
+- Theme: **light mode** — warm white `#FAFAFA` bg, slate-900 text, navy primary `#0F2A5A`, electric red `#DC2626` urgency, gold `#F59E0B` high-value, emerald `#10B981` verified.
+- Card shadow: `0 4px 12px rgba(15,42,90,0.08)`. Border: `#E2E8F0`. Status pills: `.acc-status-badge` with colored dots.
+- Active nav tab: 2px red underline, `#0F2A5A` text. No more rainbow gradients.
+
+### Mandatory rules
+
+1. **Every engine handler MUST bump CEI invocation telemetry on success.** Done one of two ways:
+   - Implicitly: any engine calling `trackApiCall(db, pipeline, ...)` automatically piggy-backs `bumpCounter(db, pipeline, ...)` — Phase 50 wiring lives in `lib/v1/system/cost.js`.
+   - Explicitly: pure-DB engines (no external API) call `require('../system/_cei_telemetry').bumpCounter(db, ENGINE, success, latencyMs)` after their main work.
+2. **Spanish-language news → spanish-detector first**, then standard victim-verifier on the translated text. Never let an English-only extractor see a Spanish article.
+3. **PI keyword expansion is owned by `lib/v1/ingest/_pi_keywords.js`.** When adding new accident verticals (e-bikes, scooters, premises, Spanish), add to the central array — `news.js` and `news-rss.js` pull rotated subsets per cron tick.
+4. **Smart cross-ref writes only to `enrichment_logs`** with `meta.engine='smart-cross-ref'` + a confidence score. It NEVER writes directly to `persons` or `contacts` — promotion happens via the existing `evidence-cross-checker` + `victim-contact-finder` chain.
+5. **error-watchdog runs every 5 min** scanning the last 10 min for clusters of 3+ identical errors. Slack + Resend alerts dispatch automatically when a cluster fires.
+6. **Theme tokens are now in `App.jsx` `:root`** — every new UI element must reference them (`--brand-navy`, `--brand-red`, `--brand-green`, `--shadow-card`). No more inline rainbow gradients.
+
+### Failure-mode contract
+
+- Spanish-detector fails translation → returns `{ ok: false, error: 'translation_failed' }`, original record stays untouched in `source_reports`.
+- smart-cross-ref Opus call returns null → returns `{ ok: false, error: 'opus_returned_nothing' }`, no enrichment_logs row written, CEI counter bumps with success=false.
+- error-watchdog Slack/Resend send fails → still returns scan summary, the failures are themselves logged via `reportError`. Watchdog never throws to caller.
+- CEI counter table missing → `bumpCounter` self-creates on first invocation; never blocks the calling engine.
+
+### Connectivity & test endpoints
+
+- `GET /api/v1/enrich/spanish-detector?secret=ingest-now&action=health`
+- `GET /api/v1/enrich/smart-cross-ref?secret=ingest-now&action=health`
+- `GET /api/v1/system/cei-counters?secret=ingest-now`
+- `GET /api/v1/system/cei-counters?secret=ingest-now&action=summary`
+- `GET /api/v1/system/error-watchdog?secret=ingest-now&action=scan&minutes=10`
+

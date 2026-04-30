@@ -9,29 +9,35 @@ const GLOBAL_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;900&display=swap');
 
 :root {
-  --bg-primary: #0b0f1a;
-  --bg-secondary: #101729;
-  --bg-card: #151d32;
-  --bg-card-hover: #1b2540;
-  --bg-input: #0d1225;
-  --border: #1c2b4d;
-  --text-primary: #f4f7ff;
-  --text-secondary: #a0b0d0;
-  --text-muted: #5e739e;
-  --brand-blue: #4f6bff;
-  --brand-purple: #a855f7;
-  --brand-magenta: #e040fb;
-  --brand-pink: #ff4da6;
-  --brand-orange: #ff7b3a;
-  --brand-yellow: #fbbf24;
-  --brand-green: #34d399;
-  --brand-cyan: #22d3ee;
-  --brand-red: #ff4757;
-  --brand-teal: #14b8a6;
+  /* Phase 50: ACC light theme — dark text on warm white, navy primary, electric red urgency */
+  --bg-primary: #FAFAFA;       /* warm white background */
+  --bg-secondary: #F4F6FB;     /* slightly off-white panel */
+  --bg-card: #FFFFFF;          /* white card */
+  --bg-card-hover: #F8FAFF;
+  --bg-input: #FFFFFF;
+  --border: #E2E8F0;           /* light slate border */
+  --text-primary: #0F172A;     /* slate-900 */
+  --text-secondary: #334155;   /* slate-700 */
+  --text-muted: #64748B;       /* slate-500 */
+  --brand-navy: #0F2A5A;       /* primary deep navy */
+  --brand-blue: #0F2A5A;       /* alias kept for legacy refs */
+  --brand-purple: #1E3A8A;     /* indigo-blue accent (replaces purple) */
+  --brand-magenta: #DC2626;    /* electric red urgency */
+  --brand-pink: #DC2626;
+  --brand-orange: #F59E0B;     /* gold high-value */
+  --brand-yellow: #F59E0B;
+  --brand-green: #10B981;      /* emerald verified */
+  --brand-cyan: #0EA5E9;
+  --brand-red: #DC2626;
+  --brand-teal: #10B981;
+  --shadow-card: 0 4px 12px rgba(15,42,90,0.08);
+  --shadow-card-hover: 0 8px 24px rgba(15,42,90,0.12);
 }
 
 body {
-  background: linear-gradient(135deg, rgba(79,107,255,0.05) 10% 0%, rgba(168,85,247,0.05) 90% 100%, rgba(224,64,251,0.05) 50% 50%);
+  background: #FAFAFA;
+  background-image: radial-gradient(at 0% 0%, rgba(15,42,90,0.04) 0%, transparent 40%), radial-gradient(at 100% 100%, rgba(245,158,11,0.04) 0%, transparent 50%);
+  color: #0F172A;
 }
 
 @keyframes gradientShift {
@@ -71,29 +77,48 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-.kpi-card { transition: all 0.3s ease; }
-.kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4) !important; }
-.incident-row { transition: all 0.2s ease; }
-.incident-row:hover { background: rgba(79,107,255,0.05) !important; transform: translateX(4px); }
+.kpi-card { transition: all 0.25s ease; }
+.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,42,90,0.12) !important; }
+.incident-row { transition: all 0.15s ease; }
+.incident-row:hover { background: rgba(15,42,90,0.04) !important; transform: translateX(2px); }
 .nav-link { transition: all 0.2s ease; position: relative; }
-.nav-link:hover { color: #4f6bff !important; }
-.nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #ff4757, #ff7b3a, #fbbf24, #34d399, #22d3ee, #4f6bff, #a855f7, #e040fb); border-radius: 1px; animation: rainbowShift 4s linear infinite; background-size: 200% 100%; }
-.sidebar-item { transition: all 0.2s ease; }
-.sidebar-item:focus { border-color: #4f6bff !important; box-shadow: 0 0 0 2px rgba(79,107,255,0.15); }
-.btn-action { transition: all 0.2s ease; }
-.btn-action:hover { transform: translateY(-1px); filter: brightness(1.15); }
-.detail-panel { animation: slideInRight 0.3s ease; }
+.nav-link:hover { color: #0F2A5A !important; }
+.nav-link.active { color: #0F2A5A !important; }
+.nav-link.active::after { content: ''; position: absolute; bottom: -2px; left: 12px; right: 12px; height: 2px; background: #DC2626; border-radius: 1px; }
+.sidebar-item { transition: all 0.15s ease; }
+.sidebar-item:focus { border-color: #0F2A5A !important; box-shadow: 0 0 0 3px rgba(15,42,90,0.08); }
+.btn-action { transition: all 0.15s ease; }
+.btn-action:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 4px 12px rgba(15,42,90,0.08); }
+.detail-panel { animation: slideInRight 0.25s ease; }
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
-.table-row { transition: all 0.15s ease; }
-.table-row:hover { background: rgba(79,107,255,0.04) !important; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0b0f1a; }
-::-webkit-scrollbar-thumb { background: #1c2b4d; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2d4a7b; }
-* { scrollbar-width: thin; scrollbar-color: #1c2b4d #0b0f1a; }
+@keyframes accPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+@keyframes accBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.acc-pulse-dot { animation: accPulse 1.6s ease-in-out infinite; }
+.acc-blink-cursor { animation: accBlink 1.1s steps(1) infinite; }
+.acc-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; box-shadow: 0 1px 2px rgba(15,42,90,0.06); border: 1px solid var(--border); background: #fff; }
+.acc-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.acc-status-badge.qualified { color: #065F46; border-color: #A7F3D0; background: #ECFDF5; }
+.acc-status-badge.qualified .dot { background: #10B981; }
+.acc-status-badge.pending { color: #92400E; border-color: #FCD34D; background: #FFFBEB; }
+.acc-status-badge.pending .dot { background: #F59E0B; }
+.acc-status-badge.verified { color: #1E40AF; border-color: #BFDBFE; background: #EFF6FF; }
+.acc-status-badge.verified .dot { background: #0F2A5A; }
+.table-row { transition: all 0.12s ease; }
+.table-row:hover { background: rgba(15,42,90,0.03) !important; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #FAFAFA; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+* { scrollbar-width: thin; scrollbar-color: #CBD5E1 #FAFAFA; }
 `;
 
 // ============================================================================
@@ -498,22 +523,29 @@ function LoginScreen({ onLogin }) {
 function NavBar({ user, page, setPage, notifications, onLogout }) {
   return (
     <nav style={{
-      height: 64, background: "rgba(20,24,41,0.95)", backdropFilter: "blur(12px)",
-      borderBottom: "1px solid rgba(79,107,255,0.1)", display: "flex", alignItems: "center",
-      justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 100
+      height: 64, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)",
+      borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "center",
+      justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 100,
+      boxShadow: "0 1px 3px rgba(15,42,90,0.04)"
     }}>
-      {/* Top rainbow gradient accent line */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #ff4757, #ff7b3a, #fbbf24, #34d399, #22d3ee, #4f6bff, #a855f7, #e040fb)", backgroundSize: "200% 100%", animation: "rainbowShift 4s linear infinite" }} />
+      {/* ACC accent line — navy with subtle red urgency punctuation */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #0F2A5A 0%, #0F2A5A 80%, #DC2626 80%, #DC2626 100%)" }} />
 
       <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* ACC logomark — navy block, stacked initials, red dot accent */}
           <div style={{
-            width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #4f6bff, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#fff", fontFamily: "'Orbitron', monospace"
-          }}>MD</div>
+            width: 36, height: 36, borderRadius: 8, background: "#0F2A5A",
+            display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
+            fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.5px", fontFamily: "'Inter', sans-serif",
+            boxShadow: "0 4px 12px rgba(15,42,90,0.18)"
+          }}>
+            ACC
+            <span className="acc-pulse-dot" style={{ position: "absolute", top: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "#DC2626", display: "inline-block" }} />
+          </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", letterSpacing: "-0.3px", lineHeight: 1, fontFamily: "'Orbitron', monospace", background: "linear-gradient(135deg, #4f6bff, #a855f7, #e040fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>MD2020 INCIDENT</div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: "#a0b0d0", letterSpacing: "1.5px", textTransform: "uppercase" }}>Donovan Digital</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#0F2A5A", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: "#64748B", letterSpacing: "1.3px", textTransform: "uppercase", marginTop: 2 }}>Multi-Source Lead Intelligence</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -521,9 +553,9 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
-                background: page === p ? "rgba(79,107,255,0.1)" : "none", border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.3px", padding: "10px 12px", borderRadius: 8,
-                color: page === p ? "#4f6bff" : "#a0b0d0", whiteSpace: "nowrap"
+                background: page === p ? "rgba(15,42,90,0.06)" : "none", border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 600, letterSpacing: "0.3px", padding: "10px 14px", borderRadius: 8,
+                color: page === p ? "#0F2A5A" : "#64748B", whiteSpace: "nowrap"
               }}>
               {p === "dashboard" && "\u25A3 "}
               {p === "incidents" && "\u26A0 "}

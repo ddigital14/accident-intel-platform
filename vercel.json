@@ -41,7 +41,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source,refresh-mv",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source,refresh-mv,error-watchdog",
       "schedule": "*/5 * * * *"
     },
     {
@@ -49,7 +49,7 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup,address-to-residents,fcc-carrier,dev-profiles,usps-validate,name-rarity,gofundme,funeral-homes,nextdoor",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=news,news-rss,reddit,people-search,social-search,twilio-lookup,address-to-residents,fcc-carrier,dev-profiles,usps-validate,name-rarity,gofundme,funeral-homes,nextdoor,spanish-detector,smart-cross-ref",
       "schedule": "*/30 * * * *"
     },
     {

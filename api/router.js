@@ -206,6 +206,11 @@ const sysLookupCache           = require('../lib/v1/system/_lookup_cache');
 const sysCrossIntelOrchestrator= require('../lib/v1/system/cross-intel-orchestrator');
 // ── Phase 48: Master lead list digest
 const sysMasterLeadList        = require('../lib/v1/system/master-lead-list');
+// ── Phase 50: Spanish detector + smart cross-ref + CEI counters + error watchdog
+const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
+const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
+const sysCeiCounters           = require('../lib/v1/system/cei-counters');
+const sysErrorWatchdog         = require('../lib/v1/system/error-watchdog');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -392,6 +397,11 @@ const ROUTES = {
   'system/lookup-cache':         sysLookupCache,
   'system/cross-intel-orchestrator': sysCrossIntelOrchestrator,
   'system/master-lead-list': sysMasterLeadList,
+  // Phase 50
+  'enrich/spanish-detector':  enrichSpanishDetector,
+  'enrich/smart-cross-ref':   enrichSmartCrossRef,
+  'system/cei-counters':      sysCeiCounters,
+  'system/error-watchdog':    sysErrorWatchdog,
 };
 
 function tryDynamicIncident(slug, req) {
