@@ -203,6 +203,8 @@ const dashAdminOverview        = require('../lib/v1/dashboard/admin-overview');
 const dashCallerId             = require('../lib/v1/dashboard/caller-id');
 const sysLookupCache           = require('../lib/v1/system/_lookup_cache');
 const sysCrossIntelOrchestrator= require('../lib/v1/system/cross-intel-orchestrator');
+// ── Phase 48: Master lead list digest
+const sysMasterLeadList        = require('../lib/v1/system/master-lead-list');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -387,6 +389,7 @@ const ROUTES = {
   'dashboard/caller-id':         dashCallerId,
   'system/lookup-cache':         sysLookupCache,
   'system/cross-intel-orchestrator': sysCrossIntelOrchestrator,
+  'system/master-lead-list': sysMasterLeadList,
 };
 
 function tryDynamicIncident(slug, req) {
