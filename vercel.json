@@ -29,7 +29,7 @@
   "crons": [
     {"path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=vacuum-nightly", "schedule": "0 4 * * *"},
     
-    {"path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=refresh-mv,predictive-at-source,cei-poll", "schedule": "* * * * *"},
+    {"path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=refresh-mv,predictive-at-source,cei-poll,embedding-drain", "schedule": "* * * * *"},
     {"path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=pulsepoint,realtime-feed-tick", "schedule": "* * * * *"},
     
     {
@@ -41,7 +41,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source,refresh-mv,error-watchdog",
+      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason,backfill-nameless,smart-router,constant-cross-loop,ensemble-qualifier,contradiction-detector,bidirectional-cascade,saved-alerts,engagement-score,predictive-at-source,refresh-mv,error-watchdog,cron-staleness-check,schema-drift-check",
       "schedule": "*/5 * * * *"
     },
     {

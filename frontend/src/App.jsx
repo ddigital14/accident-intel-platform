@@ -9,35 +9,51 @@ const GLOBAL_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;900&display=swap');
 
 :root {
-  /* Phase 50: ACC light theme — dark text on warm white, navy primary, electric red urgency */
-  --bg-primary: #FAFAFA;       /* warm white background */
-  --bg-secondary: #F4F6FB;     /* slightly off-white panel */
+  /* Phase 51: ACC grey/green/red theme — charcoal text, forest+emerald primary, red sparingly for accident pulse */
+  --bg-primary: #FAFAF9;       /* warm white background */
+  --bg-secondary: #F4F6F4;     /* slightly off-white panel */
   --bg-card: #FFFFFF;          /* white card */
-  --bg-card-hover: #F8FAFF;
+  --bg-card-hover: #F7FBF9;
   --bg-input: #FFFFFF;
   --border: #E2E8F0;           /* light slate border */
-  --text-primary: #0F172A;     /* slate-900 */
-  --text-secondary: #334155;   /* slate-700 */
+  --text-primary: #1F2937;     /* charcoal */
+  --text-secondary: #475569;   /* slate */
   --text-muted: #64748B;       /* slate-500 */
-  --brand-navy: #0F2A5A;       /* primary deep navy */
-  --brand-blue: #0F2A5A;       /* alias kept for legacy refs */
-  --brand-purple: #1E3A8A;     /* indigo-blue accent (replaces purple) */
-  --brand-magenta: #DC2626;    /* electric red urgency */
+
+  /* Phase 51 brand tokens (canonical) */
+  --brand-charcoal: #1F2937;
+  --brand-slate: #475569;
+  --brand-forest: #064E3B;
+  --brand-emerald: #10B981;
+  --brand-sage: #6EE7B7;
+  --brand-red-ember: #DC2626;  /* sparingly — accident pulse only */
+  --brand-bg: #FAFAF9;
+  --brand-card: #FFFFFF;
+  --brand-border: #E2E8F0;
+  --brand-text-primary: #1F2937;
+  --brand-text-muted: #64748B;
+  --brand-shadow: 0 4px 12px rgba(31,41,55,0.06);
+
+  /* Legacy aliases — point to new palette so nothing breaks */
+  --brand-navy: #1F2937;       /* now charcoal */
+  --brand-blue: #064E3B;       /* now forest */
+  --brand-purple: #064E3B;     /* now forest */
+  --brand-magenta: #DC2626;    /* still red ember */
   --brand-pink: #DC2626;
-  --brand-orange: #F59E0B;     /* gold high-value */
-  --brand-yellow: #F59E0B;
-  --brand-green: #10B981;      /* emerald verified */
-  --brand-cyan: #0EA5E9;
+  --brand-orange: #6EE7B7;     /* sage accent */
+  --brand-yellow: #6EE7B7;
+  --brand-green: #10B981;      /* emerald */
+  --brand-cyan: #10B981;       /* now emerald */
   --brand-red: #DC2626;
   --brand-teal: #10B981;
-  --shadow-card: 0 4px 12px rgba(15,42,90,0.08);
-  --shadow-card-hover: 0 8px 24px rgba(15,42,90,0.12);
+  --shadow-card: 0 4px 12px rgba(31,41,55,0.06);
+  --shadow-card-hover: 0 8px 24px rgba(31,41,55,0.10);
 }
 
 body {
-  background: #FAFAFA;
-  background-image: radial-gradient(at 0% 0%, rgba(15,42,90,0.04) 0%, transparent 40%), radial-gradient(at 100% 100%, rgba(245,158,11,0.04) 0%, transparent 50%);
-  color: #0F172A;
+  background: #FAFAF9;
+  background-image: radial-gradient(at 0% 0%, rgba(31,41,55,0.04) 0%, transparent 40%), radial-gradient(at 100% 100%, rgba(16,185,129,0.05) 0%, transparent 50%);
+  color: #1F2937;
 }
 
 @keyframes gradientShift {
@@ -528,16 +544,16 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
       justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 100,
       boxShadow: "0 1px 3px rgba(15,42,90,0.04)"
     }}>
-      {/* ACC accent line — navy with subtle red urgency punctuation */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #0F2A5A 0%, #0F2A5A 80%, #DC2626 80%, #DC2626 100%)" }} />
+      {/* Phase 51: ACC accent line — emerald rule with charcoal punctuation, red ember tip */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #1F2937 0%, #064E3B 60%, #10B981 92%, #DC2626 92%, #DC2626 100%)" }} />
 
       <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* ACC logomark SVG — shield + radar pulse (Phase 50b) */}
+          {/* ACC logomark SVG — Phase 51 grey/green hex */}
           <img src="/logomark.svg" alt="Accident Command Center"
-            style={{ width: 38, height: 38, display: "block", filter: "drop-shadow(0 4px 12px rgba(15,42,90,0.18))" }} />
+            style={{ width: 38, height: 38, display: "block", filter: "drop-shadow(0 4px 12px rgba(31,41,55,0.18))" }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#0F2A5A", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#1F2937", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
             <div style={{ fontSize: 9, fontWeight: 600, color: "#64748B", letterSpacing: "1.3px", textTransform: "uppercase", marginTop: 2 }}>by Donovan Digital Solutions</div>
           </div>
         </div>
@@ -546,9 +562,10 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
             <button key={p} onClick={() => setPage(p)}
               className={`nav-link ${page === p ? "active" : ""}`}
               style={{
-                background: page === p ? "rgba(15,42,90,0.06)" : "none", border: "none", cursor: "pointer",
+                background: page === p ? "rgba(16,185,129,0.08)" : "none", border: "none", cursor: "pointer",
                 fontSize: 11, fontWeight: 600, letterSpacing: "0.3px", padding: "10px 14px", borderRadius: 8,
-                color: page === p ? "#0F2A5A" : "#64748B", whiteSpace: "nowrap"
+                color: page === p ? "#064E3B" : "#475569", whiteSpace: "nowrap",
+                borderBottom: page === p ? "2px solid #10B981" : "2px solid transparent"
               }}>
               {p === "dashboard" && "\u25A3 "}
               {p === "incidents" && "\u26A0 "}

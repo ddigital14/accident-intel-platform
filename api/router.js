@@ -215,6 +215,10 @@ const sysErrorWatchdog         = require('../lib/v1/system/error-watchdog');
 const enrichMultilangDetector  = require('../lib/v1/enrich/multilang-detector');
 const ingestMultiCommunityNews = require('../lib/v1/ingest/multicommunity-news');
 const sysResendDomainSetup     = require('../lib/v1/system/resend-domain-setup');
+// ── Phase 51: embedding queue + cron staleness watchdog + schema drift detector
+const sysEmbeddingQueue        = require('../lib/v1/system/embedding-queue');
+const sysCronStaleness         = require('../lib/v1/system/cron-staleness');
+const sysSchemaDriftCheck      = require('../lib/v1/system/schema-drift-check');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -410,6 +414,10 @@ const ROUTES = {
   'enrich/multilang-detector':    enrichMultilangDetector,
   'ingest/multicommunity-news':   ingestMultiCommunityNews,
   'system/resend-domain-setup':   sysResendDomainSetup,
+  // Phase 51
+  'system/embedding-queue':       sysEmbeddingQueue,
+  'system/cron-staleness':        sysCronStaleness,
+  'system/schema-drift-check':    sysSchemaDriftCheck,
 };
 
 function tryDynamicIncident(slug, req) {

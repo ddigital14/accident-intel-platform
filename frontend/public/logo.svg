@@ -1,33 +1,49 @@
-<svg width="100%" viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Accident Command Center">
+<svg width="100%" viewBox="0 0 680 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Accident Command Center by Donovan Digital Solutions">
   <defs>
-    <linearGradient id="navyG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1E3A8A"/><stop offset="100%" stop-color="#0F2A5A"/>
+    <linearGradient id="hexFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1F2937"/>
+      <stop offset="55%" stop-color="#0F3D2E"/>
+      <stop offset="100%" stop-color="#064E3B"/>
     </linearGradient>
-    <linearGradient id="redG" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#EF4444"/><stop offset="100%" stop-color="#B91C1C"/>
+    <linearGradient id="hexEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="textInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
     </linearGradient>
   </defs>
-  <g transform="translate(340,200)">
-    <circle r="135" fill="none" stroke="#0F2A5A" stroke-width="0.6" opacity="0.18"/>
-    <circle r="115" fill="none" stroke="#0F2A5A" stroke-width="0.6" opacity="0.28"/>
-    <circle r="95" fill="none" stroke="#0F2A5A" stroke-width="0.8" opacity="0.42"/>
-    <path d="M0 -90 L80 -70 L80 0 Q80 40 0 70 Q-80 40 -80 0 L-80 -70 Z" fill="url(#navyG)"/>
-    <path d="M0 -90 L80 -70 L80 0 Q80 40 0 70 Q-80 40 -80 0 L-80 -70 Z" fill="none" stroke="#0F2A5A" stroke-width="1"/>
-    <text x="0" y="14" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="48" font-weight="500" fill="#FAFAFA" letter-spacing="6">ACC</text>
-    <text x="0" y="40" text-anchor="middle" font-size="9" fill="#FAFAFA" opacity="0.65" letter-spacing="2.4">COMMAND ACTIVE</text>
-    <g transform="translate(0,-90)">
-      <circle r="22" fill="#FAFAFA"/>
-      <path d="M0 -14 L12 0 L0 14 L-12 0 Z" fill="url(#redG)"/>
-      <circle r="3.5" fill="#FAFAFA"/>
+  <g transform="translate(340,170)">
+    <polygon points="0,-110 95.3,-55 95.3,55 0,110 -95.3,55 -95.3,-55" fill="#10B981" opacity="0.08"/>
+    <polygon points="0,-122 105.7,-61 105.7,61 0,122 -105.7,61 -105.7,-61" fill="none" stroke="#10B981" stroke-width="0.4" opacity="0.25"/>
+    <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50" fill="url(#hexFill)"/>
+    <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50" fill="none" stroke="url(#hexEdge)" stroke-width="1.2"/>
+    <polygon points="0,-88 76.2,-44 76.2,44 0,88 -76.2,44 -76.2,-44" fill="none" stroke="#10B981" stroke-width="0.35" opacity="0.45"/>
+    <line x1="-40" y1="-78" x2="-72" y2="-78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
+    <line x1="40" y1="-78" x2="72" y2="-78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
+    <line x1="-40" y1="78" x2="-72" y2="78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
+    <line x1="40" y1="78" x2="72" y2="78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
+    <text x="0" y="2" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="56" font-weight="500" fill="url(#textInner)" letter-spacing="2">A<tspan fill="#10B981">C</tspan>C</text>
+    <line x1="-40" y1="22" x2="40" y2="22" stroke="#10B981" stroke-width="0.5" opacity="0.7"/>
+    <text x="0" y="42" text-anchor="middle" font-size="9" fill="#94A3B8" letter-spacing="3.4">COMMAND ACTIVE</text>
+    <g transform="translate(0,-100)">
+      <circle r="10" fill="#FAFAF9"/>
+      <circle r="6.5" fill="#DC2626"/>
+      <circle r="2.6" fill="#FCA5A5"/>
     </g>
-    <circle r="34" cx="0" cy="-90" fill="none" stroke="#DC2626" stroke-width="0.6">
-      <animate attributeName="r" from="22" to="46" dur="1.6s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" from="0.7" to="0" dur="1.6s" repeatCount="indefinite"/>
+    <circle cx="0" cy="-100" r="14" fill="none" stroke="#DC2626" stroke-width="0.6" opacity="0.6">
+      <animate attributeName="r" from="10" to="22" dur="1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.7" to="0" dur="1.8s" repeatCount="indefinite"/>
     </circle>
   </g>
-  <text x="340" y="370" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="32" font-weight="500" fill="#0F2A5A" letter-spacing="1.5">Accident Command Center</text>
-  <line x1="240" y1="392" x2="328" y2="392" stroke="#0F2A5A" stroke-width="0.5" opacity="0.35"/>
-  <circle cx="340" cy="392" r="2.8" fill="#DC2626"/>
-  <line x1="352" y1="392" x2="440" y2="392" stroke="#0F2A5A" stroke-width="0.5" opacity="0.35"/>
-  <text x="340" y="418" text-anchor="middle" font-size="13" font-weight="400" fill="#64748B" letter-spacing="2.4">by Donovan Digital Solutions</text>
+  <g transform="translate(340,330)">
+    <text x="0" y="0" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="30" font-weight="500" fill="#1F2937" letter-spacing="4.2">ACCIDENT</text>
+    <text x="0" y="34" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="30" font-weight="500" fill="#1F2937" letter-spacing="4.2">COMMAND<tspan fill="#10B981" letter-spacing="4.2"> &#183; </tspan>CENTER</text>
+  </g>
+  <g transform="translate(340,400)">
+    <line x1="-130" y1="0" x2="-26" y2="0" stroke="#94A3B8" stroke-width="0.5"/>
+    <line x1="26" y1="0" x2="130" y2="0" stroke="#94A3B8" stroke-width="0.5"/>
+    <text x="0" y="4" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#475569" letter-spacing="3.8">BY DONOVAN DIGITAL SOLUTIONS</text>
+  </g>
 </svg>
