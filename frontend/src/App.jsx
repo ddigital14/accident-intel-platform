@@ -533,19 +533,12 @@ function NavBar({ user, page, setPage, notifications, onLogout }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* ACC logomark — navy block, stacked initials, red dot accent */}
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: "#0F2A5A",
-            display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
-            fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.5px", fontFamily: "'Inter', sans-serif",
-            boxShadow: "0 4px 12px rgba(15,42,90,0.18)"
-          }}>
-            ACC
-            <span className="acc-pulse-dot" style={{ position: "absolute", top: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "#DC2626", display: "inline-block" }} />
-          </div>
+          {/* ACC logomark SVG — shield + radar pulse (Phase 50b) */}
+          <img src="/logomark.svg" alt="Accident Command Center"
+            style={{ width: 38, height: 38, display: "block", filter: "drop-shadow(0 4px 12px rgba(15,42,90,0.18))" }} />
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: "#0F2A5A", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: "#64748B", letterSpacing: "1.3px", textTransform: "uppercase", marginTop: 2 }}>Multi-Source Lead Intelligence</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: "#64748B", letterSpacing: "1.3px", textTransform: "uppercase", marginTop: 2 }}>by Donovan Digital Solutions</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>

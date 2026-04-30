@@ -211,6 +211,10 @@ const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
 const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
 const sysCeiCounters           = require('../lib/v1/system/cei-counters');
 const sysErrorWatchdog         = require('../lib/v1/system/error-watchdog');
+// ── Phase 50b: multi-language detector + multi-community ingest + Resend domain setup
+const enrichMultilangDetector  = require('../lib/v1/enrich/multilang-detector');
+const ingestMultiCommunityNews = require('../lib/v1/ingest/multicommunity-news');
+const sysResendDomainSetup     = require('../lib/v1/system/resend-domain-setup');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -402,6 +406,10 @@ const ROUTES = {
   'enrich/smart-cross-ref':   enrichSmartCrossRef,
   'system/cei-counters':      sysCeiCounters,
   'system/error-watchdog':    sysErrorWatchdog,
+  // Phase 50b
+  'enrich/multilang-detector':    enrichMultilangDetector,
+  'ingest/multicommunity-news':   ingestMultiCommunityNews,
+  'system/resend-domain-setup':   sysResendDomainSetup,
 };
 
 function tryDynamicIncident(slug, req) {

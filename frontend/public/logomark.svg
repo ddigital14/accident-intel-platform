@@ -1,0 +1,28 @@
+<svg width="100%" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ACC logomark">
+  <defs>
+    <linearGradient id="navyG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A"/><stop offset="100%" stop-color="#0F2A5A"/>
+    </linearGradient>
+    <linearGradient id="redG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/><stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(120,130)">
+    <circle r="110" fill="none" stroke="#0F2A5A" stroke-width="0.6" opacity="0.18"/>
+    <circle r="92" fill="none" stroke="#0F2A5A" stroke-width="0.6" opacity="0.28"/>
+    <circle r="76" fill="none" stroke="#0F2A5A" stroke-width="0.8" opacity="0.42"/>
+    <path d="M0 -78 L70 -60 L70 0 Q70 35 0 60 Q-70 35 -70 0 L-70 -60 Z" fill="url(#navyG)"/>
+    <path d="M0 -78 L70 -60 L70 0 Q70 35 0 60 Q-70 35 -70 0 L-70 -60 Z" fill="none" stroke="#0F2A5A" stroke-width="1"/>
+    <text x="0" y="12" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="42" font-weight="500" fill="#FAFAFA" letter-spacing="5">ACC</text>
+    <text x="0" y="34" text-anchor="middle" font-size="8" fill="#FAFAFA" opacity="0.65" letter-spacing="2.2">COMMAND ACTIVE</text>
+    <g transform="translate(0,-78)">
+      <circle r="20" fill="#FAFAFA"/>
+      <path d="M0 -12 L10 0 L0 12 L-10 0 Z" fill="url(#redG)"/>
+      <circle r="3" fill="#FAFAFA"/>
+    </g>
+    <circle r="30" cx="0" cy="-78" fill="none" stroke="#DC2626" stroke-width="0.6">
+      <animate attributeName="r" from="20" to="40" dur="1.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.7" to="0" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
