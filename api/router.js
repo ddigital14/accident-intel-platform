@@ -208,6 +208,11 @@ const sysCrossIntelOrchestrator= require('../lib/v1/system/cross-intel-orchestra
 const sysMasterLeadList        = require('../lib/v1/system/master-lead-list');
 const sysAutoFanOut             = require('../lib/v1/system/auto-fan-out');
 const sysStrategist             = require('../lib/v1/system/strategist');
+// ── Phase 60: Adversarial cross-check (independent third-party validation)
+const sysAdversarialCrossCheck  = require('../lib/v1/system/adversarial-cross-check');
+const sysHypothesisGenerator    = require('../lib/v1/system/hypothesis-generator');
+const sysPersonMergeFinder      = require('../lib/v1/system/person-merge-finder');
+const sysPatternMiner           = require('../lib/v1/system/pattern-miner');
 // ── Phase 50: Spanish detector + smart cross-ref + CEI counters + error watchdog
 const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
 const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
@@ -412,6 +417,10 @@ const ROUTES = {
   'system/master-lead-list': sysMasterLeadList,
   'system/auto-fan-out': sysAutoFanOut,
   'system/strategist': sysStrategist,
+  'system/adversarial-cross-check': sysAdversarialCrossCheck,
+  'system/hypothesis-generator': sysHypothesisGenerator,
+  'system/person-merge-finder': sysPersonMergeFinder,
+  'system/pattern-miner': sysPatternMiner,
   // Phase 50
   'enrich/spanish-detector':  enrichSpanishDetector,
   'enrich/smart-cross-ref':   enrichSmartCrossRef,
