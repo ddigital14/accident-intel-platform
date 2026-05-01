@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Accident Command Center — Spec Sheet v1.0</title>
+<style>
+  @page { size: letter; margin: 0.75in 0.7in; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1F2937; line-height: 1.55; font-size: 10.5pt; max-width: 720px; margin: 0 auto; padding: 0 12px; }
+  .brand-band { background: #1F2937; color: #fff; padding: 18px 22px; margin: 0 -12px 24px -12px; }
+  .brand-band .logo { font-family: 'Space Grotesk', -apple-system, sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em; line-height: 1; }
+  .brand-band .logo .acc { color: #EF4444; }
+  .brand-band .logo .dds { color: #FF6600; font-size: 14px; font-weight: 600; margin-left: 10px; vertical-align: middle; }
+  .brand-band .tag { color: #94A3B8; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 4px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22pt; line-height: 1.18; color: #0F172A; letter-spacing: -0.02em; margin: 18px 0 8px 0; }
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 14pt; color: #0F172A; letter-spacing: -0.01em; margin: 28px 0 6px 0; padding-bottom: 4px; border-bottom: 2px solid #EF4444; }
+  h3 { font-family: 'Space Grotesk', sans-serif; font-size: 11.5pt; color: #1F2937; margin: 18px 0 4px 0; }
+  p { margin: 6px 0; color: #1F2937; }
+  ul, ol { margin: 4px 0 8px 22px; padding: 0; }
+  li { margin: 2px 0; color: #1F2937; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px 0; font-size: 9.5pt; }
+  th { background: #F1F5F9; color: #0F172A; padding: 6px 8px; text-align: left; border-bottom: 2px solid #CBD5E1; font-weight: 600; }
+  td { padding: 5px 8px; border-bottom: 1px solid #E2E8F0; vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  code { background: #F1F5F9; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', 'Menlo', monospace; font-size: 9pt; color: #6366F1; }
+  hr { border: none; border-top: 1px solid #E2E8F0; margin: 18px 0; }
+  strong { color: #0F172A; }
+  em { color: #475569; }
+</style>
+</head>
+<body>
+  <div class="brand-band">
+    <div class="logo">
+      <span class="acc">A</span><span class="acc">C</span><span class="acc">C</span>
+      <span class="dds">DDS</span>
+    </div>
+    <div class="tag">Accident Command Center · Donovan Digital Solutions</div>
+  </div>
+<h1>Accident Command Center — Spec Sheet (v1.0)</h1>
+<p><strong>Built by:</strong> Donovan Digital Solutions<br />
+<strong>Date:</strong> 2026-04-30<br />
+<strong>Audience:</strong> Mason Donovan, Chris Housley<br />
+<strong>Format:</strong> Info-only spec — no marketing, no narrative, no diagrams. Just what it is, what it does, what's connected, and what's measured.</p>
+<hr />
+<h2>1. What it is</h2>
+<p>A multi-engine intelligence platform that turns raw accident signal (news, scanner audio, court filings, social posts) into qualified, contactable personal-injury leads.</p>
+<ul>
+<li><strong>Domain:</strong> accidentcommandcenter.com</li>
+<li><strong>Hosting:</strong> Vercel Pro</li>
+<li><strong>Database:</strong> Postgres + PostGIS + pgvector (via Vercel)</li>
+<li><strong>Email transport:</strong> Resend (alerts@caseflowplatform.com today; alerts@accidentcommandcenter.com pending DKIM)</li>
+<li><strong>SMS transport:</strong> Twilio (330-area-code number, A2P 10DLC brand approved)</li>
+<li><strong>Storage:</strong> S3-compatible blob (Vercel Blob)</li>
+<li><strong>Repo:</strong> github.com/ddigital14/accident-intel-platform</li>
+</ul>
+<hr />
+<h2>2. What it does (functional)</h2>
+<h3>2.1 Ingest (cron, every 5–30 min)</h3>
+<ul>
+<li>Waze incident feed</li>
+<li>TomTom traffic events</li>
+<li>City 911 dispatch (Houston, Atlanta where available)</li>
+<li>Scanner audio → Whisper / Deepgram transcription → AI summarization</li>
+<li>News RSS aggregator (50+ regional outlets)</li>
+<li>Reddit r/PoliceScanner, Citizen app</li>
+<li>Police press releases (TX/GA/FL pages)</li>
+<li>Hospital trauma boards</li>
+<li>CourtListener / RECAP federal filings</li>
+<li>State court searches (where indexable)</li>
+<li>Funeral home / obituary feeds</li>
+<li>GoFundMe accident campaigns</li>
+<li>Tow company reports (where APIs exist)</li>
+<li>TomTom DOI, county property assessors</li>
+</ul>
+<h3>2.2 Extract</h3>
+<ul>
+<li>Victim names (with deny-list filter — no journalists, officers, public figures)</li>
+<li>Vehicle plates / VINs from press text</li>
+<li>Injury severity, fatality count</li>
+<li>Location → reverse-geocoded → city / state / county</li>
+<li>Attorney mention detection (CourtListener cross-reference)</li>
+<li>Insurance carrier names</li>
+<li>Family relationships (obituary survivors parser)</li>
+</ul>
+<h3>2.3 Verify (Stage A regex + Stage B Claude)</h3>
+<ul>
+<li>Stage A: structural regex — rejects bylines, official titles, historical (WWII/Korean/Vietnam), out-of-US</li>
+<li>Stage B: Claude Sonnet 4.6 verifier — yes/no/maybe, structured rationale</li>
+<li>Persons enter <code>victim_verified=TRUE</code> only after both stages pass</li>
+<li>Failure modes logged in <code>victim_verifier_reason</code></li>
+</ul>
+<h3>2.4 Enrich (auto fan-out, on every persons UPDATE)</h3>
+<ul>
+<li>30-engine matrix in <code>lib/v1/system/auto-fan-out.js</code></li>
+<li>DB trigger fires fan-out cascade on phone/email/address/name/dob/employer change</li>
+<li>Per-engine 12s timeout, 55s total budget per pass</li>
+<li>Rate limit: one full pass per person per 6h unless contact field changed</li>
+<li>All field writes logged to <code>enrichment_logs</code></li>
+</ul>
+<h3>2.5 Cross-check</h3>
+<ul>
+<li>Pairwise validation of phones (digits-only), emails (exact), addresses (70%+ token overlap), names (Levenshtein ≤2)</li>
+<li>Conflicts dock confidence by 5–10 points</li>
+<li>Matches log to <code>evidence_cross_check_summary</code></li>
+<li>States: <code>single_source</code>, <code>no_evidence_yet</code>, <code>Nm/Mc</code> (matches/conflicts), <code>CONFLICT FLAGGED</code></li>
+</ul>
+<h3>2.6 Qualify</h3>
+<ul>
+<li><code>lead_score</code> computed from evidence weight, recency, severity, contact completeness</li>
+<li>Threshold: 120 = qualified, 80–119 = pending_named, &lt;80 = pending</li>
+<li><code>qualification_state</code> on incidents</li>
+<li>Auto-promotion when contact info added</li>
+</ul>
+<h3>2.7 Distribute</h3>
+<ul>
+<li>Slack alerts for high-value qualified leads</li>
+<li>SMS alerts via Twilio (rep number, configured per metro)</li>
+<li>Daily master-list email digest (Resend, multi-recipient)</li>
+<li>Browser extension claim-lead button</li>
+<li>Rep dashboard with one-click "Run All Sources" + 25 quick-link tools</li>
+</ul>
+<hr />
+<h2>3. What's connected (integrations)</h2>
+<h3>3.1 AI / ML</h3>
+<ul>
+<li>Anthropic — Claude Opus 4.7, Sonnet 4.6, Haiku 4.5 (auto-reload threshold $10 → reload to $500)</li>
+<li>OpenAI — GPT-4o, Whisper (key: "police scanner")</li>
+<li>Deepgram — speech-to-text (Nova-3 model, parallel with Whisper)</li>
+<li>VoyageAI — embeddings (voyage-3-large, 1024 dim) + reranking (rerank-2.5)</li>
+</ul>
+<h3>3.2 Identity / contact resolution</h3>
+<ul>
+<li>Apollo Professional — match + unlock, $98/mo Pro</li>
+<li>People Data Labs — Person Enrichment Pro</li>
+<li>Hunter — email verify + domain search</li>
+<li>Trestle — Reverse Phone live, $200 credit, Mason-1 key (Reverse Address denied — consent-only)</li>
+<li>Twilio Lookup — carrier + line type</li>
+<li>NumVerify — backup carrier validation</li>
+<li>FCC carrier database — fallback</li>
+</ul>
+<h3>3.3 Public records</h3>
+<ul>
+<li>CourtListener / RECAP — free federal court records</li>
+<li>Maricopa County Assessor — live token (does not expire)</li>
+<li>Florida voter file — May 2026 delivery confirmed</li>
+<li>Missouri voter file — pricing TBD</li>
+<li>Harris County TX voter file — pricing TBD</li>
+<li>Georgia voter file — SKIPPED (commercial-use prohibited per O.C.G.A. § 21-2-225)</li>
+</ul>
+<h3>3.4 Search / OSINT</h3>
+<ul>
+<li>Brave Search "Answers Plan" (paid)</li>
+<li>Google Custom Search Engine + JSON API</li>
+<li>NewsAPI (free tier, 30-day key rotation)</li>
+</ul>
+<h3>3.5 Communication</h3>
+<ul>
+<li>Resend — email (caseflowplatform.com verified, accidentcommandcenter.com pending DKIM)</li>
+<li>Twilio — SMS, voice, MMS, A2P 10DLC brand approved</li>
+<li>Slack — webhook integration for alerts</li>
+</ul>
+<hr />
+<h2>4. What's measured (metrics)</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Source</th>
+<th>Current</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qualified leads</td>
+<td>incidents.qualification_state='qualified'</td>
+<td>15</td>
+</tr>
+<tr>
+<td>Cross-checked persons</td>
+<td>enrichment_logs.field_name='evidence_cross_check_summary'</td>
+<td>15/15</td>
+</tr>
+<tr>
+<td>Engines registered</td>
+<td>auto-fan-out.js ENGINE_MATRIX</td>
+<td>30</td>
+</tr>
+<tr>
+<td>Active sources</td>
+<td>system_api_calls last 24h</td>
+<td>23</td>
+</tr>
+<tr>
+<td>Incidents 24h</td>
+<td>incidents.created_at</td>
+<td>~122</td>
+</tr>
+<tr>
+<td>Errors 24h</td>
+<td>error_log</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Pipeline jobs passing</td>
+<td>E2E smoke-test endpoint</td>
+<td>~17/18</td>
+</tr>
+<tr>
+<td>Cost per lead</td>
+<td>system_api_calls cost_usd / qualified count</td>
+<td>tracked</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. What's enforced (rules)</h2>
+<ol>
+<li><strong>VICTIM-ONLY hard rule</strong> — name extractors must call <code>applyDenyList()</code>, must reject historical/byline/official names. Persons cannot become qualified without <code>victim_verified=TRUE</code>.</li>
+<li><strong>Auto fan-out rule</strong> — every persons UPDATE auto-enqueues a cascade job that fires every relevant engine. DB trigger + cascade processor + ENGINE_MATRIX. Rate-limited 6h unless contact field changed.</li>
+<li><strong>Enrichment_logs minimal schema</strong> — only <code>person_id</code>, <code>field_name</code>, <code>old_value</code>, <code>new_value</code>, <code>created_at</code> exist. Metadata folds into <code>new_value</code> JSON.</li>
+<li><strong>Cross-engine consistency</strong> — every new engine MUST register in <code>ENGINE_MATRIX</code>, MUST log to <code>enrichment_logs</code>, MUST NOT bypass deny-list.</li>
+<li><strong>Vercel Hobby constraints</strong> — 12 functions max, 11 crons max, no underscore prefix on <code>api/</code> files, static <code>require()</code> only.</li>
+<li><strong>Brand voice</strong> — confident, intelligent, slightly cinematic. Red (#EF4444) only for accident accent, DDS orange (#FF6600) only for parent-brand tagline.</li>
+</ol>
+<hr />
+<h2>6. Where things stand</h2>
+<h3>6.1 Live and working</h3>
+<ul>
+<li>All 11 crons firing</li>
+<li>23 active data sources</li>
+<li>15 qualified leads with full cross-check coverage</li>
+<li>Auto fan-out + DB trigger + 30-engine matrix</li>
+<li>Resend + Twilio + Slack alert paths</li>
+<li>Apollo + PDL + Hunter + Trestle keys live</li>
+</ul>
+<h3>6.2 Pending (waiting on external)</h3>
+<ul>
+<li>USPS API — Service Request 87717564 (1–3 business days, expected 2026-04-30)</li>
+<li>FL voter file — May 2026 batch</li>
+<li>MO voter file — emailed sosvoterregistration@sos.mo.gov, pricing TBD</li>
+<li>TX Harris County voter file — emailed voters@tax.hctx.net, pricing TBD or Open Records request</li>
+<li>Reddit OAuth — submitted, 1–3 business days</li>
+<li>Twilio A2P campaign — IN_PROGRESS carrier vetting</li>
+</ul>
+<h3>6.3 Skipped / not pursuing</h3>
+<ul>
+<li>GA voter file — commercial-use prohibited</li>
+<li>Trestle Reverse Address — denied (consent-only policy)</li>
+<li>USPS Web Tools (legacy XML) — deprecated</li>
+</ul>
+<hr />
+<h2>7. Roadmap (next 30 days)</h2>
+<ul>
+<li>DKIM verification for accidentcommandcenter.com → switch from-email</li>
+<li>USPS OAuth wire-up when key arrives</li>
+<li>FL voter file ingest + parser test on May delivery</li>
+<li>Apollo unlock-by-phone for the 10 leads with phone but no email</li>
+<li>PDL Pro Enrichment broader match params (drop min_likelihood to 1)</li>
+<li>Manual rep handoff queue UI tab for verified-but-no-contact persons</li>
+<li>VICTIM-ONLY rule applied to remaining 7 extractors</li>
+<li>Voyage-similar engine (currently <code>engine_not_loaded</code> — needs adapter)</li>
+</ul>
+<hr />
+<h2>8. Operating model</h2>
+<ul>
+<li><strong>Mason Donovan</strong> — founder, builder, primary rep (Akron + 330 metros)</li>
+<li><strong>Chris Housley (Housley Investments)</strong> — investor, advisor, master-list recipient</li>
+<li><strong>Fritzi Housley</strong> — investor, master-list recipient</li>
+<li><strong>Reps assigned per metro</strong> — claim-lead via browser extension or dashboard</li>
+</ul>
+<hr />
+<h2>9. Cost structure (recurring)</h2>
+<table>
+<thead>
+<tr>
+<th>Vendor</th>
+<th>Tier</th>
+<th>Monthly</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vercel Pro</td>
+<td>+ Postgres + PostGIS + pgvector</td>
+<td>~$50</td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td>auto-reload $500 at $10 floor</td>
+<td>usage-based</td>
+</tr>
+<tr>
+<td>OpenAI</td>
+<td>scanner pipeline</td>
+<td>~$30</td>
+</tr>
+<tr>
+<td>Apollo</td>
+<td>Professional</td>
+<td>$98</td>
+</tr>
+<tr>
+<td>PDL</td>
+<td>Pro</td>
+<td>$98</td>
+</tr>
+<tr>
+<td>Hunter</td>
+<td>Starter</td>
+<td>$34</td>
+</tr>
+<tr>
+<td>Trestle</td>
+<td>Self-Serve, $200 credit</td>
+<td>usage-based</td>
+</tr>
+<tr>
+<td>Twilio</td>
+<td>A2P + number + SMS</td>
+<td>~$15</td>
+</tr>
+<tr>
+<td>Resend</td>
+<td>included tier</td>
+<td>$0</td>
+</tr>
+<tr>
+<td>Brave Search</td>
+<td>Answers Plan</td>
+<td>~$10</td>
+</tr>
+<tr>
+<td>Deepgram</td>
+<td>usage-based</td>
+<td>~$20</td>
+</tr>
+<tr>
+<td>VoyageAI</td>
+<td>usage-based</td>
+<td>~$5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total recurring fixed:</strong> ~$245/month. Variable adds another $50–150 depending on lead volume.</p>
+<hr />
+<h2>10. Quick API surface</h2>
+<ul>
+<li><code>GET  /api/v1/system/master-lead-list?secret=ingest-now&amp;format=json&amp;admin=true</code> — current qualified leads</li>
+<li><code>POST /api/v1/system/auto-fan-out?secret=ingest-now&amp;action=run</code> body <code>{person_id}</code> — fan out one</li>
+<li><code>GET  /api/v1/system/auto-fan-out?secret=ingest-now&amp;action=batch&amp;scope=qualified&amp;limit=15</code> — fan out all</li>
+<li><code>GET  /api/v1/system/auto-fan-out?secret=ingest-now&amp;action=matrix</code> — engine matrix</li>
+<li><code>GET  /api/v1/enrich/evidence-cross-checker?secret=ingest-now&amp;action=batch&amp;force=qualified</code> — cross-check</li>
+<li><code>GET  /api/v1/system/health</code> — pipelines + cron + error counts</li>
+<li><code>POST /api/v1/system/resend?action=send-html</code> body <code>{to:[],subject,html}</code> — programmatic email</li>
+</ul>
+<hr />
+<p><em>End of spec. Reach donovan@donovandigitalsolutions.com or 330-814-5683.</em></p>
+</body>
+</html>
