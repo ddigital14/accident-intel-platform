@@ -61,6 +61,9 @@ const enrichArchiveSearch = require('../lib/v1/enrich/archive-search');
 const enrichStateCourts = require('../lib/v1/enrich/state-courts');
 const enrichBusinessRegistry = require('../lib/v1/enrich/business-registry');
 const enrichUspsValidate = require('../lib/v1/enrich/usps-validate');
+const enrichGeocoder = require('../lib/v1/enrich/geocoder');
+const enrichHunterDomain = require('../lib/v1/enrich/hunter-domain');
+const sysMigrationRunner = require('../lib/v1/system/migration-runner');
 const enrichRedditHistory = require('../lib/v1/enrich/reddit-history');
 const enrichCoResidence = require('../lib/v1/enrich/co-residence');
 const enrichNameRarity = require('../lib/v1/enrich/name-rarity');
@@ -189,6 +192,7 @@ const sysCleanupFalsePositives46 = require('../lib/v1/system/cleanup-false-posit
 const sysCleanupBadContacts = require('../lib/v1/system/cleanup-bad-contacts');
 const sysDemoteOrphanQualified = require('../lib/v1/system/demote-orphan-qualified');
 const sysQuarantineFakeVictims = require('../lib/v1/system/quarantine-fake-victims');
+const sysReExtractHistorical = require('../lib/v1/system/re-extract-historical');
 const enrichBraveSearch = require('../lib/v1/enrich/brave-search');
 const enrichFreeOsintExtras = require('../lib/v1/enrich/free-osint-extras');
 const sysBestLeadSynthesizer = require('../lib/v1/system/best-lead-synthesizer');
@@ -214,6 +218,7 @@ const sysHypothesisGenerator    = require('../lib/v1/system/hypothesis-generator
 const sysPersonMergeFinder      = require('../lib/v1/system/person-merge-finder');
 const sysPatternMiner           = require('../lib/v1/system/pattern-miner');
 const sysAdvancedSweepAll       = require('../lib/v1/system/advanced-sweep-all');
+const sysFamilyGraph            = require('../lib/v1/system/family-graph');
 // ── Phase 50: Spanish detector + smart cross-ref + CEI counters + error watchdog
 const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
 const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
@@ -275,6 +280,9 @@ const ROUTES = {
   'enrich/state-courts': enrichStateCourts,
   'enrich/business-registry': enrichBusinessRegistry,
   'enrich/usps-validate': enrichUspsValidate,
+  'enrich/geocoder': enrichGeocoder,
+  'enrich/hunter-domain': enrichHunterDomain,
+  'system/migration-runner': sysMigrationRunner,
   'enrich/reddit-history': enrichRedditHistory,
   'enrich/co-residence': enrichCoResidence,
   'enrich/name-rarity': enrichNameRarity,
@@ -385,6 +393,7 @@ const ROUTES = {
   'system/run-contact-finder': sysRunContactFinder,
   'system/smart-victim-pipeline': sysSmartVictimPipeline,
   'system/quarantine-fake-victims': sysQuarantineFakeVictims,
+  'system/re-extract-historical': sysReExtractHistorical,
   'system/demote-orphan-qualified': sysDemoteOrphanQualified,
   'system/cleanup-bad-contacts': sysCleanupBadContacts,
   'system/cleanup-false-positives-46': sysCleanupFalsePositives46,
@@ -423,6 +432,7 @@ const ROUTES = {
   'system/person-merge-finder': sysPersonMergeFinder,
   'system/pattern-miner': sysPatternMiner,
   'system/advanced-sweep-all': sysAdvancedSweepAll,
+  'system/family-graph': sysFamilyGraph,
   // Phase 50
   'enrich/spanish-detector':  enrichSpanishDetector,
   'enrich/smart-cross-ref':   enrichSmartCrossRef,
