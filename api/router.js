@@ -213,6 +213,7 @@ const sysAdversarialCrossCheck  = require('../lib/v1/system/adversarial-cross-ch
 const sysHypothesisGenerator    = require('../lib/v1/system/hypothesis-generator');
 const sysPersonMergeFinder      = require('../lib/v1/system/person-merge-finder');
 const sysPatternMiner           = require('../lib/v1/system/pattern-miner');
+const sysAdvancedSweepAll       = require('../lib/v1/system/advanced-sweep-all');
 // ── Phase 50: Spanish detector + smart cross-ref + CEI counters + error watchdog
 const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
 const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
@@ -421,6 +422,7 @@ const ROUTES = {
   'system/hypothesis-generator': sysHypothesisGenerator,
   'system/person-merge-finder': sysPersonMergeFinder,
   'system/pattern-miner': sysPatternMiner,
+  'system/advanced-sweep-all': sysAdvancedSweepAll,
   // Phase 50
   'enrich/spanish-detector':  enrichSpanishDetector,
   'enrich/smart-cross-ref':   enrichSmartCrossRef,
