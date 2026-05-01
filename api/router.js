@@ -219,6 +219,9 @@ const sysResendDomainSetup     = require('../lib/v1/system/resend-domain-setup')
 const sysEmbeddingQueue        = require('../lib/v1/system/embedding-queue');
 const sysCronStaleness         = require('../lib/v1/system/cron-staleness');
 const sysSchemaDriftCheck      = require('../lib/v1/system/schema-drift-check');
+// Phase 52: design tokens + endpoint descriptions (smart copy everywhere)
+const sysDesignTokens          = require('../lib/v1/system/design-tokens');
+const sysEndpointDescriptions  = require('../lib/v1/system/endpoint-descriptions');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -418,6 +421,9 @@ const ROUTES = {
   'system/embedding-queue':       sysEmbeddingQueue,
   'system/cron-staleness':        sysCronStaleness,
   'system/schema-drift-check':    sysSchemaDriftCheck,
+  // Phase 52
+  'system/design-tokens':         sysDesignTokens,
+  'system/endpoint-descriptions': sysEndpointDescriptions,
 };
 
 function tryDynamicIncident(slug, req) {

@@ -96,7 +96,8 @@ body {
 .kpi-card { transition: all 0.25s ease; }
 .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,42,90,0.12) !important; }
 .incident-row { transition: all 0.15s ease; }
-.incident-row:hover { background: rgba(15,42,90,0.04) !important; transform: translateX(2px); }
+.incident-row { transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); }
+.incident-row:hover { background: #F8FAFC !important; transform: translateX(2px); box-shadow: var(--acc-shadow-sm, 0 1px 3px rgba(31,41,55,0.06)); }
 .nav-link { transition: all 0.2s ease; position: relative; }
 .nav-link:hover { color: #0F2A5A !important; }
 .nav-link.active { color: #0F2A5A !important; }
@@ -110,6 +111,11 @@ body {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
+@keyframes accEmberPulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px #E2E8F0; }
+  50% { box-shadow: inset 0 0 0 1px #EF4444, 0 0 12px rgba(239,68,68,0.25); }
+}
+.is-ember { animation: accEmberPulse 2.4s cubic-bezier(0.4,0,0.2,1) infinite; }
 @keyframes accPulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.4); opacity: 0.6; }
@@ -120,14 +126,16 @@ body {
 }
 .acc-pulse-dot { animation: accPulse 1.6s ease-in-out infinite; }
 .acc-blink-cursor { animation: accBlink 1.1s steps(1) infinite; }
-.acc-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; box-shadow: 0 1px 2px rgba(15,42,90,0.06); border: 1px solid var(--border); background: #fff; }
+.acc-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; border: 1px solid #E2E8F0; background: #FFFFFF; font-family: 'Inter', system-ui, sans-serif; }
 .acc-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-.acc-status-badge.qualified { color: #065F46; border-color: #A7F3D0; background: #ECFDF5; }
-.acc-status-badge.qualified .dot { background: #10B981; }
-.acc-status-badge.pending { color: #92400E; border-color: #FCD34D; background: #FFFBEB; }
-.acc-status-badge.pending .dot { background: #F59E0B; }
-.acc-status-badge.verified { color: #1E40AF; border-color: #BFDBFE; background: #EFF6FF; }
-.acc-status-badge.verified .dot { background: #0F2A5A; }
+.acc-status-badge.qualified { color: #B91C1C; border-color: #FECACA; background: #FEE2E2; }
+.acc-status-badge.qualified .dot { background: #EF4444; }
+.acc-status-badge.pending { color: #475569; border-color: #E2E8F0; background: #F8FAFC; }
+.acc-status-badge.pending .dot { background: #94A3B8; }
+.acc-status-badge.verified { color: #4338CA; border-color: #A5B4FC; background: #C7D2FE; }
+.acc-status-badge.verified .dot { background: #6366F1; }
+.acc-status-badge.validated { color: #047857; border-color: #6EE7B7; background: #D1FAE5; }
+.acc-status-badge.validated .dot { background: #10B981; }
 .table-row { transition: all 0.12s ease; }
 .table-row:hover { background: rgba(15,42,90,0.03) !important; }
 ::-webkit-scrollbar { width: 8px; }
@@ -539,75 +547,87 @@ function LoginScreen({ onLogin }) {
 function NavBar({ user, page, setPage, notifications, onLogout }) {
   return (
     <nav style={{
-      height: 64, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)",
-      borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "center",
+      height: 64, background: "#FFFFFF",
+      borderBottom: "1px solid var(--acc-border, #E2E8F0)", display: "flex", alignItems: "center",
       justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 100,
-      boxShadow: "0 1px 3px rgba(15,42,90,0.04)"
+      boxShadow: "var(--acc-shadow-sm, 0 1px 3px rgba(31,41,55,0.06))"
     }}>
-      {/* Phase 51: ACC accent line — emerald rule with charcoal punctuation, red ember tip */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #1F2937 0%, #064E3B 60%, #10B981 92%, #DC2626 92%, #DC2626 100%)" }} />
+      {/* Phase 52 v5b: hairline accent — charcoal-to-red ember */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, #1F2937 0%, #475569 70%, #EF4444 100%)" }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* ACC logomark SVG — Phase 51 grey/green hex */}
+          {/* v5b ACC logomark — 32px square */}
           <img src="/logomark.svg" alt="Accident Command Center"
-            style={{ width: 38, height: 38, display: "block", filter: "drop-shadow(0 4px 12px rgba(31,41,55,0.18))" }} />
+            style={{ width: 32, height: 32, display: "block" }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#1F2937", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: "#64748B", letterSpacing: "1.3px", textTransform: "uppercase", marginTop: 2 }}>by Donovan Digital Solutions</div>
+            <div className="acc-display" style={{ fontSize: 18, fontWeight: 500, color: "var(--acc-charcoal, #1F2937)", letterSpacing: "-0.2px", lineHeight: 1.1 }}>Accident Command Center</div>
+            <div style={{ fontSize: 10, fontWeight: 500, color: "var(--acc-slate-light, #94A3B8)", letterSpacing: "1.2px", textTransform: "uppercase", marginTop: 2 }}>
+              by <span style={{ color: "var(--acc-dds-orange, #FF6600)", fontWeight: 700 }}>D</span>onovan <span style={{ color: "var(--acc-dds-orange, #FF6600)", fontWeight: 700 }}>D</span>igital <span style={{ color: "var(--acc-dds-orange, #FF6600)", fontWeight: 700 }}>S</span>olutions
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        <div className="acc-tabs" style={{ display: "flex", gap: 0, flexWrap: "wrap", border: 0 }}>
           {["dashboard", "live-feed", "incidents", "map", "my-leads", "rep-stats", "alerts", "cost", "contacts", "integrations"].map((p) => (
             <button key={p} onClick={() => setPage(p)}
-              className={`nav-link ${page === p ? "active" : ""}`}
-              style={{
-                background: page === p ? "rgba(16,185,129,0.08)" : "none", border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.3px", padding: "10px 14px", borderRadius: 8,
-                color: page === p ? "#064E3B" : "#475569", whiteSpace: "nowrap",
-                borderBottom: page === p ? "2px solid #10B981" : "2px solid transparent"
-              }}>
-              {p === "dashboard" && "\u25A3 "}
-              {p === "incidents" && "\u26A0 "}
-              {p === "my-leads" && "\u2605 "}
-              {p === "contacts" && "\uD83D\uDCCB "}
-              {p === "integrations" && "\u2699 "}
-              {p === "map" && "\u25C9 "}
-              {p === "cost" && "\uD83D\uDCB0 "}
+              className={`acc-tab ${page === p ? "active" : ""}`}
+              title={navTabTooltip(p)}
+              style={{ whiteSpace: "nowrap" }}>
               {p.replace("-", " ").toUpperCase()}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        {/* Platform switcher */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {/* Phase 52 v5b: Live pulse — engines running */}
+        <div title="Live ingestion is running — engines scan every ~10 minutes, qualified leads appear in real time."
+             style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--acc-bg-soft, #F8FAFC)", border: "1px solid var(--acc-border, #E2E8F0)", borderRadius: 999 }}>
+          <span className="acc-live-dot" />
+          <span style={{ fontSize: 11, fontWeight: 500, color: "var(--acc-charcoal, #1F2937)", letterSpacing: 0.4 }}>LIVE</span>
+          {notifications.length > 0 && (
+            <span style={{ fontFamily: "var(--acc-font-mono, ui-monospace)", fontSize: 11, color: "var(--acc-red-dark, #B91C1C)", fontWeight: 600 }}>
+              · {notifications.length} new
+            </span>
+          )}
+        </div>
         <a href="https://donovan-ai-growth-platform.vercel.app" target="_blank" rel="noopener noreferrer"
-          style={{ color: "#a0b0d0", fontSize: 11, textDecoration: "none", padding: "6px 12px", borderRadius: 6, border: "1px solid #1c2b4d", background: "linear-gradient(135deg, #4f6bff, #a855f7)", backgroundClip: "border-box", transition: "all 0.2s" }}
-          className="btn-action">
-          AI Growth Platform &rarr;
+          className="acc-btn acc-btn-secondary"
+          title="Switch to the Donovan Digital AI Growth Platform">
+          DDS Growth &rarr;
         </a>
-        <span style={{ position: "relative", cursor: "pointer" }}>
-          <span style={{ fontSize: 18 }}>&#x1F514;</span>
-          {notifications.length > 0 && <span style={{
-            position: "absolute", top: -6, right: -10, background: "linear-gradient(135deg, #ff4757, #ff7b3a)",
-            color: "#fff", fontSize: 10, borderRadius: 10, padding: "1px 6px", fontWeight: 700, animation: "pulseGlow 2s ease-in-out infinite"
-          }}>{notifications.length}</span>}
-        </span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #ff7b3a, #ff4da6)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#fff", fontWeight: 700
+            width: 32, height: 32, borderRadius: "var(--acc-radius-md, 8px)", background: "var(--acc-charcoal, #1F2937)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff", fontWeight: 600,
+            fontFamily: "var(--acc-font-display, system-ui)"
           }}>{(user.firstName || "U")[0]}</div>
           <div>
-            <div style={{ color: "#f4f7ff", fontSize: 13, fontWeight: 600 }}>{user.firstName} {user.lastName}</div>
-            <div style={{ color: "#a0b0d0", fontSize: 10 }}>{user.role || "Agent"}</div>
+            <div style={{ color: "var(--acc-charcoal, #1F2937)", fontSize: 13, fontWeight: 500 }}>{user.firstName} {user.lastName}</div>
+            <div style={{ color: "var(--acc-slate-light, #94A3B8)", fontSize: 10, textTransform: "uppercase", letterSpacing: 0.6 }}>{user.role || "Agent"}</div>
           </div>
         </div>
-        <button onClick={onLogout} className="btn-action" style={{ background: "rgba(100,116,139,0.1)", border: "1px solid #1c2b4d", color: "#a0b0d0", cursor: "pointer", fontSize: 12, padding: "6px 12px", borderRadius: 6 }}>Logout</button>
+        <button onClick={onLogout} className="acc-btn acc-btn-ghost" title="Sign out">Logout</button>
       </div>
     </nav>
   );
+}
+
+// Phase 52: tooltip text per nav tab — plain English, brand voice
+function navTabTooltip(tab) {
+  const map = {
+    'dashboard':    'Mission control. Active leads, hot incidents, and the engines actively scanning right now.',
+    'live-feed':    'Real-time stream of every incident, source ping, and enrichment hit. The platform thinking out loud.',
+    'incidents':    'Every accident on file — qualified, pending, and rejected. Filter by metro, severity, or contact status.',
+    'map':          'Geographic view of all leads. Cluster by metro. Click any pin to open the lead card.',
+    'my-leads':     'Leads assigned to you. Triple-checked victims with contact info, ready to call.',
+    'rep-stats':    'Your conversion stats — calls made, leads claimed, attribution.',
+    'alerts':       'High-value lead pings. Slack, SMS, email — every alert that fired in the last 48h.',
+    'cost':         'API spend by engine. PDL, Apollo, Trestle, Twilio. Daily burn vs budget.',
+    'contacts':     'Verified contacts with phone, email, address. Sorted by last-updated.',
+    'integrations': 'Every API + scraper wired into the platform. Health, quota, last-success.'
+  };
+  return map[tab] || tab.replace('-', ' ');
 }
 
 // ============================================================================

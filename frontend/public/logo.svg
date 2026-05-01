@@ -1,49 +1,78 @@
 <svg width="100%" viewBox="0 0 680 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Accident Command Center by Donovan Digital Solutions">
   <defs>
-    <linearGradient id="hexFill" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1F2937"/>
-      <stop offset="55%" stop-color="#0F3D2E"/>
-      <stop offset="100%" stop-color="#064E3B"/>
+    <style>
+      @import url('https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.20/index.css');
+    </style>
+    <radialGradient id="emberCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FCA5A5"/>
+      <stop offset="55%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </radialGradient>
+    <linearGradient id="reticleEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F2937" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#1F2937" stop-opacity="0.15"/>
     </linearGradient>
-    <linearGradient id="hexEdge" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10B981" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#10B981" stop-opacity="0.05"/>
-    </linearGradient>
-    <linearGradient id="textInner" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#F1F5F9"/>
-      <stop offset="100%" stop-color="#94A3B8"/>
-    </linearGradient>
+    <filter id="emberGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
   <g transform="translate(340,170)">
-    <polygon points="0,-110 95.3,-55 95.3,55 0,110 -95.3,55 -95.3,-55" fill="#10B981" opacity="0.08"/>
-    <polygon points="0,-122 105.7,-61 105.7,61 0,122 -105.7,61 -105.7,-61" fill="none" stroke="#10B981" stroke-width="0.4" opacity="0.25"/>
-    <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50" fill="url(#hexFill)"/>
-    <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50" fill="none" stroke="url(#hexEdge)" stroke-width="1.2"/>
-    <polygon points="0,-88 76.2,-44 76.2,44 0,88 -76.2,44 -76.2,-44" fill="none" stroke="#10B981" stroke-width="0.35" opacity="0.45"/>
-    <line x1="-40" y1="-78" x2="-72" y2="-78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
-    <line x1="40" y1="-78" x2="72" y2="-78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
-    <line x1="-40" y1="78" x2="-72" y2="78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
-    <line x1="40" y1="78" x2="72" y2="78" stroke="#10B981" stroke-width="0.4" opacity="0.4"/>
-    <text x="0" y="2" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="56" font-weight="500" fill="url(#textInner)" letter-spacing="2">A<tspan fill="#10B981">C</tspan>C</text>
-    <line x1="-40" y1="22" x2="40" y2="22" stroke="#10B981" stroke-width="0.5" opacity="0.7"/>
-    <text x="0" y="42" text-anchor="middle" font-size="9" fill="#94A3B8" letter-spacing="3.4">COMMAND ACTIVE</text>
-    <g transform="translate(0,-100)">
-      <circle r="10" fill="#FAFAF9"/>
-      <circle r="6.5" fill="#DC2626"/>
-      <circle r="2.6" fill="#FCA5A5"/>
+    <circle r="118" fill="none" stroke="url(#reticleEdge)" stroke-width="0.7" opacity="0.55"/>
+    <circle r="105" fill="none" stroke="#1F2937" stroke-width="0.5" opacity="0.3"/>
+    <g stroke="#1F2937" stroke-width="0.8" opacity="0.55">
+      <line x1="0" y1="-122" x2="0" y2="-108"/>
+      <line x1="0" y1="108" x2="0" y2="122"/>
+      <line x1="-122" y1="0" x2="-108" y2="0"/>
+      <line x1="108" y1="0" x2="122" y2="0"/>
     </g>
-    <circle cx="0" cy="-100" r="14" fill="none" stroke="#DC2626" stroke-width="0.6" opacity="0.6">
-      <animate attributeName="r" from="10" to="22" dur="1.8s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" from="0.7" to="0" dur="1.8s" repeatCount="indefinite"/>
+    <g fill="none" stroke="#1F2937" stroke-width="1.6" stroke-linecap="round">
+      <line x1="0" y1="0" x2="0" y2="-94" opacity="0.95"/>
+      <line x1="0" y1="0" x2="64" y2="-72" opacity="0.85"/>
+      <line x1="0" y1="0" x2="92" y2="-22" opacity="0.9"/>
+      <line x1="0" y1="0" x2="78" y2="48" opacity="0.7"/>
+      <line x1="0" y1="0" x2="34" y2="86" opacity="0.55"/>
+      <line x1="0" y1="0" x2="-46" y2="74" opacity="0.6"/>
+      <line x1="0" y1="0" x2="-88" y2="32" opacity="0.85"/>
+      <line x1="0" y1="0" x2="-72" y2="-58" opacity="0.78"/>
+      <line x1="0" y1="0" x2="-26" y2="-90" opacity="0.65"/>
+    </g>
+    <g fill="none" stroke="#475569" stroke-width="0.8" stroke-linecap="round" opacity="0.55">
+      <line x1="0" y1="0" x2="48" y2="-86"/>
+      <line x1="0" y1="0" x2="100" y2="14"/>
+      <line x1="0" y1="0" x2="14" y2="100"/>
+      <line x1="0" y1="0" x2="-100" y2="-6"/>
+      <line x1="0" y1="0" x2="-58" y2="-78"/>
+    </g>
+    <g fill="#EF4444" opacity="0.85">
+      <circle cx="62" cy="-58" r="2.4"/>
+      <circle cx="-78" cy="22" r="1.8"/>
+      <circle cx="44" cy="68" r="1.4"/>
+      <circle cx="-32" cy="-82" r="1.6"/>
+      <circle cx="86" cy="6" r="1.1"/>
+      <circle cx="-58" cy="56" r="1.2"/>
+    </g>
+    <g fill="#B91C1C" opacity="0.55">
+      <circle cx="22" cy="92" r="0.9"/>
+      <circle cx="-92" cy="-12" r="0.8"/>
+      <circle cx="72" cy="-90" r="1"/>
+    </g>
+    <circle r="22" fill="#FFFFFF"/>
+    <circle r="14" fill="url(#emberCore)" filter="url(#emberGlow)"/>
+    <circle r="6" fill="#FCA5A5"/>
+    <circle r="2.4" fill="#FFFFFF"/>
+    <circle r="22" fill="none" stroke="#EF4444" stroke-width="0.9" opacity="0.7">
+      <animate attributeName="r" from="18" to="36" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.8" to="0" dur="2s" repeatCount="indefinite"/>
     </circle>
   </g>
-  <g transform="translate(340,330)">
-    <text x="0" y="0" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="30" font-weight="500" fill="#1F2937" letter-spacing="4.2">ACCIDENT</text>
-    <text x="0" y="34" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="30" font-weight="500" fill="#1F2937" letter-spacing="4.2">COMMAND<tspan fill="#10B981" letter-spacing="4.2"> &#183; </tspan>CENTER</text>
+  <g transform="translate(340,330)" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="500">
+    <text x="0" y="0" text-anchor="middle" font-size="40" fill="#1F2937" letter-spacing="3"><tspan fill="#EF4444">A</tspan>CCIDENT</text>
+    <text x="0" y="44" text-anchor="middle" font-size="40" fill="#1F2937" letter-spacing="3"><tspan fill="#EF4444">C</tspan>OMMAND<tspan fill="#94A3B8" letter-spacing="3"> &#183; </tspan><tspan fill="#EF4444">C</tspan>ENTER</text>
   </g>
-  <g transform="translate(340,400)">
-    <line x1="-130" y1="0" x2="-26" y2="0" stroke="#94A3B8" stroke-width="0.5"/>
-    <line x1="26" y1="0" x2="130" y2="0" stroke="#94A3B8" stroke-width="0.5"/>
-    <text x="0" y="4" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#475569" letter-spacing="3.8">BY DONOVAN DIGITAL SOLUTIONS</text>
+  <g transform="translate(340,420)" font-family="'Space Grotesk', system-ui, sans-serif">
+    <line x1="-150" y1="0" x2="-46" y2="0" stroke="#CBD5E1" stroke-width="0.6"/>
+    <line x1="46" y1="0" x2="150" y2="0" stroke="#CBD5E1" stroke-width="0.6"/>
+    <text x="0" y="5" text-anchor="middle" font-size="11" font-weight="500" fill="#475569" letter-spacing="3.6">BY <tspan fill="#FF6600" font-weight="600">D</tspan>ONOVAN <tspan fill="#FF6600" font-weight="600">D</tspan>IGITAL <tspan fill="#FF6600" font-weight="600">S</tspan>OLUTIONS</text>
   </g>
 </svg>

@@ -1,0 +1,167 @@
+/* =====================================================================
+   ACC Design System v1 — Phase 52
+   Canonical design tokens for Accident Command Center.
+   Mirrored at /api/v1/system/design-tokens (JSON) for embeds + emails.
+   ===================================================================== */
+
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.20/index.css');
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/index.css');
+
+:root {
+  --acc-red:        #EF4444;
+  --acc-red-dark:   #B91C1C;
+  --acc-red-bg:     #FEE2E2;
+  --acc-charcoal:   #1F2937;
+  --acc-slate:      #475569;
+  --acc-slate-light:#94A3B8;
+  --acc-border:     #E2E8F0;
+  --acc-divider:    #CBD5E1;
+  --acc-bg:         #FFFFFF;
+  --acc-bg-soft:    #F8FAFC;
+  --acc-indigo:     #6366F1;
+  --acc-indigo-soft:#C7D2FE;
+  --acc-dds-orange: #FF6600;
+  --acc-success:    #10B981;
+  --acc-warning:    #F59E0B;
+
+  --acc-font-display: 'Space Grotesk', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  --acc-font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --acc-font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --acc-shadow-sm: 0 1px 3px rgba(31,41,55,0.06);
+  --acc-shadow-md: 0 4px 12px rgba(31,41,55,0.08);
+  --acc-shadow-lg: 0 12px 32px rgba(31,41,55,0.12);
+  --acc-radius-sm: 4px;
+  --acc-radius-md: 8px;
+  --acc-radius-lg: 12px;
+  --acc-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  margin: 0;
+  background: var(--acc-bg);
+  color: var(--acc-charcoal);
+  font-family: var(--acc-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.acc-display { font-family: var(--acc-font-display); }
+.acc-mono    { font-family: var(--acc-font-mono); }
+
+@keyframes acc-pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.35); opacity: 0.55; }
+}
+@keyframes acc-fade-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes acc-flash-border {
+  0%   { box-shadow: 0 0 0 2px rgba(239,68,68,0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+@keyframes acc-ember-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px var(--acc-border); }
+  50%      { box-shadow: inset 0 0 0 1px var(--acc-red), 0 0 12px rgba(239,68,68,0.25); }
+}
+@keyframes acc-underline-slide {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.acc-live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--acc-red);
+  border-radius: 50%;
+  animation: acc-pulse-dot 2s var(--acc-ease) infinite;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.18);
+}
+
+.acc-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--acc-border); }
+.acc-tab {
+  position: relative;
+  padding: 10px 16px;
+  font-family: var(--acc-font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--acc-slate);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color 200ms var(--acc-ease);
+}
+.acc-tab:hover { color: var(--acc-charcoal); }
+.acc-tab.active {
+  color: var(--acc-charcoal);
+  font-weight: 500;
+}
+.acc-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; bottom: -1px;
+  height: 2px;
+  background: var(--acc-red);
+  border-radius: 1px;
+  transform-origin: left;
+  animation: acc-underline-slide 220ms var(--acc-ease);
+}
+
+.acc-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 16px;
+  font-family: var(--acc-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--acc-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 200ms var(--acc-ease);
+}
+.acc-btn:active { transform: scale(0.97); }
+.acc-btn-primary   { background: var(--acc-charcoal); color: #fff; }
+.acc-btn-primary:hover { background: #334155; }
+.acc-btn-secondary { background: var(--acc-bg); color: var(--acc-charcoal); border-color: var(--acc-border); }
+.acc-btn-secondary:hover { background: var(--acc-bg-soft); }
+.acc-btn-danger    { background: var(--acc-red); color: #fff; }
+.acc-btn-danger:hover { background: var(--acc-red-dark); }
+.acc-btn-ghost     { background: transparent; color: var(--acc-charcoal); }
+.acc-btn-ghost:hover { background: var(--acc-bg-soft); }
+
+.acc-card {
+  background: var(--acc-bg);
+  border: 1px solid var(--acc-border);
+  border-radius: var(--acc-radius-lg);
+  box-shadow: var(--acc-shadow-sm);
+  padding: 16px;
+  transition: transform 200ms var(--acc-ease), box-shadow 200ms var(--acc-ease);
+}
+.acc-card:hover { transform: translateY(-2px); box-shadow: var(--acc-shadow-md); }
+.acc-card.is-new    { animation: acc-fade-slide-in 220ms var(--acc-ease), acc-flash-border 1.4s var(--acc-ease); }
+.acc-card.is-ember  { animation: acc-ember-pulse 2.4s var(--acc-ease) infinite; }
+
+.acc-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--acc-font-body);
+  border: 1px solid var(--acc-border);
+  background: var(--acc-bg);
+}
+.acc-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+.acc-badge.qualified  { color: var(--acc-red-dark);   background: var(--acc-red-bg);     border-color: #FECACA; }
+.acc-badge.qualified .dot { background: var(--acc-red); }
+.acc-badge.pending    { color: var(--acc-slate);      background: var(--acc-bg-soft);    border-color: var(--acc-border); }
+.acc-badge.pending .dot   { background: var(--acc-slate-light); }
+.acc-badge.verified   { color: #4338CA;               background: var(--acc-indigo-soft); border-color: #A5B4FC; }
+.acc-badge.verified .dot  { background: var(--acc-indigo); }
+.acc-badge.validated  { color: #047857;               background: #D1FAE5;               border-color: #6EE7B7; }
+.acc-badge.validated .dot { background: var(--acc-success); }
+
+.acc-helper { font-size: 11px; color: var(--acc-slate-light); font-style: italic; }
+.acc-meta   { font-size: 12px; color: var(--acc-slate); }
+.acc-mono-num { font-family: var(--acc-font-mono); font-size: 13px; color: var(--acc-charcoal); }
+
+.acc-empty { text-align: center; padding: 48px 16px; color: var(--acc-slate); font-family: var(--acc-font-body); }
+.acc-empty .acc-empty-title { font-family: var(--acc-font-display); font-size: 18px; color: var(--acc-charcoal); margin-bottom: 6px; font-weight: 500; }

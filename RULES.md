@@ -519,3 +519,22 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 - `GET /api/v1/system/cei-counters?secret=ingest-now&action=summary`
 - `GET /api/v1/system/error-watchdog?secret=ingest-now&action=scan&minutes=10`
 
+
+---
+
+## Phase 52 — ACC Design System v1 (2026-04-30)
+
+**Shipped:**
+- `frontend/public/logo.svg` (v5b) + `logomark.svg` (square sigil for favicon/header)
+- `frontend/src/theme.css` — canonical CSS variables, typography (Space Grotesk + Inter), button/badge/card classes
+- `frontend/src/App.jsx` — header rebuild (live-pulse dot, DDS-orange tagline accents, red active tab underline, smart tab tooltips)
+- `lib/v1/system/master-lead-list.js` — `buildHtml()` rebranded to ACC v5b email template (single-column 600px, inline CSS, charcoal CTA pill)
+- `lib/v1/system/design-tokens.js` (NEW) — `GET /api/v1/system/design-tokens` returns canonical tokens as JSON for embeds + integrations
+- `lib/v1/system/endpoint-descriptions.js` (NEW) — `GET /api/v1/system/endpoint-descriptions` returns rep-friendly plain-English descriptions for every public endpoint
+
+**Rules going forward:**
+1. Any new color used in code MUST come from `--acc-*` CSS variable or be added to both `theme.css` and `design-tokens.js` simultaneously.
+2. Every new endpoint added to `api/router.js` MUST also add an entry to `lib/v1/system/endpoint-descriptions.js` DESCRIPTIONS map. Tests will block missing entries in future.
+3. Email templates MUST inline all CSS (Resend/Gmail strip linked CSS) and stay ≤ 600px max-width.
+4. Logos: full lockup uses `0 0 680 460` viewBox; logomark uses `0 0 240 240`. Don't drift.
+5. Brand voice: "confident, intelligent, slightly cinematic, with personality but professional." DDS orange ONLY for parent-brand "by Donovan Digital Solutions" tagline. Red ONLY for accident accent.
