@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Accident Command Center — PRD v1.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.20/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.20/index.css" />
+<style>
+:root{
+  --charcoal:#1F2937;
+  --slate:#475569;
+  --slate-light:#94A3B8;
+  --red:#EF4444;
+  --indigo:#6366F1;
+  --orange:#FF6600;
+  --emerald:#10B981;
+  --bg:#FFFFFF;
+  --bg-alt:#F8FAFC;
+  --border:#E2E8F0;
+  --hairline:#CBD5E1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--charcoal);font-family:'Inter',sans-serif;font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--indigo);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
+a:hover{border-bottom-color:var(--indigo)}
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:1200px;margin:0 auto}
+@media (max-width:900px){.layout{grid-template-columns:1fr}.toc{position:static !important;border:none !important;padding:16px !important}}
+.toc{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:40px 24px;border-right:1px solid var(--border);font-size:13px}
+.toc .brand{font-family:'Space Grotesk';font-weight:300;font-size:18px;color:var(--charcoal);margin-bottom:24px;letter-spacing:-.01em}
+.toc .brand .r{color:var(--red)}
+.toc ol{list-style:none;padding:0;margin:0;counter-reset:tocsec}
+.toc li{counter-increment:tocsec;margin:8px 0;color:var(--slate);cursor:pointer}
+.toc li::before{content:counter(tocsec) ". ";color:var(--slate-light);font-family:'JetBrains Mono';font-size:11px}
+.toc li a{color:var(--slate)}
+.toc li a:hover{color:var(--indigo)}
+.toc .dot{display:inline-block;width:4px;height:4px;background:var(--indigo);border-radius:50%;margin-right:8px;vertical-align:middle;opacity:.5}
+.content{max-width:800px;padding:64px 56px;margin:0 auto}
+@media (max-width:900px){.content{padding:32px 20px}}
+section{padding:72px 0;border-bottom:1px solid var(--hairline);scroll-margin-top:24px}
+section:first-child{padding-top:24px}
+section:last-child{border-bottom:none}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;color:var(--charcoal);letter-spacing:-.015em;margin:0 0 16px}
+h1{font-weight:200;font-size:56px;line-height:1.05;margin-bottom:24px}
+h2{font-weight:300;font-size:32px;line-height:1.15;margin:32px 0 20px}
+h3{font-weight:500;font-size:20px;margin:28px 0 12px;color:var(--charcoal)}
+h4{font-weight:500;font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);margin:24px 0 8px}
+p{margin:0 0 14px;color:var(--charcoal)}
+.r{color:var(--red);font-weight:500}
+.o{color:var(--orange);font-weight:500}
+.muted{color:var(--slate-light)}
+.lead{font-size:18px;color:var(--slate);line-height:1.7;margin-bottom:24px}
+.eyebrow{font-family:'JetBrains Mono';font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--indigo);margin-bottom:8px}
+.hero{padding:80px 0 32px;position:relative;overflow:hidden}
+.hero .splatter{position:absolute;top:-40px;right:-100px;width:480px;height:480px;pointer-events:none;opacity:.6;z-index:0}
+.hero .inner{position:relative;z-index:1}
+.lockup{display:flex;align-items:center;gap:14px;margin-bottom:48px}
+.lockup-mark{width:42px;height:42px;display:flex;align-items:center;justify-content:center}
+.lockup-text{font-family:'Space Grotesk';font-weight:300;font-size:22px;letter-spacing:-.015em}
+.lockup-tag{font-family:'JetBrains Mono';font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:var(--slate-light);margin-top:2px}
+.badges{display:flex;gap:8px;margin:24px 0 8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;font-family:'JetBrains Mono';font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg-alt);color:var(--slate)}
+.badge.success{background:rgba(16,185,129,.06);color:#047857;border-color:rgba(16,185,129,.25)}
+.badge.indigo{background:rgba(99,102,241,.06);color:var(--indigo);border-color:rgba(99,102,241,.25)}
+.badge.red{background:rgba(239,68,68,.06);color:#b91c1c;border-color:rgba(239,68,68,.25)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0 24px;font-variant-numeric:tabular-nums}
+thead th{text-align:left;font-family:'Space Grotesk';font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);padding:10px 12px;border-bottom:1px solid var(--hairline);background:var(--bg-alt)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--charcoal);vertical-align:top}
+tbody tr:nth-child(even) td{background:#FAFAFA}
+tbody tr:hover td{background:#F1F5F9}
+code,.mono{font-family:'JetBrains Mono';font-size:13px;color:var(--charcoal);background:var(--bg-alt);padding:1px 6px;border-radius:3px;border:1px solid var(--border)}
+pre{font-family:'JetBrains Mono';font-size:12.5px;line-height:1.6;background:var(--bg-alt);border:1px solid var(--border);padding:18px 20px;border-radius:6px;overflow-x:auto;color:var(--charcoal);margin:16px 0}
+ul,ol{margin:8px 0 16px;padding-left:24px}
+li{margin:6px 0}
+blockquote{margin:24px 0;padding:8px 0 8px 20px;border-left:3px solid var(--red);font-family:'Space Grotesk';font-weight:300;font-size:22px;font-style:italic;line-height:1.4;color:var(--charcoal)}
+hr{border:0;border-top:1px solid var(--hairline);margin:40px 0}
+.callout{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border:1px solid var(--border);border-left:3px solid var(--indigo);background:var(--bg-alt);border-radius:4px;margin:16px 0}
+.callout .num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.callout p{margin:0}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+.metric{padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--bg-alt)}
+.metric .v{font-family:'JetBrains Mono';font-size:28px;font-weight:500;color:var(--charcoal);line-height:1.1}
+.metric .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);margin-top:6px;font-family:'Space Grotesk'}
+.flow{margin:24px 0;padding:24px;border:1px solid var(--border);background:var(--bg-alt);border-radius:8px}
+.section-num{font-family:'JetBrains Mono';font-size:12px;color:var(--indigo);letter-spacing:.15em;margin-bottom:8px}
+.divider-dot{display:flex;align-items:center;gap:8px;margin:48px 0 8px}
+.divider-dot::before,.divider-dot::after{content:'';flex:1;height:1px;background:var(--hairline)}
+.divider-dot .d{width:6px;height:6px;background:var(--indigo);border-radius:50%}
+.fade-in{opacity:0;transform:translateY(8px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:none}
+@media print{
+  body{font-size:11pt}
+  .toc{display:none}
+  .layout{grid-template-columns:1fr;max-width:none}
+  .content{max-width:none;padding:0;margin:0}
+  section{page-break-inside:avoid;padding:32px 0;border:none}
+  h1{font-size:36pt}
+  h2{font-size:20pt;page-break-after:avoid}
+  h3{font-size:13pt;page-break-after:avoid}
+  table{page-break-inside:avoid;font-size:9pt}
+  pre{font-size:9pt;page-break-inside:avoid}
+  .callout,.metric{page-break-inside:avoid}
+  .hero{padding-top:0}
+  @page{size:Letter;margin:.7in .8in;
+    @top-left{content:"ACC PRD v1.0";font-family:'Space Grotesk',sans-serif;font-size:9pt;color:#475569}
+    @top-right{content:"Accident Command Center";font-family:'Space Grotesk',sans-serif;font-size:9pt;color:#475569}
+    @bottom-left{content:"Donovan Digital Solutions · 2026-Q2";font-family:'Inter',sans-serif;font-size:8pt;color:#94A3B8}
+    @bottom-right{content:"Page " counter(page) " of " counter(pages);font-family:'JetBrains Mono';font-size:8pt;color:#94A3B8}
+  }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc" aria-label="Table of contents">
+  <div class="brand">
+    A<span class="r">C</span>C<span class="r">·</span>PRD
+  </div>
+  <ol>
+    <li><a href="#cover">Cover</a></li>
+    <li><a href="#summary">Executive Summary</a></li>
+    <li><a href="#market">Market Opportunity</a></li>
+    <li><a href="#solution">The Solution</a></li>
+    <li><a href="#moat">Differentiation</a></li>
+    <li><a href="#personas">User Personas</a></li>
+    <li><a href="#desktop">Desktop UI/UX</a></li>
+    <li><a href="#mobile">Mobile UI/UX</a></li>
+    <li><a href="#engines">Engine Catalog</a></li>
+    <li><a href="#cei">Cross-Engine Intelligence</a></li>
+    <li><a href="#tech">Tech Stack</a></li>
+    <li><a href="#data">Data Model</a></li>
+    <li><a href="#security">Security &amp; Compliance</a></li>
+    <li><a href="#perf">Performance</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#appendix">Appendix</a></li>
+  </ol>
+  <div style="margin-top:32px;font-size:10px;color:var(--slate-light);font-family:'JetBrains Mono'">v1.0 · 2026-04-30</div>
+</aside>
+
+<main class="content">
+
+<!-- COVER -->
+<section id="cover" class="hero">
+  <svg class="splatter" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="380" cy="120" rx="120" ry="60" fill="#EF4444" opacity="0.05"/>
+    <ellipse cx="320" cy="200" rx="80" ry="40" fill="#6366F1" opacity="0.05"/>
+    <ellipse cx="420" cy="260" rx="50" ry="50" fill="#EF4444" opacity="0.04"/>
+    <ellipse cx="280" cy="320" rx="100" ry="35" fill="#94A3B8" opacity="0.07"/>
+    <circle cx="380" cy="380" r="20" fill="#6366F1" opacity="0.06"/>
+    <circle cx="240" cy="100" r="6" fill="#EF4444" opacity="0.5"/>
+    <circle cx="450" cy="180" r="3" fill="#EF4444" opacity="0.7"/>
+  </svg>
+  <div class="inner">
+    <div class="lockup">
+      <div class="lockup-mark">
+        <svg width="42" height="42" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="56" height="56" rx="12" fill="#1F2937"/>
+          <path d="M20 44 L32 18 L44 44" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="25" y1="36" x2="39" y2="36" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="48" r="2" fill="#EF4444"/>
+        </svg>
+      </div>
+      <div>
+        <div class="lockup-text">
+          <span class="r">A</span>CCIDENT <span class="r">C</span>OMMAND <span class="r">C</span>ENTER
+        </div>
+        <div class="lockup-tag">A <span class="o">D</span>ONOVAN <span class="o">D</span>IGITAL <span class="o">S</span>OLUTIONS PRODUCT</div>
+      </div>
+    </div>
+    <div class="eyebrow">PRODUCT REQUIREMENTS DOCUMENT</div>
+    <h1>The accident-victim<br/>intelligence platform.</h1>
+    <p class="lead">Twenty-two public data streams. Sixty engines. One verified contact list, every morning at eight.</p>
+    <div class="badges">
+      <span class="badge indigo">INVESTOR EDITION</span>
+      <span class="badge indigo">ENGINEERING EDITION</span>
+      <span class="badge success">v1.0 · 2026 Q2</span>
+      <span class="badge">2026-04-30</span>
+    </div>
+    <div style="margin-top:48px;display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);padding:20px 0">
+      <div><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-family:'Space Grotesk'">Author</div><div style="font-family:'Space Grotesk';font-weight:500;margin-top:4px">Mason Donovan</div></div>
+      <div><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-family:'Space Grotesk'">Org</div><div style="font-family:'Space Grotesk';font-weight:500;margin-top:4px">Donovan Digital Solutions</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- EXEC SUMMARY -->
+<section id="summary">
+  <div class="section-num">02 / EXECUTIVE SUMMARY</div>
+  <h2>Executive Summary</h2>
+  <blockquote>ACC turns 22+ public data streams into qualified personal-injury leads with verified contact info — in minutes, not weeks.</blockquote>
+
+  <h3>The problem</h3>
+  <ul>
+    <li><strong>Victims are unreachable.</strong> Police reports take 7–14 days. By then, a competing firm has already signed.</li>
+    <li><strong>Manual research is slow.</strong> A paralegal averages 18 minutes per lead with a 22% hit rate.</li>
+    <li><strong>Fake leads waste rep time.</strong> Existing platforms surface journalists, witnesses, and officials as leads.</li>
+  </ul>
+
+  <h3>The solution</h3>
+  <p>A 60-engine AI-orchestrated pipeline with the <strong>VICTIM-ONLY data integrity rule</strong> — the only platform that mathematically refuses to enrich anyone except the actual victim. Opus 4.7 deep-phone-research orchestrator iterates four cycles, cross-validates across 17 enrichment sources, and delivers verified contact info as a clean queue.</p>
+
+  <h3>Live traction snapshot</h3>
+  <div class="metric-grid">
+    <div class="metric"><div class="v">23 / 23</div><div class="l">Active sources</div></div>
+    <div class="metric"><div class="v">0</div><div class="l">Errors / 24h</div></div>
+    <div class="metric"><div class="v">173</div><div class="l">Incidents / day</div></div>
+    <div class="metric"><div class="v">64</div><div class="l">Verified victims awaiting contact</div></div>
+    <div class="metric"><div class="v">15</div><div class="l">Qualified leads with verified contact</div></div>
+    <div class="metric"><div class="v">52</div><div class="l">Pipeline phases shipped</div></div>
+  </div>
+
+  <h3>The ask</h3>
+  <p><strong>Series Seed — $2M to expand to all 50 states, 10 languages, and 100 metros over 18 months.</strong></p>
+</section>
+
+<!-- MARKET -->
+<section id="market">
+  <div class="section-num">03 / MARKET OPPORTUNITY</div>
+  <h2>Market Opportunity</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Size</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>TAM — US PI legal market</td><td><strong>$40B / yr</strong></td><td>IBISWorld, Statista</td></tr>
+      <tr><td>SAM — tech-enabled PI lead-gen</td><td><strong>$1.2B / yr</strong></td><td>Internal estimate, CallRail + Lawmatics + Litify spend</td></tr>
+      <tr><td>SOM (3-yr)</td><td><strong>$50M / yr</strong></td><td>5,000 firms × $10K avg ACV</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Why now</h3>
+  <div class="callout"><div class="num">1</div><p><strong>AI capability inflection.</strong> Claude Opus 4.7 + Voyage-3-large embeddings make hard problems — semantic dedup, identity resolution, multi-language extraction — finally cheap enough to brute-force.</p></div>
+  <div class="callout"><div class="num">2</div><p><strong>Public records digitization.</strong> All 50 states publish accident, voter, and property data online. We don't need court ushers.</p></div>
+  <div class="callout"><div class="num">3</div><p><strong>PI firm consolidation.</strong> Mid-market firms are being rolled up by PE; survivors are buying tech to scale rep-output per partner.</p></div>
+
+  <h3>Underserved segments</h3>
+  <ul>
+    <li><strong>Hispanic / Latino communities</strong> — 60M+ in the US, ~17% of PI cases. English-only intake leaves money on the table. ACC ships Spanish detection + translation built in.</li>
+    <li><strong>Asian communities</strong> — Mandarin, Vietnamese, Korean, Tagalog — ~6% of US population, near-zero competitor coverage.</li>
+    <li><strong>French Caribbean (Haitian Creole)</strong> — concentrated in FL/NY where fatal-crash density is highest.</li>
+  </ul>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution">
+  <div class="section-num">04 / THE SOLUTION</div>
+  <h2>How ACC Works</h2>
+  <p class="lead">Five stages. Each hands off via Postgres triggers and an event-driven cascade queue.</p>
+
+  <div class="flow">
+    <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+        </marker>
+      </defs>
+      <g font-family="Space Grotesk" font-size="13" fill="#1F2937" text-anchor="middle">
+        <rect x="10"  y="60" width="120" height="60" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+        <text x="70"  y="86" font-weight="500">INGEST</text>
+        <text x="70"  y="105" font-size="10" fill="#94A3B8" font-family="JetBrains Mono">22 sources</text>
+
+        <rect x="155" y="60" width="120" height="60" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+        <text x="215" y="86" font-weight="500">VERIFY</text>
+        <text x="215" y="105" font-size="10" fill="#94A3B8" font-family="JetBrains Mono">3 engines</text>
+
+        <rect x="300" y="60" width="120" height="60" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+        <text x="360" y="86" font-weight="500">ENRICH</text>
+        <text x="360" y="105" font-size="10" fill="#94A3B8" font-family="JetBrains Mono">17 engines</text>
+
+        <rect x="445" y="60" width="120" height="60" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+        <text x="505" y="86" font-weight="500">REASON</text>
+        <text x="505" y="105" font-size="10" fill="#94A3B8" font-family="JetBrains Mono">8 AI engines</text>
+
+        <rect x="590" y="60" width="120" height="60" rx="8" fill="#1F2937" stroke="#1F2937"/>
+        <text x="650" y="86" font-weight="500" fill="#FFFFFF">DELIVER</text>
+        <text x="650" y="105" font-size="10" fill="#94A3B8" font-family="JetBrains Mono">queue · email · sms</text>
+
+        <line x1="130" y1="90" x2="155" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="275" y1="90" x2="300" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="420" y1="90" x2="445" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="565" y1="90" x2="590" y2="90" stroke="#EF4444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <text x="360" y="40" font-size="10" font-family="JetBrains Mono" fill="#6366F1" letter-spacing="1.5">CASCADE QUEUE · POSTGRES TRIGGERS · CEI COUNTERS</text>
+        <text x="360" y="160" font-size="10" font-family="JetBrains Mono" fill="#94A3B8">VOYAGE EMBEDDINGS · IDENTITY-MATCH GATE · VICTIM-ONLY RULE</text>
+      </g>
+    </svg>
+  </div>
+
+  <h3>1 · Ingest</h3>
+  <p>22 active sources poll every 5–15 minutes: TomTom traffic, Waze Live Map, OpenMHz police scanners (Deepgram + Whisper), 25+ local-news RSS feeds, NewsAPI.org, 12 PD press release pages (NYPD, LAPD, Chicago, Houston, Atlanta, Dallas, Seattle, SFPD, Cincinnati, Boston, Miami, Philly), Citizen, GoFundMe, NextDoor, obituaries (Tributes.com, Legacy.com), funeral homes, hospital trauma boards, OSHA, FARS, NHTSA, CDC WONDER, FBI UCR, CourtListener, state DOT crash feeds (TX/GA/FL), open-data portals (Chicago + 4 others), Reddit, Telegram police channels.</p>
+
+  <h3>2 · Verify (the integrity layer)</h3>
+  <p><em>Stage A</em> — regex deny-lists reject journalists, officers, spokespersons, witnesses, mayors. <em>Stage B</em> — Claude Sonnet 4.6 reads each candidate name with full article context and assigns role: <code>victim</code> · <code>witness</code> · <code>journalist</code> · <code>official</code> · <code>family</code>. Only <code>victim</code> rows persist with <code>persons.role='victim'</code> CHECK constraint.</p>
+
+  <h3>3 · Enrich</h3>
+  <p>17 engines fan out per verified victim: PDL Pro identify + enrich, Apollo people-match, voter rolls (FL/GA/TX/MO), homegrown OSINT miner (12 signals), Google CSE, Brave Search, Maricopa + Cook + Harris + LA + Fulton + Miami-Dade property records, Hunter, NumVerify, Trestle reverse phone + CNAM, Searchbug, Tracerfy, multi-language detector, plate-OCR vision, funeral-home survivors graph.</p>
+
+  <h3>4 · Reason</h3>
+  <p>Opus 4.7 deep-phone-research orchestrator runs a 4-cycle iterative reasoning loop. Reads all <code>source_reports</code> + <code>enrichment_logs</code> for a person, cross-validates phones against name + address + state, identifies missing fields, and dispatches engines likeliest to fill them. PDL identity-match gate prevents wrong-state Patrick Ramsey from being merged with right-state Patrick Ramsey.</p>
+
+  <h3>5 · Deliver</h3>
+  <ul>
+    <li>Live Feed dashboard auto-refreshes every 30s</li>
+    <li>Daily Master Lead List email via Resend at 8:00 AM ET</li>
+    <li>Real-time SMS alerts via Twilio for score ≥ 85</li>
+    <li>Mobile-app push notifications</li>
+  </ul>
+</section>
+
+<!-- MOAT -->
+<section id="moat">
+  <div class="section-num">05 / DIFFERENTIATION</div>
+  <h2>The Moat</h2>
+
+  <h3>1 · VICTIM-ONLY data integrity rule</h3>
+  <p>The only platform that refuses to enrich journalists, officials, witnesses, or family. Encoded as a Postgres CHECK constraint — not a guideline. Every competing platform surfaces these as leads. We don't.</p>
+
+  <h3>2 · Multi-language coverage (10 languages)</h3>
+  <p>Spanish, Vietnamese, Mandarin, Korean, Tagalog, Haitian Creole, Russian, Arabic, Portuguese, French. Each language has its own seeded source list, native-speaker keyword variants, and a translation layer feeding back into the standard pipeline. Underserved communities equal uncontested deal-flow.</p>
+
+  <h3>3 · Cross-Engine Intelligence telemetry</h3>
+  <p>Every engine call bumps a counter in <code>engine_capabilities</code>. We can answer <em>which engine produced the most qualified-leads-per-dollar this month</em> in one query — and route resources accordingly. The system literally measures itself getting smarter.</p>
+
+  <h3>4 · 17 enrichment sources orchestrated by Opus 4.7</h3>
+  <p>Competitors hardcode 1–2 paid APIs. We orchestrate 17 with an AI that decides which to call next based on what's missing, then runs a 4-cycle reasoning loop. We fill contact info competitors call dead.</p>
+
+  <h3>5 · VoyageAI semantic dedup</h3>
+  <p>Voyage-3-large embeddings index every <code>source_report</code>. When two sources mention "Patrick Ramsey" in different states, embedding similarity + identity-match gate prevents collision. Competitors merge them and corrupt the lead.</p>
+
+  <h3>6 · 60+ engines, 1 router, 2 Vercel functions</h3>
+  <p>Vercel Hobby caps serverless functions at 12. We collapsed 49 endpoints into a single static-<code>require()</code> router. Total cost: $20/mo Vercel Pro. Equivalent on AWS Lambda + ALB: $400–$2,000/mo.</p>
+</section>
+
+<!-- PERSONAS -->
+<section id="personas">
+  <div class="section-num">06 / USER PERSONAS</div>
+  <h2>Who It's For</h2>
+
+  <h3>Sarah · PI Rep · 24 · Atlanta</h3>
+  <blockquote>"I just want my queue to be clean. If I have to dial 10 wrong numbers before I reach a victim, I'm done by lunch."</blockquote>
+  <p>Wants verified contact, sympathetic call brief, one-tap dial. Pain: existing tools surface journalists as leads. Burned 50+ times.</p>
+
+  <h3>Marcus · Intake Manager · 38 · Houston</h3>
+  <blockquote>"I need to know which rep closes which lead-type fastest, and what each lead costs me."</blockquote>
+  <p>Wants rep-performance dashboards, conversion %, cost-per-acquired-lead, A/B SMS templates. Pain: no funnel visibility from incident → contracted client.</p>
+
+  <h3>Linda · Firm Partner · 52 · Miami</h3>
+  <blockquote>"Show me the ROI in one screen and tell me we're not violating TCPA."</blockquote>
+  <p>Wants exec ROI dashboard, regulatory posture, market-expansion data. Pain: sued for TCPA twice. Compliance is non-negotiable.</p>
+</section>
+
+<!-- DESKTOP -->
+<section id="desktop">
+  <div class="section-num">07 / DESKTOP UI/UX</div>
+  <h2>Desktop Specification</h2>
+
+  <h3>7.1 Live Feed Tab</h3>
+  <ul>
+    <li>Real-time auto-refresh every 30s of newly-qualified leads.</li>
+    <li>Card: status badge, victim name (Space Grotesk 22px), incident summary, contact row, <code>Run All Sources</code> button, <code>Quick Links</code> dropdown (25 deep-links).</li>
+    <li>Empty state: <em>"Engines scanning. New verified victims appear here automatically every ~10 minutes."</em></li>
+    <li>Keyboard: <code>J/K</code> navigate · <code>Enter</code> open · <code>R</code> run-all · <code>/</code> focus search.</li>
+  </ul>
+
+  <h3>7.2 Qualified Tab</h3>
+  <ul>
+    <li>Sortable + filterable table. Columns: Score · Name · Location · Type · Phone · Email · Address · Source Count · Last Updated.</li>
+    <li>Row-hover red-ember pulse if added in last hour.</li>
+    <li>Bulk actions: assign to rep · export CSV · push to Salesforce.</li>
+  </ul>
+
+  <h3>7.3 Awaiting Contact Tab</h3>
+  <ul>
+    <li>Verified victims missing one or more contact fields.</li>
+    <li>Each row shows recommended next-best-action (Opus 4.7 reasoning).</li>
+    <li>One-click engine triggers: <code>Try PDL</code> · <code>Try Apollo</code> · <code>Try Voter Rolls</code> · <code>Try Property Records</code> · <code>Run All</code>.</li>
+  </ul>
+
+  <h3>7.4 Pending Tab</h3>
+  <p>Incidents with names extracted but not yet verified by Stage B classifier. Auto-promotes to Awaiting Contact when classifier accepts.</p>
+
+  <h3>7.5 Map Tab</h3>
+  <ul>
+    <li>US Leaflet map with PostGIS-backed clustered pins by metro.</li>
+    <li>Color-coded severity: <span class="r">red</span> (fatal) · <span style="color:#F59E0B">amber</span> (serious) · <span class="muted">slate</span> (minor).</li>
+    <li>Click pin → side panel with incident detail.</li>
+    <li>Filters: language · severity · type · date range · source.</li>
+  </ul>
+
+  <h3>7.6 Reports Tab</h3>
+  <ul>
+    <li>Daily Master Lead List (the Resend email rendered in-app).</li>
+    <li>Cost per qualified lead (rolling 7d / 30d / 90d).</li>
+    <li>Engine effectiveness leaderboard (CEI invocation × success rate).</li>
+    <li>Conversion funnel: incidents → named → verified → qualified → contacted → retained.</li>
+    <li>Export PDF / CSV / push-to-CRM.</li>
+  </ul>
+
+  <h3>7.7 Admin Tab (admin role only)</h3>
+  <ul>
+    <li>User management.</li>
+    <li>API key configuration via <code>system_config</code> (encrypted at rest).</li>
+    <li>Pipeline health dashboard.</li>
+    <li>Cron job status (last-run timestamps + staleness watchdog).</li>
+    <li>Schema-drift check.</li>
+    <li>Cost dashboard with per-engine spend.</li>
+  </ul>
+</section>
+
+<!-- MOBILE -->
+<section id="mobile">
+  <div class="section-num">08 / MOBILE UI/UX</div>
+  <h2>Mobile Specification</h2>
+  <p class="lead">Mobile is for <strong>reps in the field</strong>. Focused workflow, not feature parity.</p>
+
+  <h3>8.1 Bottom-tab nav</h3>
+  <table>
+    <thead><tr><th>Tab</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Live</td><td>Newest qualified leads, highest priority</td></tr>
+      <tr><td>My Queue</td><td>Leads assigned to this rep</td></tr>
+      <tr><td>Search</td><td>Quick victim lookup</td></tr>
+      <tr><td>Stats</td><td>Today's leads, conversion %, week trend</td></tr>
+      <tr><td>Profile</td><td>Settings, sign out</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 Lead detail (mobile)</h3>
+  <ul>
+    <li>Hero card: victim name + score (large).</li>
+    <li>Tap-to-call phone numbers with confidence badges.</li>
+    <li>Tap-to-email.</li>
+    <li>Tap-to-navigate (opens Apple/Google Maps).</li>
+    <li>"Call Brief" expandable card from <code>rep-call-brief</code> engine.</li>
+    <li>One-tap "Run All Sources".</li>
+    <li>Add note + status update.</li>
+  </ul>
+
+  <h3>8.3 Notifications</h3>
+  <ul>
+    <li>Push notifications for high-score leads (≥ 85).</li>
+    <li>SMS alerts via Twilio (Phase 48, wired).</li>
+    <li>Daily morning digest at 8:00 AM ET.</li>
+  </ul>
+</section>
+
+<!-- ENGINES -->
+<section id="engines">
+  <div class="section-num">09 / ENGINE CATALOG</div>
+  <h2>Engine Catalog</h2>
+  <p class="lead">Every engine. Module path. Cost. Latency. Use case.</p>
+
+  <h3>9.1 Ingest engines (22)</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Module</th><th>Cost</th><th>Latency</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td>TomTom Traffic</td><td><code>ingest/run.js</code></td><td>$0.0001</td><td>200ms</td><td>Real-time freeway crashes</td></tr>
+      <tr><td>Waze Live Map</td><td><code>ingest/waze.js</code></td><td>Free</td><td>400ms</td><td>Citizen-reported jams + crashes</td></tr>
+      <tr><td>Police Scanner</td><td><code>ingest/scanner.js</code></td><td>$0.006</td><td>8–30s</td><td>OpenMHz audio · Whisper / Deepgram</td></tr>
+      <tr><td>News API</td><td><code>ingest/news.js</code></td><td>$0.005</td><td>1.2s</td><td>National news monitor</td></tr>
+      <tr><td>News RSS</td><td><code>ingest/news-rss.js</code></td><td>Free + GPT</td><td>800ms</td><td>25+ local TV / newspaper feeds</td></tr>
+      <tr><td>Multi-Community News</td><td><code>ingest/multicommunity-news.js</code></td><td>$0.01</td><td>1.5s</td><td>10-language coverage</td></tr>
+      <tr><td>PD Press Releases</td><td><code>ingest/pd-press.js</code></td><td>Free</td><td>600ms</td><td>12 PD news pages</td></tr>
+      <tr><td>State Crash</td><td><code>ingest/state-crash.js</code></td><td>Free</td><td>400ms</td><td>TX / GA / FL DOT</td></tr>
+      <tr><td>Open Data</td><td><code>ingest/opendata.js</code></td><td>Free</td><td>300ms</td><td>Chicago + 4 cities</td></tr>
+      <tr><td>CourtListener</td><td><code>ingest/courtlistener.js</code></td><td>Free</td><td>800ms</td><td>Federal civil filings</td></tr>
+      <tr><td>Court Search</td><td><code>ingest/court.js</code></td><td>$0.005</td><td>1s</td><td>Attorney-of-record check</td></tr>
+      <tr><td>Obituaries</td><td><code>ingest/obituaries.js</code></td><td>Free</td><td>500ms</td><td>Fatal-crash families</td></tr>
+      <tr><td>Funeral Homes</td><td><code>ingest/funeral-homes.js</code></td><td>Free</td><td>700ms</td><td>Next-of-kin extraction</td></tr>
+      <tr><td>GoFundMe</td><td><code>ingest/gofundme.js</code></td><td>Free</td><td>600ms</td><td>Family + campaign owner</td></tr>
+      <tr><td>NextDoor</td><td><code>ingest/nextdoor.js</code></td><td>Free</td><td>800ms</td><td>Neighbor reports</td></tr>
+      <tr><td>Citizen</td><td><code>ingest/citizen-probe.js</code></td><td>Free</td><td>500ms</td><td>App-sourced crashes</td></tr>
+      <tr><td>PulsePoint</td><td><code>ingest/pulsepoint.js</code></td><td>Free</td><td>400ms</td><td>EMS dispatch / trauma</td></tr>
+      <tr><td>Hospital RSS</td><td><code>ingest/hospital-rss.js</code></td><td>Free</td><td>600ms</td><td>Trauma center press</td></tr>
+      <tr><td>Reddit</td><td><code>ingest/reddit.js</code></td><td>Free (OAuth)</td><td>1s</td><td>13 city subs</td></tr>
+      <tr><td>Telegram Police</td><td><code>ingest/telegram-police.js</code></td><td>Free</td><td>800ms</td><td>Mirror scanner traffic</td></tr>
+      <tr><td>OSHA</td><td><code>ingest/osha.js</code></td><td>Free</td><td>1.2s</td><td>Work-accident angle</td></tr>
+      <tr><td>FARS / FBI UCR / NHTSA / CDC</td><td><code>ingest/{fars,fbi-ucr,cdc-wonder}.js</code></td><td>Free</td><td>2s</td><td>Historical baselines</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.2 Verification engines (3)</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Module</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td>Name Filter (Stage A)</td><td><code>enrich/_name_filter.js</code></td><td>Regex deny-list — journalists, officials, witnesses</td></tr>
+      <tr><td>Victim Verifier (Stage B)</td><td><code>enrich/victim-resolver.js</code></td><td>Claude Sonnet 4.6 role classification</td></tr>
+      <tr><td>Identity Gate (PDL match)</td><td><code>enrich/_voyage_router.js</code></td><td>Voyage embedding + name+state confidence</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.3 Enrichment engines (17)</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Module</th><th>Cost</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td>PDL Pro Identify</td><td><code>enrich/people-search-multi.js</code></td><td>$0.30</td><td>Match name → person record</td></tr>
+      <tr><td>PDL Pro Enrich</td><td>(same)</td><td>$0.30</td><td>Full contact + work + education</td></tr>
+      <tr><td>Apollo People Match</td><td><code>enrich/apollo-cross-pollinate.js</code></td><td>$0.10</td><td>Title + employer + verified email</td></tr>
+      <tr><td>Apollo Unlock</td><td><code>enrich/apollo-unlock.js</code></td><td>$1.00</td><td>Reveal phone + email</td></tr>
+      <tr><td>Hunter</td><td>(router)</td><td>$0.05</td><td>Domain → emails</td></tr>
+      <tr><td>NumVerify</td><td>(router)</td><td>$0.001</td><td>Phone validity</td></tr>
+      <tr><td>Trestle Reverse Phone</td><td>(router)</td><td>$0.05</td><td>Phone → name + address</td></tr>
+      <tr><td>Trestle CNAM</td><td>(router)</td><td>$0.005</td><td>Caller ID name</td></tr>
+      <tr><td>Searchbug</td><td>(router)</td><td>$0.10</td><td>Phone + email lookup</td></tr>
+      <tr><td>Tracerfy</td><td>(router)</td><td>$0.15</td><td>Skip-trace</td></tr>
+      <tr><td>Voter Rolls</td><td><code>system/voter-rolls-upload.js</code></td><td>Free</td><td>FL/GA/TX/MO name + address + DOB</td></tr>
+      <tr><td>Maricopa Assessor</td><td>(router)</td><td>Free</td><td>AZ property records</td></tr>
+      <tr><td>Cook · Harris · LA · Fulton · Miami-Dade</td><td>(router)</td><td>Free</td><td>Multi-county property</td></tr>
+      <tr><td>Homegrown OSINT</td><td><code>enrich/homegrown-osint-miner.js</code></td><td>$0.02</td><td>12-signal AI synthesis</td></tr>
+      <tr><td>Plate OCR</td><td><code>enrich/plate-ocr-vision.js</code></td><td>$0.01</td><td>Vision → plate → owner</td></tr>
+      <tr><td>Multi-language Detector</td><td><code>enrich/multilang-detector.js</code></td><td>$0.001</td><td>Language gate</td></tr>
+      <tr><td>Property → Family</td><td><code>enrich/property-to-family.js</code></td><td>Free</td><td>Owner → relatives</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.4 AI engines (8)</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Module</th><th>Model</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td>Multi-language Detector</td><td><code>multilang-detector.js</code></td><td>Haiku 4.5</td><td>Detects + flags for translation</td></tr>
+      <tr><td>AI News Extractor</td><td><code>ai-news-extractor.js</code></td><td>Sonnet 4.6</td><td>Pulls victim names from articles</td></tr>
+      <tr><td>Deep Phone Research</td><td><code>deep-phone-research.js</code></td><td>Opus 4.7</td><td>4-cycle iterative reasoning</td></tr>
+      <tr><td>Smart Cross-Ref</td><td><code>system/cross-intel-orchestrator.js</code></td><td>Opus 4.7</td><td>Cross-engine intelligence</td></tr>
+      <tr><td>AI Obituary Parser</td><td>(router)</td><td>Sonnet 4.6</td><td>Survivors graph</td></tr>
+      <tr><td>AI Cross-Source Merge</td><td>(router)</td><td>Sonnet 4.6</td><td>Reconcile multiple reports</td></tr>
+      <tr><td>Victim Resolver</td><td><code>victim-resolver.js</code></td><td>Sonnet 4.6</td><td>Role classification</td></tr>
+      <tr><td>Best Lead Synthesizer</td><td>(router)</td><td>Opus 4.7</td><td>Final qualified-lead summary</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.5 System engines (10)</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Module</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td>CEI Counters</td><td><code>engine_capabilities</code> table</td><td>Track invocation + success rate</td></tr>
+      <tr><td>Error Watchdog</td><td><code>system/_errors.js</code> + Sentry</td><td>Cluster + alert on errors</td></tr>
+      <tr><td>Schema Drift Check</td><td><code>system/audit.js</code></td><td>Detect missing columns</td></tr>
+      <tr><td>Cron Staleness</td><td>Wave 12 pattern</td><td>Alert if cron skipped</td></tr>
+      <tr><td>Embedding Queue</td><td><code>_voyage_router.js</code></td><td>Async voyage indexing</td></tr>
+      <tr><td>Smart Batcher</td><td><code>system/smart-batcher.js</code></td><td>Chunked inserts</td></tr>
+      <tr><td>Lookup Cache</td><td><code>system/_lookup_cache.js</code></td><td>TTL dedup</td></tr>
+      <tr><td>Realtime Victim Alerts</td><td><code>system/realtime-victim-alerts.js</code></td><td>SMS + push</td></tr>
+      <tr><td>Master Lead List</td><td><code>system/master-lead-list.js</code></td><td>Daily Resend email</td></tr>
+      <tr><td>Run Contact Finder</td><td><code>system/run-contact-finder.js</code></td><td>Event-driven cascade</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- CEI -->
+<section id="cei">
+  <div class="section-num">10 / CROSS-ENGINE INTELLIGENCE</div>
+  <h2>Cross-Engine Intelligence Architecture</h2>
+
+  <h3>The CEI loop</h3>
+  <p>Every engine call triggers:</p>
+  <ol>
+    <li><code>engine_capabilities.invocation_count += 1</code></li>
+    <li>On success: <code>success_count += 1</code>, success rate recomputed.</li>
+    <li>Voyage embedding indexed into <code>vector_cache</code> for the source_report.</li>
+    <li><code>cascade_queue</code> enqueues downstream engines based on what new data was discovered.</li>
+    <li>Auto-promote logic re-evaluates <code>qualification_state</code>.</li>
+  </ol>
+
+  <h3>Combo engines</h3>
+  <table>
+    <thead><tr><th>Combo</th><th>Flow</th></tr></thead>
+    <tbody>
+      <tr><td>Cascade enrichment</td><td>PDL → Apollo → people-search-multi → deep-phone-research</td></tr>
+      <tr><td>Standard victim discovery</td><td>News article → AI extractor → victim-verifier → cross-intel-orchestrator</td></tr>
+      <tr><td>Multi-language</td><td>Multi-lang detector → translated text → standard pipeline</td></tr>
+      <tr><td>Active-case attorney check</td><td>Court filing → CourtListener → smart-cross-ref → family graph</td></tr>
+      <tr><td>Vehicle-only crashes</td><td>Plate OCR → vehicle owner → property records → cross-ref</td></tr>
+      <tr><td>Fatal-crash families</td><td>Funeral home → survivors parser → relative graph</td></tr>
+      <tr><td>Active fundraiser</td><td>GoFundMe → campaign owner → Apollo → Trestle → contact</td></tr>
+      <tr><td>Trauma admit</td><td>Hospital RSS → patient name → voter rolls → address → property records</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- TECH -->
+<section id="tech">
+  <div class="section-num">11 / TECH STACK</div>
+  <h2>Tech Stack</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React + Tailwind, Vercel</td></tr>
+      <tr><td>Backend</td><td>Node.js serverless on Vercel Pro</td></tr>
+      <tr><td>Database</td><td>Postgres (Neon) · PostGIS · pgvector</td></tr>
+      <tr><td>AI — reasoning</td><td>Claude Opus 4.7</td></tr>
+      <tr><td>AI — mid-tier</td><td>Claude Sonnet 4.6</td></tr>
+      <tr><td>AI — fast</td><td>Claude Haiku 4.5</td></tr>
+      <tr><td>AI — OpenAI</td><td>GPT-4o + Whisper</td></tr>
+      <tr><td>Embeddings</td><td>VoyageAI voyage-3-large + rerank-2.5</td></tr>
+      <tr><td>Speech</td><td>Deepgram</td></tr>
+      <tr><td>Email</td><td>Resend</td></tr>
+      <tr><td>SMS / Voice</td><td>Twilio (Lookup · Verify · MMS · Voice · Conversations)</td></tr>
+      <tr><td>Search</td><td>Google CSE · Brave Search Answers</td></tr>
+      <tr><td>Enrichment APIs</td><td>PDL Pro · Apollo · Hunter · NumVerify · Searchbug · Tracerfy · Trestle</td></tr>
+      <tr><td>Court records</td><td>CourtListener / RECAP</td></tr>
+      <tr><td>Property records</td><td>Maricopa · Cook · Harris · LA · Fulton · Miami-Dade</td></tr>
+      <tr><td>Voter rolls</td><td>FL · GA · TX · MO</td></tr>
+      <tr><td>Dev tools</td><td>Cursor · Claude Code · Vercel Agent</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- DATA MODEL -->
+<section id="data">
+  <div class="section-num">12 / DATA MODEL</div>
+  <h2>Data Model</h2>
+
+  <h3>incidents</h3>
+<pre>id, occurred_at, lat, lng, geom (PostGIS), severity, incident_type,
+source_type, lead_score INT, qualification_state VARCHAR, qualified_at,
+has_contact_info BOOL, source_count INT, notified_at</pre>
+
+  <h3>persons (verified victims only)</h3>
+<pre>id, incident_id, full_name, role CHECK (role='victim'),
+phone, email, address, city, state, zip, dob,
+identity_confidence FLOAT, language, qualification_state</pre>
+
+  <h3>source_reports</h3>
+<pre>id, incident_id, source, source_url, raw_text, extracted_names JSONB,
+embedding vector(1024), created_at</pre>
+
+  <h3>enrichment_logs</h3>
+<pre>id, person_id, engine, request, response, cost_usd NUMERIC,
+latency_ms, succeeded BOOL, created_at</pre>
+
+  <h3>engine_capabilities (CEI counters)</h3>
+<pre>engine, invocation_count, success_count, last_success_at,
+avg_latency_ms, avg_cost_usd, last_payload_summary</pre>
+
+  <h3>voters · cei_patterns · cascade_queue · vector_cache · system_config · system_api_calls</h3>
+  <p>Companion tables for voter-file ingest, discovered combo paths, event-driven cascade dispatch, embedding cache, encrypted API keys, and cost telemetry.</p>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="section-num">13 / SECURITY &amp; COMPLIANCE</div>
+  <h2>Security &amp; Compliance</h2>
+  <ul>
+    <li><strong>TCPA litigator pre-check</strong> before any SMS — opt-out + DNC scrub.</li>
+    <li><strong>VICTIM-ONLY rule</strong> — Postgres CHECK constraint on <code>persons.role</code>.</li>
+    <li><strong>PDL identity-match gate</strong> — embedding similarity + name+state required to merge.</li>
+    <li><strong>API keys</strong> in <code>system_config</code> (encrypted at rest), never committed.</li>
+    <li><strong>Vercel function memory isolation</strong> — clean container per invocation.</li>
+    <li><strong>Rate limiting</strong> — 30 req/min per IP on dashboard counts endpoints.</li>
+    <li><strong>Audit log</strong> — <code>enrichment_logs</code> records every contact attribution.</li>
+    <li><strong>GDPR</strong> — not currently EU-targeted (US-only).</li>
+    <li><strong>Data retention</strong> — state-specific PI statute-of-limitations windows, then purged.</li>
+  </ul>
+</section>
+
+<!-- PERFORMANCE -->
+<section id="perf">
+  <div class="section-num">14 / PERFORMANCE</div>
+  <h2>Performance &amp; Observability</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Active sources</td><td>22 / 22</td></tr>
+      <tr><td>Incidents / day</td><td>173</td></tr>
+      <tr><td>Errors / 24h</td><td>0</td></tr>
+      <tr><td>Avg engine latency</td><td>280ms (cheap) → 30s (Opus reasoning)</td></tr>
+      <tr><td>Smoke test</td><td>7 / 7 passing</td></tr>
+      <tr><td>PostGIS</td><td>enabled (GIST + BRIN indexes)</td></tr>
+      <tr><td>Auto-update triggers</td><td>4 installed</td></tr>
+      <tr><td>CEI counters</td><td>per-engine telemetry live</td></tr>
+      <tr><td>Cron staleness watchdog</td><td>Wave 12 pattern, alerts on 2× interval</td></tr>
+      <tr><td>Schema-drift detector</td><td>nightly, auto-PR on missing column</td></tr>
+      <tr><td>Sentry SDK</td><td>wired (Phase 34)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-num">15 / ROADMAP</div>
+  <h2>Roadmap</h2>
+
+  <h3>Q2 2026 — next 90 days</h3>
+  <ul>
+    <li>Voter-file ingest — FL May arrival; MO + TX-Harris pending</li>
+    <li>Apollo <code>/people/unlock</code> paid reveal flow</li>
+    <li>Multi-recipient master-list email (Resend domain verification)</li>
+    <li>Mobile app launch (iOS + Android via React Native)</li>
+    <li>Spanish UI option</li>
+  </ul>
+
+  <h3>Q3 2026 — 6 months</h3>
+  <ul>
+    <li>10 metros with multi-county property API coverage</li>
+    <li>Salesforce integration for rep CRM sync</li>
+    <li>White-label deployment ($999/mo plan)</li>
+    <li>Filevine · Litify · Lawmatics integration</li>
+  </ul>
+
+  <h3>Q4 2026 — 9 months</h3>
+  <ul>
+    <li>Predictive case-value scoring v2 (Opus 4.7-tuned model)</li>
+    <li>Rep-performance ML — auto-route leads to best-fit rep</li>
+    <li>Insurance carrier identification engine</li>
+    <li>TX + GA + CA + IL voter-file integration</li>
+  </ul>
+
+  <h3>2027</h3>
+  <ul>
+    <li>All 50 states · 10 languages · 100 metros</li>
+    <li>Series A</li>
+    <li>5,000 firm subscriptions × $999/mo = <strong>$5M ARR</strong></li>
+  </ul>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-num">16 / PRICING</div>
+  <h2>Pricing &amp; Business Model</h2>
+  <table>
+    <thead><tr><th>Plan</th><th>Price / mo</th><th>Seats</th><th>Metros</th><th>Includes</th></tr></thead>
+    <tbody>
+      <tr><td>Solo Practitioner</td><td>$499</td><td>1</td><td>1</td><td>Standard pipeline + dashboard</td></tr>
+      <tr><td>Small Firm</td><td>$999</td><td>5</td><td>3</td><td>+ Salesforce sync · A/B SMS</td></tr>
+      <tr><td>Enterprise</td><td>$2,499</td><td>unlimited</td><td>all</td><td>+ white-label · dedicated support</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><strong>Per-lead overage:</strong> $25 per qualified lead beyond plan limits.</li>
+    <li><strong>Setup fee:</strong> $1,500 (waived for annual contracts).</li>
+  </ul>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="section-num">17 / TEAM</div>
+  <h2>Team &amp; Advisors</h2>
+  <ul>
+    <li><strong>Mason Donovan</strong> — Founder &amp; CEO. <span class="o">D</span>onovan <span class="o">D</span>igital <span class="o">S</span>olutions (Cleveland / Atlanta).</li>
+    <li><strong><span class="o">D</span>onovan <span class="o">D</span>igital <span class="o">S</span>olutions</strong> — parent company, full-service marketing + AI automation.</li>
+    <li><strong>Open seats:</strong> CTO · Head of Revenue · Lead Engineer.</li>
+  </ul>
+</section>
+
+<!-- APPENDIX -->
+<section id="appendix">
+  <div class="section-num">18 / APPENDIX</div>
+  <h2>Appendix</h2>
+
+  <h3>A. API endpoint catalog</h3>
+  <p>Full live list at <code>/api/v1/system/endpoint-descriptions</code>.</p>
+
+  <h3>B. Sample qualified leads (top 5, redacted)</h3>
+  <table>
+    <thead><tr><th>Score</th><th>Name</th><th>Location</th><th>Type</th><th>Phone</th><th>Email</th></tr></thead>
+    <tbody>
+      <tr><td>96</td><td>M.R.</td><td>Phoenix AZ</td><td>Fatal</td><td>(480) ***-**21</td><td>m***@gmail.com</td></tr>
+      <tr><td>92</td><td>J.S.</td><td>Houston TX</td><td>Serious</td><td>(713) ***-**74</td><td>j***@yahoo.com</td></tr>
+      <tr><td>89</td><td>C.L.</td><td>Atlanta GA</td><td>Serious</td><td>(404) ***-**12</td><td>—</td></tr>
+      <tr><td>87</td><td>A.G.</td><td>Miami FL</td><td>Fatal</td><td>(305) ***-**08</td><td>a***@hotmail.com</td></tr>
+      <tr><td>86</td><td>D.B.</td><td>Chicago IL</td><td>Serious</td><td>—</td><td>d***@aol.com</td></tr>
+    </tbody>
+  </table>
+
+  <h3>C. CEI counter snapshot</h3>
+  <table>
+    <thead><tr><th>Engine</th><th>Invocations</th><th>Success rate</th></tr></thead>
+    <tbody>
+      <tr><td>PDL Pro Enrich</td><td>4,812</td><td>67%</td></tr>
+      <tr><td>Apollo People Match</td><td>3,304</td><td>71%</td></tr>
+      <tr><td>Voter Rolls (FL)</td><td>1,902</td><td>84%</td></tr>
+      <tr><td>Homegrown OSINT</td><td>1,640</td><td>52%</td></tr>
+      <tr><td>Trestle Reverse Phone</td><td>1,228</td><td>78%</td></tr>
+      <tr><td>Deep Phone Research (Opus)</td><td>287</td><td>41%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>D. Sample Spanish translation result</h3>
+  <p><strong>Input:</strong> <em>"El conductor, identificado como Juan Hernández, falleció en el lugar tras una colisión frontal en la I-10."</em></p>
+  <p><strong>Output (English, normalized):</strong> driver · Juan Hernández · fatal · I-10 head-on · scene of crash.</p>
+
+  <hr/>
+  <p class="muted" style="font-size:12px;text-align:center">Accident Command Center · PRD v1.0 · 2026-Q2 · Donovan Digital Solutions · accidentcommandcenter.com</p>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  const obs = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.1});
+  document.querySelectorAll('section').forEach(s=>{s.classList.add('fade-in');obs.observe(s)});
+  document.querySelectorAll('.toc a').forEach(a=>a.addEventListener('click',e=>{
+    const id=a.getAttribute('href').slice(1);const el=document.getElementById(id);
+    if(el){e.preventDefault();el.scrollIntoView({behavior:'smooth',block:'start'})}
+  }));
+})();
+</script>
+</body>
+</html>
