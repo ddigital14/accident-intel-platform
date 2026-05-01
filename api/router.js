@@ -65,6 +65,7 @@ const enrichGeocoder = require('../lib/v1/enrich/geocoder');
 const enrichHunterDomain = require('../lib/v1/enrich/hunter-domain');
 const sysMigrationRunner = require('../lib/v1/system/migration-runner');
 const sysMeasurement = require('../lib/v1/system/measurement');
+const ingestNewSources = require('../lib/v1/ingest/new-sources');
 const enrichTextExtractors = require('../lib/v1/enrich/text-extractors');
 const enrichOpenCNAM = require('../lib/v1/enrich/opencnam');
 const enrichHunterCampaign = require('../lib/v1/enrich/hunter-campaign');
@@ -290,6 +291,7 @@ const ROUTES = {
   'enrich/hunter-domain': enrichHunterDomain,
   'system/migration-runner': sysMigrationRunner,
   'system/measurement': sysMeasurement,
+  'ingest/new-sources': ingestNewSources,
   'enrich/text-extractors': enrichTextExtractors,
   'enrich/opencnam': enrichOpenCNAM,
   'enrich/hunter-campaign': enrichHunterCampaign,
