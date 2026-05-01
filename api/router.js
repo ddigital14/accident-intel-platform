@@ -64,6 +64,11 @@ const enrichUspsValidate = require('../lib/v1/enrich/usps-validate');
 const enrichGeocoder = require('../lib/v1/enrich/geocoder');
 const enrichHunterDomain = require('../lib/v1/enrich/hunter-domain');
 const sysMigrationRunner = require('../lib/v1/system/migration-runner');
+const enrichTextExtractors = require('../lib/v1/enrich/text-extractors');
+const enrichOpenCNAM = require('../lib/v1/enrich/opencnam');
+const enrichHunterCampaign = require('../lib/v1/enrich/hunter-campaign');
+const enrichWhitepagesScrape = require('../lib/v1/enrich/whitepages-scrape');
+const sysAttorneyCrossLink = require('../lib/v1/system/attorney-cross-link');
 const enrichRedditHistory = require('../lib/v1/enrich/reddit-history');
 const enrichCoResidence = require('../lib/v1/enrich/co-residence');
 const enrichNameRarity = require('../lib/v1/enrich/name-rarity');
@@ -283,6 +288,11 @@ const ROUTES = {
   'enrich/geocoder': enrichGeocoder,
   'enrich/hunter-domain': enrichHunterDomain,
   'system/migration-runner': sysMigrationRunner,
+  'enrich/text-extractors': enrichTextExtractors,
+  'enrich/opencnam': enrichOpenCNAM,
+  'enrich/hunter-campaign': enrichHunterCampaign,
+  'enrich/whitepages-scrape': enrichWhitepagesScrape,
+  'system/attorney-cross-link': sysAttorneyCrossLink,
   'enrich/reddit-history': enrichRedditHistory,
   'enrich/co-residence': enrichCoResidence,
   'enrich/name-rarity': enrichNameRarity,

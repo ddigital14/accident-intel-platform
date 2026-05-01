@@ -70,22 +70,6 @@
     {
       "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=state-crash,tcpa-refresh,relatives-search,co-residence,vehicle-owner,person-merge,temporal-corroborate,confidence-decay,active-learning,salvage-listings,insurance-doi,workers-comp,fatal-family-tree,fraud-filter",
       "schedule": "0 */2 * * *"
-    },
-    {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=court,vehicle-history,court-reverse-link,trestle-probe,census-income,attorney-heatmap,lead-stale-recycler,whois-llc",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=audit,errors-clean",
-      "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=digest",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/v1/cron/dispatch?secret=ingest-now&jobs=master-lead-list",
-      "schedule": "0 12 * * *"
     }
   ]
 }
