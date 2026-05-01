@@ -538,3 +538,38 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 3. Email templates MUST inline all CSS (Resend/Gmail strip linked CSS) and stay ≤ 600px max-width.
 4. Logos: full lockup uses `0 0 680 460` viewBox; logomark uses `0 0 240 240`. Don't drift.
 5. Brand voice: "confident, intelligent, slightly cinematic, with personality but professional." DDS orange ONLY for parent-brand "by Donovan Digital Solutions" tagline. Red ONLY for accident accent.
+
+---
+
+## 12. Auto Fan-Out — MANDATORY platform rule (Phase 55, 2026-04-30)
+
+**Rule.** Whenever any field is added or changed on a `persons` row, the platform must auto-fire every engine that could plausibly enrich the missing fields. The goal is maximum contact-info coverage with no engine left unused.
+
+**Enforced by three layers (all required):**
+
+1. **Postgres trigger** (`persons_auto_fan_out_trigger` in `database/migrations/2026-04-30-auto-fan-out-trigger.sql`) — fires on INSERT/UPDATE of `phone`, `email`, `address`, `full_name`, `dob`, `employer`, `victim_verified`. Enqueues a row in `cascade_queue` with `action='auto_fan_out'`, `priority` 6–9 depending on which field changed (contact-info changes get priority 9), and `contact_field_changed=TRUE` when applicable.
+2. **Cascade processor** (`lib/v1/_cascade.js` `ACTION_HANDLERS.auto_fan_out`) — drains the queue every minute, dispatching to `runFanOut(personId, ...)` from `lib/v1/system/auto-fan-out.js`.
+3. **Fan-out engine** (`lib/v1/system/auto-fan-out.js`) — single source of truth for the engine matrix. Selects engines based on what's known (name/phone/email/address/plate/vin/fatal) and what's missing. Fires every applicable engine in parallel with per-engine timeout 12s and total budget 55s. Logs a `fan_out_summary` row to `enrichment_logs` after each pass. Rate-limited to one full pass per person per 6 hours UNLESS a contact-info field changed (then re-fires immediately).
+
+**Engine matrix (current — keep in sync with `ENGINE_MATRIX` in auto-fan-out.js):**
+- Identity: pdl-identify, apollo-match, victim-resolver, voter-rolls-search, courtlistener, funeral-survivors, osint-miner, deep-phone-research, people-search-multi
+- Phone-driven: trestle-phone, twilio-lookup, numverify, fcc-carrier, pdl-by-phone, apollo-unlock
+- Email-driven: hunter-verify, pdl-by-email, dev-profiles
+- Address-driven: trestle-address, maricopa-property, fulton-property, co-residence, census-income, usps-validate
+- Vehicle-driven: vehicle-owner, nhtsa-vin, fars
+- Cross-checks (always run last): evidence-cross-check, smart-cross-ref, voyage-similar
+
+**Mandatory checklist for any new engine added to AIP from now on:**
+- [ ] Register the engine in `ENGINE_MATRIX` in `lib/v1/system/auto-fan-out.js` with its `fires_on` triggers and `fills` outputs.
+- [ ] Engine must expose a `runOne(db, personId)`-style method (or equivalent) that the orchestrator can call.
+- [ ] Engine must log every field write to `enrichment_logs` with `source` and `field_name` so cross-check can attribute.
+- [ ] Engine must NOT bypass the deny-list filter (`_name_filter.js`) when extracting names.
+- [ ] If the engine writes phone/email/address, the trigger will re-fire fan-out automatically — do NOT manually re-call the orchestrator from inside the engine (avoids loops).
+
+**Anti-pattern to avoid:** Adding a new field to `persons` and only firing the one engine that produced it. Always rely on the trigger to fan out.
+
+**Quick API surface:**
+- `GET /api/v1/system/auto-fan-out?secret=ingest-now&action=health` — sanity check, returns matrix size.
+- `GET /api/v1/system/auto-fan-out?secret=ingest-now&action=matrix` — full engine matrix.
+- `POST /api/v1/system/auto-fan-out?secret=ingest-now&action=run` body `{person_id, trigger_field?, force?}` — run on one person.
+- `GET /api/v1/system/auto-fan-out?secret=ingest-now&action=batch&scope=qualified&limit=50` — fan out over all qualified persons (one-shot).

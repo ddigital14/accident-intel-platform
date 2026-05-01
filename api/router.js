@@ -206,6 +206,7 @@ const sysLookupCache           = require('../lib/v1/system/_lookup_cache');
 const sysCrossIntelOrchestrator= require('../lib/v1/system/cross-intel-orchestrator');
 // ── Phase 48: Master lead list digest
 const sysMasterLeadList        = require('../lib/v1/system/master-lead-list');
+const sysAutoFanOut             = require('../lib/v1/system/auto-fan-out');
 // ── Phase 50: Spanish detector + smart cross-ref + CEI counters + error watchdog
 const enrichSpanishDetector    = require('../lib/v1/enrich/spanish-detector');
 const enrichSmartCrossRef      = require('../lib/v1/enrich/smart-cross-ref');
@@ -408,6 +409,7 @@ const ROUTES = {
   'system/lookup-cache':         sysLookupCache,
   'system/cross-intel-orchestrator': sysCrossIntelOrchestrator,
   'system/master-lead-list': sysMasterLeadList,
+  'system/auto-fan-out': sysAutoFanOut,
   // Phase 50
   'enrich/spanish-detector':  enrichSpanishDetector,
   'enrich/smart-cross-ref':   enrichSmartCrossRef,
