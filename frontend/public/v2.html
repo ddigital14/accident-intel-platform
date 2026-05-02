@@ -226,6 +226,21 @@ function severityClass(L) {
   return '';
 }
 
+// Phase 80: query property-registry for the mobile-card surface, render dynamically
+let mobileCardFields = null;
+async function loadCardSchema() {
+  if (mobileCardFields) return mobileCardFields;
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/system/property-registry?secret=${SECRET}&action=for_surface&surface=mobile-card`).then(r => r.json());
+    mobileCardFields = r.properties || [];
+    console.log(`[v2] loaded ${mobileCardFields.length} mobile-card fields from registry`);
+    return mobileCardFields;
+  } catch (e) {
+    console.warn('[v2] registry unavailable, using hardcoded fallback');
+    mobileCardFields = []; return [];
+  }
+}
+
 function renderLeads() {
   const list = document.getElementById('lead-list');
   let leads = allLeads;
@@ -424,6 +439,7 @@ async function showPropertyRegistry() {
   } catch(e) { pane.innerHTML = '<div class="detail"><p style="color:var(--red);">Error loading registry: '+e.message+'</p></div>'; }
 }
 
+loadCardSchema();
 loadStats();
 loadLeads();
 </script>
