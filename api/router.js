@@ -68,6 +68,7 @@ const sysMeasurement = require('../lib/v1/system/measurement');
 const sysDailyIntelEmail = require('../lib/v1/system/daily-intel-email');
 const sysUniversalResolver = require('../lib/v1/system/universal-resolver');
 const sysRelationshipDetector = require('../lib/v1/system/relationship-detector');
+const sysTriangulationVerifier = require('../lib/v1/system/triangulation-verifier');
 const ingestNewSources = require('../lib/v1/ingest/new-sources');
 const enrichTextExtractors = require('../lib/v1/enrich/text-extractors');
 const enrichOpenCNAM = require('../lib/v1/enrich/opencnam');
@@ -297,6 +298,7 @@ const ROUTES = {
   'system/daily-intel-email': sysDailyIntelEmail,
   'system/universal-resolver': sysUniversalResolver,
   'system/relationship-detector': sysRelationshipDetector,
+  'system/triangulation-verifier': sysTriangulationVerifier,
   'ingest/new-sources': ingestNewSources,
   'enrich/text-extractors': enrichTextExtractors,
   'enrich/opencnam': enrichOpenCNAM,
