@@ -75,6 +75,7 @@ const sysPropertyEvents = require('../lib/v1/system/property-events');
 const sysPropertyRegistrySync = require('../lib/v1/system/property-registry-sync');
 const sysFourPillarGate = require('../lib/v1/system/four-pillar-gate');
 const sysPropertyEventsBackfill = require('../lib/v1/system/property-events-backfill');
+const sysDeployGate = require('../lib/v1/system/deploy-gate');
 const sysLeadQualityScorer = require('../lib/v1/system/lead-quality-scorer');
 const enrichAddressSonnet = require('../lib/v1/enrich/address-sonnet-extractor');
 const ingestNewSources = require('../lib/v1/ingest/new-sources');
@@ -313,6 +314,7 @@ const ROUTES = {
   'system/property-registry-sync': sysPropertyRegistrySync,
   'system/four-pillar-gate': sysFourPillarGate,
   'system/property-events-backfill': sysPropertyEventsBackfill,
+  'system/deploy-gate': sysDeployGate,
   'system/lead-quality-scorer': sysLeadQualityScorer,
   'enrich/address-sonnet-extractor': enrichAddressSonnet,
   'ingest/new-sources': ingestNewSources,
