@@ -69,6 +69,9 @@ const sysDailyIntelEmail = require('../lib/v1/system/daily-intel-email');
 const sysUniversalResolver = require('../lib/v1/system/universal-resolver');
 const sysRelationshipDetector = require('../lib/v1/system/relationship-detector');
 const sysTriangulationVerifier = require('../lib/v1/system/triangulation-verifier');
+const sysPropertyRegistry = require('../lib/v1/system/property-registry');
+const sysLeadQualityScorer = require('../lib/v1/system/lead-quality-scorer');
+const enrichAddressSonnet = require('../lib/v1/enrich/address-sonnet-extractor');
 const ingestNewSources = require('../lib/v1/ingest/new-sources');
 const enrichTextExtractors = require('../lib/v1/enrich/text-extractors');
 const enrichOpenCNAM = require('../lib/v1/enrich/opencnam');
@@ -299,6 +302,9 @@ const ROUTES = {
   'system/universal-resolver': sysUniversalResolver,
   'system/relationship-detector': sysRelationshipDetector,
   'system/triangulation-verifier': sysTriangulationVerifier,
+  'system/property-registry': sysPropertyRegistry,
+  'system/lead-quality-scorer': sysLeadQualityScorer,
+  'enrich/address-sonnet-extractor': enrichAddressSonnet,
   'ingest/new-sources': ingestNewSources,
   'enrich/text-extractors': enrichTextExtractors,
   'enrich/opencnam': enrichOpenCNAM,
