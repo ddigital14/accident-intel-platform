@@ -355,6 +355,15 @@ function showDetail(id) {
         <div class="k">Tier</div><div class="v">${L.lead_tier || 'normal'}</div>
       </div>
       ${L.discrepancy_note ? `<div class="note" style="margin:14px 0;">⚠ ${L.discrepancy_note}</div>` : ''}
+      <div style="margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;">
+          <strong style="font-size:13px;color:var(--charcoal);">📞 Suggested call opening</strong>
+          <button class="btn ghost" style="padding:4px 10px;font-size:11px;" onclick="loadCallScript('${L.person_id}', true)">♻ Regenerate</button>
+        </div>
+        <div id="call-script-box">
+          <div style="padding:10px 12px;background:var(--white);border:1px dashed var(--border);border-radius:6px;color:var(--slate);font-size:12px;font-style:italic;">Loading suggestion…</div>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
         ${L.phone ? `<a class="btn primary" href="tel:${L.phone}">📞 Call</a>` : ''}
         ${L.email ? `<a class="btn ghost" href="mailto:${L.email}">✉ Email</a>` : ''}
@@ -364,6 +373,38 @@ function showDetail(id) {
     </div>
   `;
   pane.scrollIntoView({ behavior: 'smooth' });
+  if (L.person_id) loadCallScript(L.person_id, false);
+}
+
+async function loadCallScript(personId, regen) {
+  const box = document.getElementById('call-script-box');
+  if (!box) return;
+  box.innerHTML = '<div style="padding:10px 12px;background:var(--white);border:1px dashed var(--border);border-radius:6px;color:var(--slate);font-size:12px;font-style:italic;">' + (regen ? 'Regenerating…' : 'Loading suggestion…') + '</div>';
+  try {
+    const url = `${API_BASE}/api/v1/system/call-script-generator?secret=${SECRET}&action=generate&person_id=${encodeURIComponent(personId)}`;
+    const r = await fetch(url).then(r => r.json());
+    const cs = r && (r.script || r.data || r);
+    const primary = (cs && (cs.primary_line || cs.primary)) || '';
+    const fallback = (cs && (cs.fallback_line || cs.fallback)) || '';
+    const notes = (cs && (cs.approach_notes || cs.notes)) || '';
+    if (!primary && !fallback) {
+      box.innerHTML = '<div style="padding:10px 12px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;color:#B91C1C;font-size:12px;">No suggestion available.</div>';
+      return;
+    }
+    let html = '';
+    if (primary) html += '<div style="padding:10px 12px;background:var(--emerald-bg);border-left:4px solid var(--emerald);border-radius:6px;margin-bottom:8px;color:#065F46;font-size:13px;line-height:1.5;"><div style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#047857;margin-bottom:4px;">Primary line</div>' + escapeHtml(primary) + '</div>';
+    if (fallback) html += '<div style="padding:10px 12px;background:#F8FAFC;border-left:4px solid var(--slate-soft);border-radius:6px;margin-bottom:8px;color:var(--charcoal);font-size:12px;line-height:1.5;"><div style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--slate);margin-bottom:4px;">Fallback</div>' + escapeHtml(fallback) + '</div>';
+    if (notes) html += '<div style="font-size:11px;color:var(--slate);font-style:italic;margin-top:6px;line-height:1.4;">' + escapeHtml(notes) + '</div>';
+    box.innerHTML = html;
+  } catch (e) {
+    box.innerHTML = '<div style="padding:10px 12px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;color:#B91C1C;font-size:12px;">Could not load suggestion: ' + escapeHtml(e.message || String(e)) + '</div>';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
 }
 
 async function verifyLead(pid, contact) {
