@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Accident Command Center · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white:#FFFFFF; --charcoal:#1F2937; --slate:#475569; --slate-soft:#94A3B8;
+  --red:#EF4444; --red-bg:#FEF2F2; --orange:#FF6600;
+  --indigo:#6366F1; --indigo-bg:#EEF2FF;
+  --emerald:#10B981; --emerald-bg:#ECFDF5;
+  --amber:#F59E0B; --amber-bg:#FFFBEB;
+  --border:#E2E8F0; --bg:#F8FAFC;
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; padding:0; background:var(--white); color:var(--charcoal); font-family:'Inter',-apple-system,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+.font-display { font-family:'Space Grotesk',sans-serif; letter-spacing:-0.02em; }
+.font-mono { font-family:'JetBrains Mono',monospace; }
+
+/* ── Top bar ── */
+.topbar { background:var(--charcoal); color:var(--white); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.logo { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; letter-spacing:-0.02em; }
+.logo .acc { color:var(--red); }
+.logo .dds { color:var(--orange); font-size:11px; font-weight:600; margin-left:8px; vertical-align:middle; }
+.topbar .icons { display:flex; gap:14px; align-items:center; }
+.bell { position:relative; cursor:pointer; }
+.bell .dot { position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:var(--red); border-radius:50%; border:2px solid var(--charcoal); }
+.avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--red),var(--indigo)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; cursor:pointer; }
+
+/* ── Layout ── */
+.layout { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 60px); }
+@media (max-width:768px) { .layout { grid-template-columns:1fr; } .sidebar { display:none; } .main { padding-bottom:80px; } }
+.sidebar { background:#FAFBFC; border-right:1px solid var(--border); padding:18px 12px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; color:var(--slate); font-weight:500; font-size:14px; cursor:pointer; margin-bottom:2px; text-decoration:none; }
+.nav-item:hover { background:rgba(99,102,241,0.06); color:var(--charcoal); }
+.nav-item.active { background:var(--charcoal); color:var(--white); }
+.nav-item .ico { font-size:16px; width:20px; }
+.nav-item .badge { margin-left:auto; background:var(--red); color:white; font-size:10px; padding:2px 8px; border-radius:99px; font-weight:700; }
+.main { padding:24px; max-width:1200px; }
+
+/* ── Stats ── */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+@media (max-width:600px) { .stats { grid-template-columns:repeat(2,1fr); } }
+.stat { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:var(--shadow); }
+.stat .label { font-size:11px; color:var(--slate); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.stat .value { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; color:var(--charcoal); line-height:1; }
+.stat .value.red { color:var(--red); }
+.stat .value.indigo { color:var(--indigo); }
+.stat .value.emerald { color:var(--emerald); }
+.stat .delta { font-size:11px; color:var(--slate); margin-top:4px; }
+
+/* ── Search + Chips ── */
+.search { width:100%; padding:12px 16px; border:1px solid var(--border); border-radius:10px; font-size:14px; background:var(--white); margin-bottom:14px; font-family:inherit; }
+.search:focus { outline:none; border-color:var(--indigo); box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+.chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:18px; -webkit-overflow-scrolling:touch; }
+.chips::-webkit-scrollbar { display:none; }
+.chip { padding:8px 14px; border-radius:99px; border:1px solid var(--border); background:var(--white); color:var(--slate); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer; }
+.chip.active { background:var(--charcoal); color:var(--white); border-color:var(--charcoal); }
+.chip.review.active { background:var(--amber); border-color:var(--amber); }
+.chip.demoted.active { background:var(--red); border-color:var(--red); }
+
+/* ── Lead cards ── */
+.lead-list { display:flex; flex-direction:column; gap:10px; }
+.lead { background:var(--white); border:1px solid var(--border); border-left:4px solid var(--slate-soft); border-radius:10px; padding:14px 16px; box-shadow:var(--shadow); display:grid; grid-template-columns:1fr auto; gap:12px; cursor:pointer; transition:transform 0.1s; }
+.lead:hover { transform:translateY(-1px); border-color:var(--indigo); }
+.lead.fatal { border-left-color:var(--red); }
+.lead.critical { border-left-color:var(--amber); }
+.lead.review { background:linear-gradient(to right, var(--amber-bg) 0%, var(--white) 8%); border-left-color:var(--amber); }
+.lead.demoted { background:linear-gradient(to right, var(--red-bg) 0%, var(--white) 8%); border-left-color:var(--red); opacity:0.85; }
+.lead .name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--charcoal); margin-bottom:2px; }
+.lead .loc { font-size:12px; color:var(--slate); margin-bottom:6px; }
+.lead .contact { display:flex; gap:10px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--charcoal); flex-wrap:wrap; margin-bottom:4px; }
+.lead .note { background:var(--amber-bg); color:#92400E; font-size:11px; padding:4px 8px; border-radius:6px; margin-top:6px; font-style:italic; border-left:3px solid var(--amber); }
+.lead.demoted .note { background:var(--red-bg); color:#B91C1C; border-left-color:var(--red); }
+.lead .right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.lead .score { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; line-height:1; }
+.lead .score.high { color:var(--red); }
+.lead .score.mid { color:var(--amber); }
+.lead .score.low { color:var(--slate); }
+.badge { display:inline-block; padding:3px 8px; border-radius:99px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+.badge.qualified { background:var(--red); color:white; }
+.badge.verified { background:var(--emerald-bg); color:var(--emerald); }
+.badge.unverified { background:#F1F5F9; color:var(--slate); }
+
+/* ── Action row ── */
+.actions { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.action-btn { padding:8px; text-align:center; font-size:11px; color:var(--slate); font-weight:600; cursor:pointer; border-radius:6px; }
+.action-btn:hover { background:var(--bg); color:var(--charcoal); }
+.action-btn .ico { display:block; font-size:18px; margin-bottom:2px; }
+
+/* ── Mobile bottom nav ── */
+.bottom-nav { display:none; }
+@media (max-width:768px) {
+  .bottom-nav { display:grid; grid-template-columns:repeat(5,1fr); position:fixed; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); padding:8px 0 12px 0; z-index:50; }
+  .bottom-nav .item { text-align:center; cursor:pointer; color:var(--slate); }
+  .bottom-nav .item.active { color:var(--red); }
+  .bottom-nav .item .ico { font-size:20px; display:block; margin-bottom:2px; }
+  .bottom-nav .item .label { font-size:10px; font-weight:600; }
+}
+
+/* ── Detail panel ── */
+.detail { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; margin-top:18px; box-shadow:var(--shadow); }
+.detail h2 { font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; margin:0 0 4px 0; }
+.detail .info-grid { display:grid; grid-template-columns:120px 1fr; gap:8px 16px; margin:14px 0; font-size:13px; }
+.detail .info-grid .k { color:var(--slate); font-weight:600; }
+.detail .info-grid .v { color:var(--charcoal); font-family:'JetBrains Mono',monospace; }
+.btn { padding:10px 18px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; border:none; font-family:inherit; }
+.btn.primary { background:var(--indigo); color:white; }
+.btn.primary:hover { background:#4F46E5; }
+.btn.danger { background:var(--red); color:white; }
+.btn.ghost { background:var(--white); border:1px solid var(--border); color:var(--charcoal); }
+
+/* ── Skeleton ── */
+.sk { background:linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%); background-size:200% 100%; animation:sk 1.5s infinite; border-radius:8px; }
+@keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.empty { text-align:center; padding:48px 20px; color:var(--slate); }
+.empty .big { font-size:48px; margin-bottom:12px; opacity:0.5; }
+
+#detail-result { margin-top:14px; padding:14px; border-radius:8px; font-size:13px; }
+#detail-result.ok { background:var(--emerald-bg); border-left:4px solid var(--emerald); color:#065F46; }
+#detail-result.err { background:var(--red-bg); border-left:4px solid var(--red); color:#991B1B; }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="acc">A</span><span class="acc">C</span><span class="acc">C</span> <span class="dds">DDS</span></div>
+  <div class="icons">
+    <div class="bell">🔔<span class="dot"></span></div>
+    <div class="avatar" id="avatar">MD</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <a class="nav-item active"><span class="ico">📊</span>Dashboard</a>
+    <a class="nav-item"><span class="ico">🎯</span>Leads<span class="badge" id="nav-lead-count">—</span></a>
+    <a class="nav-item"><span class="ico">🗺️</span>Map</a>
+    <a class="nav-item"><span class="ico">📞</span>Activity</a>
+    <a class="nav-item"><span class="ico">⚙️</span>Settings</a>
+    <a class="nav-item" style="margin-top:24px;"><span class="ico">📚</span>Docs · PRD</a>
+    <div style="position:absolute; bottom:18px; left:12px; right:12px; padding:12px; border-top:1px solid var(--border); font-size:12px; color:var(--slate);">
+      <div style="font-weight:600; color:var(--charcoal);">Mason Donovan</div>
+      <div>donovan@donovandigital…</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="stats" id="stats">
+      <div class="stat"><div class="label">Qualified</div><div class="value red sk" style="height:32px;">&nbsp;</div></div>
+      <div class="stat"><div class="label">24h Ingest</div><div class="value indigo sk" style="height:32px;">&nbsp;</div></div>
+      <div class="stat"><div class="label">Conv Rate</div><div class="value emerald sk" style="height:32px;">&nbsp;</div></div>
+      <div class="stat"><div class="label">With Phone</div><div class="value sk" style="height:32px;">&nbsp;</div></div>
+    </div>
+
+    <input class="search" id="search" placeholder="🔍 Search leads, victims, phone, email..." />
+
+    <div class="chips">
+      <div class="chip active" data-tier="all">All</div>
+      <div class="chip" data-tier="qualified">Qualified</div>
+      <div class="chip" data-tier="normal">Normal</div>
+      <div class="chip review" data-tier="review">⚠ Review</div>
+      <div class="chip demoted" data-tier="demoted">✗ Demoted</div>
+    </div>
+
+    <div class="lead-list" id="lead-list">
+      <div class="lead sk" style="height:80px;"></div>
+      <div class="lead sk" style="height:80px;"></div>
+      <div class="lead sk" style="height:80px;"></div>
+    </div>
+
+    <div id="detail-pane"></div>
+
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="item active"><span class="ico">📊</span><span class="label">Home</span></div>
+  <div class="item"><span class="ico">🎯</span><span class="label">Leads</span></div>
+  <div class="item"><span class="ico">🗺️</span><span class="label">Map</span></div>
+  <div class="item"><span class="ico">📞</span><span class="label">Activity</span></div>
+  <div class="item"><span class="ico">⚙️</span><span class="label">Settings</span></div>
+</nav>
+
+<script>
+const API_BASE = location.hostname.includes('accidentcommandcenter') || location.hostname.includes('vercel.app')
+  ? '' : 'https://accidentcommandcenter.com';
+const SECRET = 'ingest-now';
+
+let allLeads = [];
+let activeTier = 'all';
+let activeSearch = '';
+
+async function fetchJSON(path) {
+  const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}secret=${SECRET}`;
+  const r = await fetch(url);
+  return r.json();
+}
+
+function loadStats() {
+  fetchJSON('/api/v1/system/measurement?action=snapshot').then(d => {
+    const el = document.getElementById('stats');
+    const inc = d.incidents || {}, q = d.qualified || {}, p = d.persons || {};
+    const conv = (q.conversion_rate || 0) * 100;
+    el.innerHTML = `
+      <div class="stat"><div class="label">Qualified</div><div class="value red">${q.total || 0}</div><div class="delta">${conv.toFixed(2)}% conv</div></div>
+      <div class="stat"><div class="label">24h Ingest</div><div class="value indigo">${(inc.last_24h || 0).toLocaleString()}</div><div class="delta">${(inc.total || 0).toLocaleString()} total</div></div>
+      <div class="stat"><div class="label">Conv Rate</div><div class="value emerald">${conv.toFixed(2)}%</div><div class="delta">7d: ${(inc.last_7d || 0).toLocaleString()}</div></div>
+      <div class="stat"><div class="label">With Phone</div><div class="value">${p.with_phone || 0} / ${p.total || 0}</div><div class="delta">${p.verified || 0} verified</div></div>
+    `;
+  }).catch(() => {});
+}
+
+function severityClass(L) {
+  if ((L.severity || '').toLowerCase() === 'fatal') return 'fatal';
+  if (['critical','serious'].includes((L.severity || '').toLowerCase())) return 'critical';
+  return '';
+}
+
+function renderLeads() {
+  const list = document.getElementById('lead-list');
+  let leads = allLeads;
+  if (activeTier === 'qualified') leads = leads.filter(L => L.qualification_state === 'qualified' || !L.lead_tier);
+  else if (activeTier === 'review') leads = leads.filter(L => L.lead_tier === 'review');
+  else if (activeTier === 'demoted') leads = leads.filter(L => L.lead_tier === 'demoted');
+  else if (activeTier === 'normal') leads = leads.filter(L => !L.lead_tier || L.lead_tier === 'normal');
+
+  if (activeSearch) {
+    const s = activeSearch.toLowerCase();
+    leads = leads.filter(L => (L.victim || '').toLowerCase().includes(s) || (L.phone || '').includes(s) || (L.email || '').toLowerCase().includes(s) || (L.city || '').toLowerCase().includes(s));
+  }
+
+  if (!leads.length) {
+    list.innerHTML = '<div class="empty"><div class="big">📭</div><div>No leads match your filter</div></div>';
+    return;
+  }
+
+  list.innerHTML = leads.map(L => {
+    const score = L.score || 0;
+    const scoreClass = score >= 90 ? 'high' : score >= 70 ? 'mid' : 'low';
+    const tier = L.lead_tier || 'normal';
+    const noteHtml = L.discrepancy_note ? `<div class="note">⚠ ${L.discrepancy_note}</div>` : '';
+    const verified = L.victim_verified ? '<span class="badge verified">✓ Verified</span>' : '';
+    const qbadge = L.qualification_state === 'qualified' ? '<span class="badge qualified">Qualified</span>' : '';
+    return `<div class="lead ${severityClass(L)} ${tier}" onclick="showDetail('${L.person_id || L.incident_id}')">
+      <div>
+        <div class="name">${L.victim || '—'}</div>
+        <div class="loc">📍 ${L.city || '?'}, ${L.state || '?'} · ${L.severity || '—'}</div>
+        <div class="contact">
+          ${L.phone ? `<span>📞 ${L.phone}</span>` : ''}
+          ${L.email ? `<span>✉ ${L.email}</span>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">${verified} ${qbadge}</div>
+        ${noteHtml}
+      </div>
+      <div class="right">
+        <div class="score ${scoreClass}">${score}</div>
+        <div style="font-size:10px;color:var(--slate);">SCORE</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('nav-lead-count').textContent = leads.length;
+}
+
+function loadLeads() {
+  fetchJSON('/api/v1/system/master-lead-list?format=json&admin=true').then(d => {
+    allLeads = d.leads || [];
+    renderLeads();
+  }).catch(() => {
+    document.getElementById('lead-list').innerHTML = '<div class="empty"><div class="big">⚠</div><div>Could not load leads</div></div>';
+  });
+}
+
+function showDetail(id) {
+  const L = allLeads.find(x => x.person_id === id || x.incident_id === id);
+  if (!L) return;
+  const pane = document.getElementById('detail-pane');
+  pane.innerHTML = `
+    <div class="detail">
+      <h2>${L.victim || '—'}</h2>
+      <div style="color:var(--slate);font-size:13px;">📍 ${L.city || '?'}, ${L.state || '?'} · Score <strong>${L.score || 0}</strong></div>
+      <div class="info-grid">
+        <div class="k">Phone</div><div class="v">${L.phone || '—'}</div>
+        <div class="k">Email</div><div class="v">${L.email || '—'}</div>
+        <div class="k">Age</div><div class="v">${L.age || '—'}</div>
+        <div class="k">Role</div><div class="v">${L.role || '—'}</div>
+        <div class="k">Attorney</div><div class="v">${L.attorney || '—'}</div>
+        <div class="k">Tier</div><div class="v">${L.lead_tier || 'normal'}</div>
+      </div>
+      ${L.discrepancy_note ? `<div class="note" style="margin:14px 0;">⚠ ${L.discrepancy_note}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+        ${L.phone ? `<a class="btn primary" href="tel:${L.phone}">📞 Call</a>` : ''}
+        ${L.email ? `<a class="btn ghost" href="mailto:${L.email}">✉ Email</a>` : ''}
+        <button class="btn ghost" onclick="verifyLead('${L.person_id}', '${L.phone || L.email || ''}')">🔍 Verify Identity</button>
+      </div>
+      <div id="detail-result"></div>
+    </div>
+  `;
+  pane.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function verifyLead(pid, contact) {
+  const result = document.getElementById('detail-result');
+  result.className = '';
+  result.textContent = 'Running universal-resolver across all engines...';
+  const isPhone = /^[+\d\s\-()]+$/.test(contact);
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/system/universal-resolver?secret=${SECRET}&action=resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(isPhone ? { phone: contact } : { email: contact })
+    }).then(r => r.json());
+    result.className = 'ok';
+    const id = r.identity || {};
+    let html = `<strong>✓ Verified across ${r.engines_ok}/${r.engines_total} engines (${r.duration_ms}ms)</strong><br/><br/>`;
+    for (const [k,v] of Object.entries(id)) {
+      const val = typeof v.value === 'string' ? v.value : (v.value?.street_line_1 || JSON.stringify(v.value).slice(0,60));
+      html += `<div><strong>${k}:</strong> ${val} <span style="color:var(--slate);font-size:11px;">(${v.sources.join(', ')})</span></div>`;
+    }
+    result.innerHTML = html;
+  } catch (e) {
+    result.className = 'err';
+    result.textContent = '✗ Verification failed: ' + e.message;
+  }
+}
+
+document.getElementById('search').addEventListener('input', e => { activeSearch = e.target.value; renderLeads(); });
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+  activeTier = c.dataset.tier;
+  renderLeads();
+}));
+
+loadStats();
+loadLeads();
+</script>
+
+</body>
+</html>
