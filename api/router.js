@@ -72,6 +72,7 @@ const sysTriangulationVerifier = require('../lib/v1/system/triangulation-verifie
 const sysPropertyRegistry = require('../lib/v1/system/property-registry');
 const sysPropertyCoverage = require('../lib/v1/system/property-coverage');
 const sysPropertyEvents = require('../lib/v1/system/property-events');
+const sysPropertyRegistrySync = require('../lib/v1/system/property-registry-sync');
 const sysLeadQualityScorer = require('../lib/v1/system/lead-quality-scorer');
 const enrichAddressSonnet = require('../lib/v1/enrich/address-sonnet-extractor');
 const ingestNewSources = require('../lib/v1/ingest/new-sources');
@@ -307,6 +308,7 @@ const ROUTES = {
   'system/property-registry': sysPropertyRegistry,
   'system/property-coverage': sysPropertyCoverage,
   'system/property-events': sysPropertyEvents,
+  'system/property-registry-sync': sysPropertyRegistrySync,
   'system/lead-quality-scorer': sysLeadQualityScorer,
   'enrich/address-sonnet-extractor': enrichAddressSonnet,
   'ingest/new-sources': ingestNewSources,
