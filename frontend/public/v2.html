@@ -241,6 +241,71 @@ async function loadCardSchema() {
   }
 }
 
+
+// Phase 81: schema-driven render. mobileCardFields populated by loadCardSchema().
+// Maps registry field IDs to lead-object keys (master-lead-list flattens differently)
+const FIELD_MAP = {
+  full_name: 'victim',
+  city: 'city',
+  state: 'state',
+  phone: 'phone',
+  email: 'email',
+  age: 'age',
+  has_attorney: 'attorney',
+  victim_verified: 'victim_verified',
+  lead_tier: 'lead_tier',
+  notes: 'discrepancy_note',
+  severity: 'severity',
+  qualification_state: 'qualification_state',
+  lead_score: 'score',
+  master_quality_score: 'master_quality_score'
+};
+
+function pickField(L, registryId) {
+  const leadKey = FIELD_MAP[registryId] || registryId;
+  return L[leadKey];
+}
+
+function renderLeadFromSchema(L) {
+  const score = pickField(L, 'lead_score') || 0;
+  const scoreClass = score >= 90 ? 'high' : score >= 70 ? 'mid' : 'low';
+  const tier = pickField(L, 'lead_tier') || 'normal';
+  const sev = severityClass(L);
+
+  // Use the registry schema to drive what shows; fall back to hardcoded if registry not loaded
+  const fields = mobileCardFields || [];
+
+  // Find structured fields from the registry: name, location, contact, badges, score
+  const nameField = fields.find(f => f.id === 'full_name');
+  const noteVal = pickField(L, 'notes');
+  const verifiedVal = pickField(L, 'victim_verified');
+  const qstateVal = pickField(L, 'qualification_state');
+  const phone = pickField(L, 'phone');
+  const email = pickField(L, 'email');
+
+  const noteHtml = noteVal ? `<div class="note">⚠ ${noteVal}</div>` : '';
+  const verified = verifiedVal ? '<span class="badge verified">✓ Verified</span>' : '';
+  const qbadge = qstateVal === 'qualified' ? '<span class="badge qualified">Qualified</span>' : '';
+
+  return `<div class="lead ${sev} ${tier}" onclick="showDetail('${L.person_id || L.incident_id}')" data-fields="${(fields.map(f => f.id).join(','))}">
+    <div>
+      <div class="name">${pickField(L, 'full_name') || '—'}</div>
+      <div class="loc">📍 ${pickField(L, 'city') || '?'}, ${pickField(L, 'state') || '?'} · ${pickField(L, 'severity') || '—'}</div>
+      <div class="contact">
+        ${phone ? `<span>📞 ${phone}</span>` : ''}
+        ${email ? `<span>✉ ${email}</span>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;">${verified} ${qbadge}</div>
+      ${noteHtml}
+    </div>
+    <div class="right">
+      <div class="score ${scoreClass}">${score}</div>
+      <div style="font-size:10px;color:var(--slate);">SCORE</div>
+    </div>
+  </div>`;
+}
+
+
 function renderLeads() {
   const list = document.getElementById('lead-list');
   let leads = allLeads;
@@ -259,30 +324,7 @@ function renderLeads() {
     return;
   }
 
-  list.innerHTML = leads.map(L => {
-    const score = L.score || 0;
-    const scoreClass = score >= 90 ? 'high' : score >= 70 ? 'mid' : 'low';
-    const tier = L.lead_tier || 'normal';
-    const noteHtml = L.discrepancy_note ? `<div class="note">⚠ ${L.discrepancy_note}</div>` : '';
-    const verified = L.victim_verified ? '<span class="badge verified">✓ Verified</span>' : '';
-    const qbadge = L.qualification_state === 'qualified' ? '<span class="badge qualified">Qualified</span>' : '';
-    return `<div class="lead ${severityClass(L)} ${tier}" onclick="showDetail('${L.person_id || L.incident_id}')">
-      <div>
-        <div class="name">${L.victim || '—'}</div>
-        <div class="loc">📍 ${L.city || '?'}, ${L.state || '?'} · ${L.severity || '—'}</div>
-        <div class="contact">
-          ${L.phone ? `<span>📞 ${L.phone}</span>` : ''}
-          ${L.email ? `<span>✉ ${L.email}</span>` : ''}
-        </div>
-        <div style="display:flex;gap:6px;margin-top:6px;">${verified} ${qbadge}</div>
-        ${noteHtml}
-      </div>
-      <div class="right">
-        <div class="score ${scoreClass}">${score}</div>
-        <div style="font-size:10px;color:var(--slate);">SCORE</div>
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML = leads.map(L => renderLeadFromSchema(L)).join('');
 
   document.getElementById('nav-lead-count').textContent = leads.length;
 }

@@ -1,16 +1,19 @@
+<!-- Phase 81: Every rule has a stable ID (Rule N). Cite as "Rule 43" in commits/PRs. -->
+<!-- Numbering is sequential as rules are added. Do NOT renumber existing rules. -->
+
 # AIP Architecture Rules
 
 These rules MUST be followed for any future change to prevent regressions.
 Auto-generated for Claude / human contributors.
 
-## Vercel constraints (Hobby plan)
+## Rule 1 · Vercel constraints (Hobby plan)
 - **Max 12 serverless functions per deployment**
 - **Max 11 cron jobs per project**
 - **Underscore-prefixed files in /api/ are EXCLUDED** (use without underscore for handlers)
 - **Vercel only bundles files reached via STATIC require()** — no dynamic require with variable paths
 - **Catch-all `[...slug].js` syntax doesn't work** in plain Vercel /api/ (it's a Next.js feature)
 
-## How AIP routes requests
+## Rule 2 · How AIP routes requests
 Every `/api/v1/*` URL is rewritten to `/api/router.js`. The router has:
 1. Static require() at top for every handler module under `/lib/v1/...`
 2. A `ROUTES` table mapping URL slugs → handler modules
@@ -23,26 +26,26 @@ Every `/api/v1/*` URL is rewritten to `/api/router.js`. The router has:
 4. If it should be cron-driven, add to `lib/v1/cron/dispatch.js` JOB_HANDLERS map
 5. Update vercel.json crons (only via the dispatcher — NEVER add a new top-level cron, you'll hit the 11 limit)
 
-## Database schema rules
+## Rule 3 · Database schema rules
 - **Schema migrations live as `ensureColumns()` / `ensureTable()` functions** that run idempotently on first request. We don't use a migrations runner — Vercel serverless makes that fragile.
 - **All vocabularies live in `lib/_schema.js`** (severity, incident_type, source_type, etc). Adding a new value requires updating that file.
 - **All triggers/procedures are installed via `lib/v1/system/triggers.js`** which is idempotent.
 - **Every new pipeline must call `normalizeIncident()` and `normalizePerson()` from `lib/_schema.js`** before INSERT.
 - **Every catch block must call `await reportError(db, pipeline, source, message, context)`** so errors flow to the dashboard.
 
-## Enrichment integration rules
+## Rule 4 · Enrichment integration rules
 - **Use `lib/v1/enrich/_routing.js`** to decide which API to call for which enrichment goal. New APIs added there.
 - **Each enrichment API helper returns** `{ source, confidence, fields, cost_usd, endpoint }` or `null`. The trigger merges these in confidence order.
 - **API keys are read from env vars FIRST, then `system_config` table** (so `/api/v1/system/setup` POST can configure without redeploying).
 - **NEVER hardcode an API key** in source. Always read from env or DB config.
 
-## Cron rules
+## Rule 5 · Cron rules
 - **Only the dispatcher pattern**: `vercel.json` crons hit `/api/v1/cron/dispatch?secret=ingest-now&jobs=foo,bar`
 - **Each job handler must be statically require'd** in `lib/v1/cron/dispatch.js` JOB_HANDLERS map
 - **Job timeout = 50s** (Vercel function limit is 60s for Pro, 30s on Hobby — leave 10s headroom)
 - **Heavy OpenAI / scraping jobs go on the per-function 1024MB / 60s overrides** in vercel.json `functions` map
 
-## Schema field rules (canonical)
+## Rule 6 · Schema field rules (canonical)
 | Field | Where it lives | Set by | Read by |
 |---|---|---|---|
 | `incidents.qualification_state` | DB | aip_persons_change_trigger (Postgres) + qualify.js | feed.js, counts.js, dashboard |
@@ -56,7 +59,7 @@ Every `/api/v1/*` URL is rewritten to `/api/router.js`. The router has:
 | `persons.has_attorney` | DB | court.js + manual | filter qualified leads |
 | `persons.enrichment_score` | DB | enrich/run.js + enrich/trigger.js | dashboard |
 
-## Dashboard data flow
+## Rule 7 · Dashboard data flow
 - `/api/v1/dashboard/counts` — public summary (no auth): qualification breakdown, top leads, source breakdown, pipeline health
 - `/api/v1/dashboard/feed?state=qualified|pending|pending_named|all` — main lead list, joined with persons
 - `/api/v1/system/health` — pipeline cron status, error counts
@@ -65,7 +68,7 @@ Every `/api/v1/*` URL is rewritten to `/api/router.js`. The router has:
 - `/api/v1/system/cost` — API spend by service
 - `/api/v1/system/setup` — GET shows config; POST updates Slack/Twilio/Trestle/reps
 
-## Never break the build — pre-deploy checklist
+## Rule 8 · Never break the build — pre-deploy checklist
 - [ ] `node -c <file>` passes for every changed JS file
 - [ ] Total `find api -name '*.js'` ≤ 12
 - [ ] Total `vercel.json crons` ≤ 11
@@ -77,7 +80,7 @@ Every `/api/v1/*` URL is rewritten to `/api/router.js`. The router has:
 - [ ] Catch blocks call `reportError(db, ...)`
 - [ ] Smoke test still passes after deploy
 
-## Auto-update triggers (Postgres)
+## Rule 9 · Auto-update triggers (Postgres)
 Installed by `/api/v1/system/triggers`:
 - `tr_persons_qualify` — recomputes incident.qualification_state when persons change
 - `tr_sourcereports_count` — keeps incidents.source_count synced
@@ -86,13 +89,13 @@ Installed by `/api/v1/system/triggers`:
 
 Re-run `GET /api/v1/system/triggers?secret=ingest-now` after any DB connection reset.
 
-## Future-proofing additions
+## Rule 10 · Future-proofing additions
 - Always include a "rollback" path for every new pipeline (delete the data_source row + filter incidents by tag)
 - Always log to `system_changelog` (`logChange(db, {kind, title, summary, ...})`) for any deploy or schema change
 - Always use `batchInsert(db, table, rows)` from `lib/_batch.js` for >1 row insert — NEVER per-row INSERT in a loop
 - Always use `dedupCache.has()` / `.set()` from `lib/_cache.js` for source_reference dedup BEFORE hitting DB
 
-## CORE INTENT — Multi-cross-conversion (read CORE_INTENT.md)
+## Rule 11 · CORE INTENT — Multi-cross-conversion (read CORE_INTENT.md)
 
 Every change to AIP must support the multi-cross-conversion directive:
 - New pipelines emit cascade events after linking data
@@ -104,7 +107,7 @@ Every change to AIP must support the multi-cross-conversion directive:
 If a proposed change WEAKENS this — adds dead-end data, breaks the
 linkage chain, or misaligns properties — DO NOT SHIP IT.
 
-## NEW ENGINE INTEGRATION RULE (added 2026-04-26)
+## Rule 12 · NEW ENGINE INTEGRATION RULE (added 2026-04-26)
 
 Every NEW engine/integration must obey the following — no engine ships without all 14 boxes checked.
 
@@ -131,9 +134,9 @@ This rule supersedes the older guidance — any engine missing items from this l
 and MUST be brought into compliance before adding new functionality.
 
 
-## Phase 19 — AI Router + Claude + Beyond-Competitor Features (2026-04-27)
+## Rule 13 · Phase 19 — AI Router + Claude + Beyond-Competitor Features (2026-04-27)
 
-### AI Router (`lib/v1/enrich/_ai_router.js`) — REQUIRED
+### Rule 14 · AI Router (`lib/v1/enrich/_ai_router.js`) — REQUIRED
 EVERY new GPT/Claude call MUST go through the AI router. NO direct fetch() calls
 to api.openai.com or api.anthropic.com from any other file. The router gives us:
 - Tier routing (cheap=gpt-4o-mini, premium=gpt-4o, auto=fatal->premium)
@@ -144,7 +147,7 @@ to api.openai.com or api.anthropic.com from any other file. The router gives us:
 If you're tempted to write `await fetch('https://api.openai.com/...')` again — STOP.
 Use `extractJson(db, { pipeline, systemPrompt, userPrompt, tier, severityHint })` instead.
 
-### Model registry (single source of truth)
+### Rule 15 · Model registry (single source of truth)
 `MODELS` map in `_ai_router.js`. Update only there when new versions ship.
 - gpt-4o-mini    — high-volume cheap extraction
 - gpt-4o         — fatal/serious incidents + obituaries + court (high-value cases)
@@ -153,13 +156,13 @@ Use `extractJson(db, { pipeline, systemPrompt, userPrompt, tier, severityHint })
 - claude-sonnet-4-6    — Claude cross-reasoner (top leads)
 - claude-opus-4-6      — manual long-document reasoning (use sparingly)
 
-### Claude cross-reasoner (`lib/v1/enrich/claude-cross-reasoner.js`)
+### Rule 16 · Claude cross-reasoner (`lib/v1/enrich/claude-cross-reasoner.js`)
 Cron: every 5 min via `qualify,notify,enrich-trigger,cascade,cross-exam,claude-reason`.
 For top-15 leads with score≥50 + no recent reasoning, runs Claude Sonnet over ALL
 evidence and produces verdict (high_confidence|moderate|low|contradictory|duplicate).
 Boost in [-15,+15] applied to person.confidence_score → emits cascade.
 
-### Cross-wires (`lib/v1/enrich/cross-wires.js`)
+### Rule 17 · Cross-wires (`lib/v1/enrich/cross-wires.js`)
 Free, fast, applied to every newly qualified incident in qualify.js:
 - weatherSnapshot          (OpenWeather, free tier)
 - priorIncidentsAtLocation (PostGIS ±100m / 5 years)
@@ -167,7 +170,7 @@ Free, fast, applied to every newly qualified incident in qualify.js:
 - timeOfDayBucket          (rush_hour | overnight | weekend | day | evening)
 - first_responder_agency   (heuristic from police_department)
 
-### Predictive case value (`lib/v1/system/_case_value.js`)
+### Rule 18 · Predictive case value (`lib/v1/system/_case_value.js`)
 Logistic-style score → band:
 - low      ($5k–$25k)
 - moderate ($25k–$100k)
@@ -176,22 +179,22 @@ Logistic-style score → band:
 
 Stored on `incidents.case_value_*` columns. Set during qualify cron.
 
-### Test endpoint (`/api/v1/system/test-gpt?secret=ingest-now`)
+### Rule 19 · Test endpoint (`/api/v1/system/test-gpt?secret=ingest-now`)
 P0 debug: returns env_keys_set + sample extraction round-trip with timings.
 First stop when "GPT extraction returns null" symptoms appear.
 
-### Court → has_attorney → incident.tags
+### Rule 20 · Court → has_attorney → incident.tags
 court.js now bubbles `has_attorney` up to `incidents.tags` so dashboards filter
 without joining persons. Don't break this contract.
 
-### Required env vars (in addition to existing)
+### Rule 21 · Required env vars (in addition to existing)
 - ANTHROPIC_API_KEY    — for Claude cross-reasoner + provider fallback
 - OPENWEATHER_API_KEY  — for weather snapshots (free tier sufficient)
 
 
-## Phase 21 — Cross-Link Maximization + Smart Router (2026-04-27)
+## Rule 22 · Phase 21 — Cross-Link Maximization + Smart Router (2026-04-27)
 
-### New cross-links shipped
+### Rule 23 · New cross-links shipped
 | # | Wire | File | Trigger | Effect |
 |---|------|------|---------|--------|
 | 1 | VIN recalls → severity boost | `enrich/vehicle-history.js` | recall_count > 0 | lead_score += 5 (10 if 3+) |
@@ -205,13 +208,13 @@ without joining persons. Don't break this contract.
 | 9 | Incident-level cascade | `system/_cascade.js` (enqueueIncidentCascade) | qualify_state / case_value / lead_score change | re-cross-exam all persons |
 | 10 | contact_quality (cold/warm/hot) | `enrich/twilio.js` | post-Twilio Lookup | persons.contact_quality column |
 
-### Smart router (`lib/v1/enrich/_smart_router.js`)
+### Rule 24 · Smart router (`lib/v1/enrich/_smart_router.js`)
 Pure decision function `pickNextAction(person, incident, ic)` chooses cheapest valuable next-step.
 Action priority: backfill-nameless → pdl-by-name → twilio-lookup → hunter-find → searchbug+voter → social-search → family-tree → court-reverse-link → claude-reasoner → ready-for-rep.
 Endpoints: `?action=pick&person_id=` and `?action=batch&limit=15`.
 Cron: folded into 5-min slot alongside qualify.
 
-### New columns
+### Rule 25 · New columns
 - persons.identity_confidence (INT, indexed)
 - persons.identity_conflict (BOOL)
 - persons.likely_family_residence (BOOL)
@@ -225,16 +228,16 @@ All ALTER TABLEs live inside qualify.js ensureColumns flow → applied on every 
 
 ---
 
-## Phase 22 — PDL-by-name + voter loaders + property records expansion + tributes.com swap (2026-04-27)
+## Rule 26 · Phase 22 — PDL-by-name + voter loaders + property records expansion + tributes.com swap (2026-04-27)
 
-### New endpoints
+### Rule 27 · New endpoints
 | Path | Purpose | Cron |
 |---|---|---|
 | `/api/v1/enrich/pdl-by-name` | Bulk PDL Person Enrichment for `pending_named` persons missing phone+email | folded into 30-min `pd-press,obituaries,...` slot as `pdl-by-name` job |
 | `/api/v1/enrich/ga-voter-loader` | GA voter-roll bulk loader (pipe-delimited) | n/a — manual POST after Mason downloads file |
 | `/api/v1/enrich/tx-voter-loader` | TX voter-roll bulk loader (pipe-delimited) | n/a — manual POST after Mason buys file |
 
-### Property records: 4 new counties
+### Rule 28 · Property records: 4 new counties
 `lib/v1/enrich/property-records.js` COUNTY_ENDPOINTS now includes:
 - `GA:Fulton` (Atlanta) — Fulton GIS ArcGIS feature service
 - `FL:MiamiDade` (Miami) — public assessor address-search
@@ -243,16 +246,16 @@ All ALTER TABLEs live inside qualify.js ensureColumns flow → applied on every 
 
 City→county map expanded for the major cities of each.
 
-### Obituary source swap
+### Rule 29 · Obituary source swap
 - `lib/v1/enrich/obit-backfill.js` + `lib/v1/ingest/obituaries.js` now hit **tributes.com** first; legacy.com is fallback. UA changed from `AIP-Backfill/1.0` to `Mozilla/5.0 (compatible; AIP/1.0; research)` to avoid bot blocks.
 
-### Smart-router execution upgrade
+### Rule 30 · Smart-router execution upgrade
 `enrich-pdl-by-name` action is now executed inline (not just deferred) when smart router picks it — closes the "router decides + nothing happens" gap.
 
-### Cron count
+### Rule 31 · Cron count
 Still 11/11 (Hobby max) — all new work folded into existing slots.
 
-### 14-point compliance for PDL-by-name engine
+### Rule 32 · 14-point compliance for PDL-by-name engine
 | Check | Status |
 |---|---|
 | Static `require()` | yes (no dynamic) |
@@ -272,11 +275,11 @@ Still 11/11 (Hobby max) — all new work folded into existing slots.
 
 ---
 
-## Phase 24 — ZERO-FAKE-DATA RULE (CRITICAL)
+## Rule 33 · Phase 24 — ZERO-FAKE-DATA RULE (CRITICAL)
 
 **NO seed/dummy/mock/fake/sample/placeholder data may EVER be applied to production.**
 
-### What counts as fake data
+### Rule 34 · What counts as fake data
 - Any rows from `database/seeds/002_test_data.sql`
 - Hardcoded names: Emily Chen, David Kim, James Tucker, Angela Martinez, Robert Garcia, Tanisha Brown, Sarah Johnson, Marcus Williams, Lisa Chen
 - Hardcoded phone patterns: `404555xxxx`, `770555xxxx`, `678555xxxx` (555-prefix area)
@@ -284,7 +287,7 @@ Still 11/11 (Hobby max) — all new work folded into existing slots.
 - Any incident with `tags = ['test'|'seed'|'demo']`
 - Any "fallback" mock response from a pipeline when an API returns no data
 
-### Enforcement
+### Rule 35 · Enforcement
 1. `database/seeds/002_test_data.sql` is **DEV/TEST only**. NEVER run against production DATABASE_URL.
 2. `deploy.sh` (and any CI workflow) MUST NOT call `psql ... -f database/seeds/002_test_data.sql`.
 3. Verify with: `GET /api/v1/system/audit?secret=ingest-now` -> issues.seed_incidents + issues.seed_persons must be 0.
@@ -293,12 +296,12 @@ Still 11/11 (Hobby max) — all new work folded into existing slots.
 6. New ingestion engines MUST NOT include test fixture rows in their first run.
 7. `lib/v1/ingest/_homegrown_rotation.js` and all RSS/news pipelines extract from REAL feed responses only — no inline sample objects.
 
-### Audit cron
+### Rule 36 · Audit cron
 `audit` cron runs daily at 5 AM UTC; it now reports `seed_incidents` and `seed_persons` counts. Any non-zero value triggers an error in `system_errors`.
 
 ---
 
-## Phase 24 — PI-broad keyword filter
+## Rule 37 · Phase 24 — PI-broad keyword filter
 
 `lib/v1/ingest/news-rss.js` `CRASH_KEYWORDS` regex was widened from ~15 vehicle terms
 to a full personal-injury surface area (vehicle, pedestrian/cyclist, water, workplace,
@@ -312,7 +315,7 @@ When adding a new ingest source, copy the canonical PI regex. Do NOT use a narro
 
 ---
 
-## Phase 24 — Auto-assign re-rotate
+## Rule 38 · Phase 24 — Auto-assign re-rotate
 
 `lib/v1/system/auto-assign.js` now releases stale assignments before assigning new ones:
 - Assigned >7d ago AND status in (new|unclaimed|assigned) -> release back to pool
@@ -321,7 +324,7 @@ Override stale window via `?stale_days=N`.
 
 ---
 
-## Phase 24 — WhitePages structured-data parser
+## Rule 39 · Phase 24 — WhitePages structured-data parser
 
 `lib/v1/enrich/people-search.js` now extracts persons from `<script id="__NEXT_DATA__">`
 JSON blocks before falling back to GPT regex extraction. Much more reliable when WP
@@ -329,7 +332,7 @@ returns a Next.js-rendered page.
 
 ---
 
-## Phase 24 — identity_confidence backfill + canonicalization
+## Rule 40 · Phase 24 — identity_confidence backfill + canonicalization
 
 `lib/v1/enrich/claude-identity-investigator.js` now exposes:
 - `?action=backfill_ic&limit=200` -> backfill NULL identity_confidence via `crossExamine`
@@ -341,7 +344,7 @@ returns a Next.js-rendered page.
 When adding a new enrichment engine, write to `persons.identity_confidence` (NOT just
 `confidence_score`) when you have multi-source verification.
 
-## ROLLBACK PATHS (Phase 31)
+## Rule 41 · ROLLBACK PATHS (Phase 31)
 
 Every shipped engine MUST document a rollback path. The standard pattern:
 
@@ -358,7 +361,7 @@ Every shipped engine MUST document a rollback path. The standard pattern:
 
 4. **Drop new schema columns/tables:** Each engine that creates tables/columns must include the corresponding `DROP` SQL in its module-level comment.
 
-## DEPLOY LOG REQUIREMENT (Phase 31)
+## Rule 42 · DEPLOY LOG REQUIREMENT (Phase 31)
 
 Every shipped engine MUST log via `lib/v1/system/_deploy.deployLog()` on first run after deploy, OR via the global deploy hook in `system/changelog`. Pattern:
 ```js
@@ -367,11 +370,11 @@ await deployLog({ name: 'my-engine', version: 'commit-sha', summary: 'what chang
 ```
 This produces a `system_changelog` row with `kind='deploy'` for audit / blame.
 
-## ⚠️ VICTIM-ONLY DATA RULE — ABSOLUTE (Phase 38)
+## Rule 43 · ⚠️ VICTIM-ONLY DATA RULE — ABSOLUTE (Phase 38)
 
 **Mason directive 2026-04-28:** Contact data attached to a lead MUST be the accident victim's data (or a directly-involved party — driver, passenger, pedestrian). NEVER the contact data of journalists, news authors, officers, witnesses, family quoted, or bystanders.
 
-### Hard rules (no exceptions)
+### Rule 44 · Hard rules (no exceptions)
 
 1. **No name extraction skips the deny-list filter.** Every extractor that parses names from raw text MUST call `applyDenyList(name, surroundingText)` from `lib/v1/enrich/_name_filter.js` before storing the name. The filter rejects byline patterns, official titles, journalist tags, and attribution-only mentions ("according to X said").
 
@@ -385,19 +388,19 @@ This produces a `system_changelog` row with `kind='deploy'` for audit / blame.
 
 6. **Quarantine endpoint exists for retroactive cleanup.** `/api/v1/system/quarantine-fake-victims` — re-runs verification on existing qualified persons; demotes incidents with no remaining verified victims to `pending_unverified`.
 
-### When adding a new ingest source
+### Rule 45 · When adding a new ingest source
 
 - If the source contains free text that names people (news, social, court filings, scanner transcripts), wire it through `_name_filter.js` BEFORE storing.
 - After the verifier batch runs, only then can downstream enrichers (PDL, Apollo, Trestle, Maricopa, voter rolls, people-search-multi, Hunter, Google CSE) attach contact data.
 - New extractors MUST add `applyDenyList()` call AND add the surrounding text context to the candidate so Stage B (Claude) has enough signal to classify edge cases.
 
-### When adding a new enrichment engine
+### Rule 46 · When adding a new enrichment engine
 
 - The engine MUST gate on `victim_verified = true` in its candidate selection SQL.
 - The engine MUST emit `enqueueCascade(db, 'person', personId, '<engine>', { weight: N })` so cross-checker can validate.
 - The engine MUST log conflicts when its returned data disagrees with existing person fields, not silently overwrite.
 
-### Smart victim pipeline (composite)
+### Rule 47 · Smart victim pipeline (composite)
 
 `/api/v1/system/smart-victim-pipeline?secret=ingest-now` runs all stages in order:
 1. `victim-verifier` (Stage A regex + Stage B Claude classification)
@@ -409,11 +412,11 @@ Anything else (per-engine cron jobs) is supplementary — the composite endpoint
 
 ---
 
-## Phase 41 — AI EXTRACTION LAYER (2026-04-28)
+## Rule 48 · Phase 41 — AI EXTRACTION LAYER (2026-04-28)
 
 Replaces deterministic regex extractors with Claude Sonnet/Opus for higher recall, structured family/vehicle data, and multi-source synthesis. Augments the existing pipeline; does NOT replace it.
 
-### Modules
+### Rule 49 · Modules
 
 | Module | File | Model | Job key | Cron interval |
 |---|---|---|---|---|
@@ -422,7 +425,7 @@ Replaces deterministic regex extractors with Claude Sonnet/Opus for higher recal
 | AI Cross-Source Merge | `lib/v1/system/ai-cross-source-merge.js` | Claude Opus 4.6 | `ai-cross-source-merge` | every 2 h |
 | Rep Pre-Call Brief | `lib/v1/dashboard/rep-call-brief.js` | Claude Sonnet 4.6 | (HTTP only, on-demand) | n/a |
 
-### Mandatory rules
+### Rule 50 · Mandatory rules
 
 1. **Every AI extraction MUST go through `_ai_router.js extract()` / `extractJson()`.** Never call `fetch('https://api.anthropic.com')` directly. The router handles model selection, failover, cost tracking, and JSON parsing.
 2. **Every AI-extracted name MUST be re-checked through `applyDenyList(name, surroundingText)` from `_name_filter.js`** before insert. Claude is asked to skip journalists/officials but the deny-list is a safety net.
@@ -432,23 +435,23 @@ Replaces deterministic regex extractors with Claude Sonnet/Opus for higher recal
 6. **All AI tokens are logged via `trackApiCall(db, pipeline, model, input_tokens, output_tokens, ok)`** through the router. Cost tab shows per-pipeline breakdown.
 7. **Conflicts surfaced by Module 3 are written to `enrichment_logs.data->>'cross_source_conflicts'`** for audit and manual review.
 
-### Failure-mode contract
+### Rule 51 · Failure-mode contract
 
 - AI returns 401/quota → router falls over to OpenAI per existing logic
 - AI returns malformed JSON → `extractJson` returns null, handler returns `{ ok: false, error: 'ai_no_parse' }` with 200 status (NEVER 500)
 - Network timeout → caught, person row not inserted, error logged via `reportError`
 - Insert constraint failure → retry path strips `victim_verified`/`derived_from` then plain insert; if still fails, skipped row is reported in `samples`
 
-### Cascade fan-out
+### Rule 52 · Cascade fan-out
 
 Every newly-inserted person from an AI module fires `enqueueCascade()` with `trigger_source='ai-<module>'`. This auto-runs the contact-finder + cross-exam chain so AI extraction stays consistent with Phase 39's event-driven trigger model.
 
 
 ---
 
-## Phase 43 — Brave fallback + 5 free OSINT extras + best-lead-synthesizer + Opus 4.7
+## Rule 53 · Phase 43 — Brave fallback + 5 free OSINT extras + best-lead-synthesizer + Opus 4.7
 
-### Modules
+### Rule 54 · Modules
 
 | Module | File | Model | Job key | Cron interval |
 |---|---|---|---|---|
@@ -456,7 +459,7 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 | Free OSINT Extras (5x) | `lib/v1/enrich/free-osint-extras.js` | n/a (HTTP) | `free-osint-extras` | health-only — invoked from synthesizer |
 | Best Lead Synthesizer | `lib/v1/system/best-lead-synthesizer.js` | Claude Opus 4.7 | `best-lead-synthesizer` | every 4 h, limit 2 |
 
-### Mandatory rules
+### Rule 55 · Mandatory rules
 
 1. **`_ai_router.js MODELS.premium_anth` is now `claude-opus-4-7`.** Every "tier=premium with provider=claude" or `tier='opus'` request routes here.
 2. **CSE auto-fallback**: every Google CSE call inside `homegrown-osint-miner.js` goes through `searchWithFallback(db, cfg, q, num)`. On 429/403 it transparently calls Brave. Both code paths track via `trackApiCall`.
@@ -464,7 +467,7 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 4. **`best-lead-synthesizer` is the closer.** Every other engine MUST keep producing structured JSON output that fits inside the `gather()` slice budget. If a new engine ships, hook its `*One()` function into `synthesizeOne`'s `Promise.all`.
 5. **Opus 4.7 is reserved for premium reasoning paths only** — synthesizer, claude-identity-investigator, premium ai-cross-source-merge. Everything else stays on Sonnet/Haiku/GPT-mini for cost.
 
-### Failure-mode contract additions
+### Rule 56 · Failure-mode contract additions
 
 - CSE 429 → log info-severity in `system_errors`, call Brave, continue
 - Brave 401 / no key → return `{ ok: false, skipped: true }`, miner records error and moves on
@@ -473,9 +476,9 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 
 ---
 
-## Phase 50 — AccidentCommandCenter.com launch: rebrand + Spanish + CEI telemetry + smart cross-ref + watchdog
+## Rule 57 · Phase 50 — AccidentCommandCenter.com launch: rebrand + Spanish + CEI telemetry + smart cross-ref + watchdog
 
-### Modules
+### Rule 58 · Modules
 
 | Module | File | Model | Job key | Cron interval |
 |---|---|---|---|---|
@@ -486,14 +489,14 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 | Error watchdog | `lib/v1/system/error-watchdog.js` | n/a | `error-watchdog` | every 5 min |
 | PI keyword library | `lib/v1/ingest/_pi_keywords.js` | n/a | (used by news + news-rss) | n/a |
 
-### Branding (frontend)
+### Rule 59 · Branding (frontend)
 
 - Platform name: **Accident Command Center** (logomark "ACC" stacked on navy block + pulsing red dot accent).
 - Theme: **light mode** — warm white `#FAFAFA` bg, slate-900 text, navy primary `#0F2A5A`, electric red `#DC2626` urgency, gold `#F59E0B` high-value, emerald `#10B981` verified.
 - Card shadow: `0 4px 12px rgba(15,42,90,0.08)`. Border: `#E2E8F0`. Status pills: `.acc-status-badge` with colored dots.
 - Active nav tab: 2px red underline, `#0F2A5A` text. No more rainbow gradients.
 
-### Mandatory rules
+### Rule 60 · Mandatory rules
 
 1. **Every engine handler MUST bump CEI invocation telemetry on success.** Done one of two ways:
    - Implicitly: any engine calling `trackApiCall(db, pipeline, ...)` automatically piggy-backs `bumpCounter(db, pipeline, ...)` — Phase 50 wiring lives in `lib/v1/system/cost.js`.
@@ -504,14 +507,14 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 5. **error-watchdog runs every 5 min** scanning the last 10 min for clusters of 3+ identical errors. Slack + Resend alerts dispatch automatically when a cluster fires.
 6. **Theme tokens are now in `App.jsx` `:root`** — every new UI element must reference them (`--brand-navy`, `--brand-red`, `--brand-green`, `--shadow-card`). No more inline rainbow gradients.
 
-### Failure-mode contract
+### Rule 61 · Failure-mode contract
 
 - Spanish-detector fails translation → returns `{ ok: false, error: 'translation_failed' }`, original record stays untouched in `source_reports`.
 - smart-cross-ref Opus call returns null → returns `{ ok: false, error: 'opus_returned_nothing' }`, no enrichment_logs row written, CEI counter bumps with success=false.
 - error-watchdog Slack/Resend send fails → still returns scan summary, the failures are themselves logged via `reportError`. Watchdog never throws to caller.
 - CEI counter table missing → `bumpCounter` self-creates on first invocation; never blocks the calling engine.
 
-### Connectivity & test endpoints
+### Rule 62 · Connectivity & test endpoints
 
 - `GET /api/v1/enrich/spanish-detector?secret=ingest-now&action=health`
 - `GET /api/v1/enrich/smart-cross-ref?secret=ingest-now&action=health`
@@ -522,7 +525,7 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 
 ---
 
-## Phase 52 — ACC Design System v1 (2026-04-30)
+## Rule 63 · Phase 52 — ACC Design System v1 (2026-04-30)
 
 **Shipped:**
 - `frontend/public/logo.svg` (v5b) + `logomark.svg` (square sigil for favicon/header)
@@ -541,7 +544,7 @@ Every newly-inserted person from an AI module fires `enqueueCascade()` with `tri
 
 ---
 
-## 12. Auto Fan-Out — MANDATORY platform rule (Phase 55, 2026-04-30)
+## Rule 64 · Auto Fan-Out — MANDATORY platform rule (Phase 55, 2026-04-30)
 
 **Rule.** Whenever any field is added or changed on a `persons` row, the platform must auto-fire every engine that could plausibly enrich the missing fields. The goal is maximum contact-info coverage with no engine left unused.
 
