@@ -264,6 +264,11 @@ const sysDeepDiveNarrow        = require('../lib/v1/system/deep-dive-narrow');
 const ingestPatchNews          = require('../lib/v1/ingest/patch-news');
 const ingestCoronerFeeds       = require('../lib/v1/ingest/coroner-feeds');
 
+// Phase 93: sheriff bookings + caringbridge + twitter witness
+const ingestSheriffBookings    = require('../lib/v1/ingest/sheriff-bookings');
+const ingestCaringbridge       = require('../lib/v1/ingest/caringbridge');
+const ingestTwitterWitness    = require('../lib/v1/ingest/twitter-witness');
+
 const ROUTES = {
   'auth/login': authLogin,
   'auth/me': authMe,
@@ -504,6 +509,10 @@ const ROUTES = {
   'system/deep-dive-narrow':      sysDeepDiveNarrow,
   'ingest/patch-news':            ingestPatchNews,
   'ingest/coroner-feeds':         ingestCoronerFeeds,
+  // Phase 93
+  'ingest/sheriff-bookings':      ingestSheriffBookings,
+  'ingest/caringbridge':          ingestCaringbridge,
+  'ingest/twitter-witness':       ingestTwitterWitness,
 };
 
 function tryDynamicIncident(slug, req) {
