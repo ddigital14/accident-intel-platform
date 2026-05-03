@@ -258,6 +258,12 @@ const sysSchemaDriftCheck      = require('../lib/v1/system/schema-drift-check');
 const sysDesignTokens          = require('../lib/v1/system/design-tokens');
 const sysEndpointDescriptions  = require('../lib/v1/system/endpoint-descriptions');
 
+// Phase 92: crash-news bridge + deep-dive-narrow + Patch.com + coroner feeds
+const sysCrashNewsBridge       = require('../lib/v1/system/crash-news-bridge');
+const sysDeepDiveNarrow        = require('../lib/v1/system/deep-dive-narrow');
+const ingestPatchNews          = require('../lib/v1/ingest/patch-news');
+const ingestCoronerFeeds       = require('../lib/v1/ingest/coroner-feeds');
+
 const ROUTES = {
   'auth/login': authLogin,
   'auth/me': authMe,
@@ -493,6 +499,11 @@ const ROUTES = {
   // Phase 52
   'system/design-tokens':         sysDesignTokens,
   'system/endpoint-descriptions': sysEndpointDescriptions,
+  // Phase 92
+  'system/crash-news-bridge':     sysCrashNewsBridge,
+  'system/deep-dive-narrow':      sysDeepDiveNarrow,
+  'ingest/patch-news':            ingestPatchNews,
+  'ingest/coroner-feeds':         ingestCoronerFeeds,
 };
 
 function tryDynamicIncident(slug, req) {
