@@ -272,6 +272,7 @@ const sysDbDiag                = require('../lib/v1/system/db-diag');
 const sysPromoteNamedPending   = require('../lib/v1/system/promote-named-pending');
 const sysResearchQueue         = require('../lib/v1/system/research-queue');
 const sysResearchCascade       = require('../lib/v1/system/research-cascade');
+const sysResearchAgent         = require('../lib/v1/system/research-agent');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -521,6 +522,7 @@ const ROUTES = {
   'system/promote-named-pending': sysPromoteNamedPending,
   'system/research-queue':         sysResearchQueue,
   'system/research-cascade':       sysResearchCascade,
+  'system/research-agent':         sysResearchAgent,
 };
 
 function tryDynamicIncident(slug, req) {
