@@ -271,6 +271,7 @@ const ingestTwitterWitness    = require('../lib/v1/ingest/twitter-witness');
 const sysDbDiag                = require('../lib/v1/system/db-diag');
 const sysPromoteNamedPending   = require('../lib/v1/system/promote-named-pending');
 const sysResearchQueue         = require('../lib/v1/system/research-queue');
+const sysResearchCascade       = require('../lib/v1/system/research-cascade');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -519,6 +520,7 @@ const ROUTES = {
   'system/db-diag':               sysDbDiag,
   'system/promote-named-pending': sysPromoteNamedPending,
   'system/research-queue':         sysResearchQueue,
+  'system/research-cascade':       sysResearchCascade,
 };
 
 function tryDynamicIncident(slug, req) {
