@@ -274,6 +274,7 @@ const sysResearchQueue         = require('../lib/v1/system/research-queue');
 const sysResearchCascade       = require('../lib/v1/system/research-cascade');
 const sysResearchAgent         = require('../lib/v1/system/research-agent');
 const sysLocalNewsFetcher      = require('../lib/v1/system/local-news-fetcher');
+const sysBulkResearch          = require('../lib/v1/system/bulk-research');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -525,6 +526,7 @@ const ROUTES = {
   'system/research-cascade':       sysResearchCascade,
   'system/research-agent':         sysResearchAgent,
   'system/local-news':             sysLocalNewsFetcher,
+  'system/bulk-research':          sysBulkResearch,
 };
 
 function tryDynamicIncident(slug, req) {
