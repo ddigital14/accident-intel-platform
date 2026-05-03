@@ -268,6 +268,7 @@ const ingestCoronerFeeds       = require('../lib/v1/ingest/coroner-feeds');
 const ingestSheriffBookings    = require('../lib/v1/ingest/sheriff-bookings');
 const ingestCaringbridge       = require('../lib/v1/ingest/caringbridge');
 const ingestTwitterWitness    = require('../lib/v1/ingest/twitter-witness');
+const sysDbDiag                = require('../lib/v1/system/db-diag');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -513,6 +514,7 @@ const ROUTES = {
   'ingest/sheriff-bookings':      ingestSheriffBookings,
   'ingest/caringbridge':          ingestCaringbridge,
   'ingest/twitter-witness':       ingestTwitterWitness,
+  'system/db-diag':               sysDbDiag,
 };
 
 function tryDynamicIncident(slug, req) {
