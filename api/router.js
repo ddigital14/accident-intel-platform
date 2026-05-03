@@ -273,6 +273,7 @@ const sysPromoteNamedPending   = require('../lib/v1/system/promote-named-pending
 const sysResearchQueue         = require('../lib/v1/system/research-queue');
 const sysResearchCascade       = require('../lib/v1/system/research-cascade');
 const sysResearchAgent         = require('../lib/v1/system/research-agent');
+const sysLocalNewsFetcher      = require('../lib/v1/system/local-news-fetcher');
 
 const ROUTES = {
   'auth/login': authLogin,
@@ -523,6 +524,7 @@ const ROUTES = {
   'system/research-queue':         sysResearchQueue,
   'system/research-cascade':       sysResearchCascade,
   'system/research-agent':         sysResearchAgent,
+  'system/local-news':             sysLocalNewsFetcher,
 };
 
 function tryDynamicIncident(slug, req) {
